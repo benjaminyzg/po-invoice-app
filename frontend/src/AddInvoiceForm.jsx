@@ -8,6 +8,10 @@ function AddInvoiceForm({ token, onInvoiceAdded }) {
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState('');
 
+  const [items, setItems] = useState([{ description: '', quantity: 1, unit_price: 0 }]);
+
+  const addItem = () => setItems([...items, { description: '', quantity: 1, unit_price: 0 }]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -20,6 +24,11 @@ function AddInvoiceForm({ token, onInvoiceAdded }) {
       due_date: dueDate
     };
 
+    const payload = {
+    ...invoiceData,
+    items: items 
+    };
+
     try {
       const response = await fetch('http://127.0.0.1:8000/api/invoices/', {
         method: 'POST',
@@ -27,7 +36,7 @@ function AddInvoiceForm({ token, onInvoiceAdded }) {
           'Content-Type': 'application/json',
           'Authorization': `Token ${token}`
         },
-        body: JSON.stringify(invoiceData)
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
