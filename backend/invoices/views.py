@@ -30,6 +30,13 @@ def delete_invoice(request, pk):
     invoice.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def mark_as_paid(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
+    invoice.status = 'PAID'
+    invoice.save()
+    return Response({'message': 'Invoice marked as paid'})
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])

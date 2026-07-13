@@ -60,6 +60,23 @@ function App() {
     });
   };
 
+  const markAsPaid = async (id) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/invoices/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`
+        }
+      });
+      if (response.ok) {
+        fetchInvoices(); // Refresh the list
+      }
+    } catch (err) {
+      console.error('Error marking as paid:', err);
+    }
+  };
+
   // Fetch invoices from backend when the component mounts or when token changes
   useEffect(() => {
     if (token) {
@@ -94,22 +111,44 @@ function App() {
     inv.vendor_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // --- ADD THE SUMMARY LOGIC HERE ---
+  const totalPending = filteredInvoices
+  .filter(inv => inv.status === 'PENDING')
+  .reduce((sum, inv) => {
+    const amount = parseFloat(inv.amount);
+    return sum + (isNaN(amount) ? 0 : amount); // Only add if it's a valid number
+  }, 0);
+  // ----------------------------------
+  
   return (
-    <div style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', textAlign: 'left' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>PO & Invoicing Workspace</h2>
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm mt-6 overflow-hidden">
+      <div className="overflow-x-auto">
+        <h2>Focus Machinery: PO & Invoicing Workspace</h2>
         <button onClick={handleLogout} style={{ padding: '6px 12px', cursor: 'pointer' }}>Log Out</button>
       </div>
 
       <hr />
 
+      {/* --- ADD THE SUMMARY RENDER BLOCK HERE --- */}
+      <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm mb-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-2">Dashboard Summary</h3>
+        <p className="text-gray-600">
+          Total Pending Amount: 
+          <span className="text-2xl font-bold text-blue-600 ml-2">
+            ${totalPending.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+          </span>
+        </p>
+      </div>
+      {/* ----------------------------------------- */}
+
+      {/* Your Small & Short Search Input */}
       <h3>Your Invoices</h3>
-      {/* 1. Add the Search Input Here */}
       <input 
         type="text" 
         placeholder="Search by vendor..." 
-        onChange={(e) => setSearchTerm(e.target.value)} 
-        style={{ padding: '8px', marginBottom: '10px', width: '100%' }}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{ padding: '8px', marginBottom: '10px', width: '30%' }}
+        // ...
       />
 
       {/* 2. Then, pass your filtered list to your table */}
@@ -128,20 +167,21 @@ function App() {
       {invoices.length === 0 ? (
         <p style={{ color: '#666', fontStyle: 'italic' }}>No invoices found. Your connection is working perfectly!</p>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #ccc', textAlign: 'left' }}>
-              <th style={{ padding: '8px' }}>Invoice #</th>
-              <th style={{ padding: '8px' }}>Vendor</th>
-              <th style={{ padding: '8px' }}>Amount</th>
-              <th style={{ padding: '8px' }}>Status</th>
+        <table className="min-w-full divide-y divide-gray-200 mt-4">
+        <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-white divide-y divide-gray-200">
           {filteredInvoices.map(invoice => (
-            <tr key={invoice.id} style={{ borderBottom: '1px solid #eee' }}>
+            <tr key={invoice.id} className="hover:bg-gray-100">
               {/* Invoice Number Cell */}
-              <td style={{ padding: '8px' }}>
+              <td className="px-6 py-4 whitespace-nowrap">
                 {editingId === invoice.id ? 
                   <input 
                     style={editInputStyle} 
@@ -151,7 +191,7 @@ function App() {
                   : invoice.vendor_name}
               </td>
               {/* Vendor Name Cell */}
-              <td style={{ padding: '8px' }}>
+              <td className="px-6 py-4 whitespace-nowrap">
                 {editingId === invoice.id ? 
                   <input 
                     style={editInputStyle} 
@@ -161,7 +201,7 @@ function App() {
                   : invoice.vendor_name}
               </td>
               {/* Amount Cell */}
-              <td style={{ padding: '8px' }}>
+              <td className="px-6 py-4 whitespace-nowrap">
                 {editingId === invoice.id ? 
                   <input 
                     style={editInputStyle} // Add this
@@ -169,11 +209,10 @@ function App() {
                     defaultValue={invoice.amount} 
                     onChange={(e) => setEditData({...editData, amount: e.target.value})} 
                   /> 
-                  : `$${invoice.amount}`}
+              : `$${parseFloat(invoice.amount).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}              
               </td>
-
               {/* Status Cell */}
-              <td style={{ padding: '8px' }}>
+              <td className="px-6 py-4 whitespace-nowrap">
                 {editingId === invoice.id ? 
                   <select 
                     style={editInputStyle} // Add this
@@ -187,15 +226,19 @@ function App() {
                   : invoice.status}
               </td>
               {/* Actions Cell */}
-              <td style={{ padding: '8px' }}>
-              <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+              <td className="px-6 py-4 whitespace-nowrap">
+              <div className="flex space-x-2">
                 {editingId === invoice.id ? 
-                  <button onClick={() => saveEdit(invoice.id)}>Save</button> : 
-                  <button onClick={() => { setEditingId(invoice.id); setEditData(invoice); }}>Edit</button>
+                  <button onClick={() => saveEdit(invoice.id)} className="text-blue-500 hover:text-blue-700">
+                    Save
+                  </button> : 
+                  <button onClick={() => { setEditingId(invoice.id); setEditData(invoice); }} className="text-blue-500 hover:text-blue-700">
+                    Edit
+                  </button>
                 }
                 <button 
                   onClick={() => deleteInvoice(invoice.id)} 
-                  style={{ color: 'red', cursor: 'pointer' }}
+                  className="text-red-500 hover:text-red-700"
                 >
                   Delete
                 </button>
