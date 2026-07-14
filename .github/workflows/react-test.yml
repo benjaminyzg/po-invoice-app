@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./frontend # Change this if your folder name is different
+        working-directory: ./frontend
     
     steps:
     - uses: actions/checkout@v4
@@ -19,10 +19,15 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20' # Or your version
-        
+        node-version: '22' # Latest stable is recommended for modern Vite/React 19
+        cache: 'npm' # This speeds up your workflow by caching dependencies
+        cache-dependency-path: frontend/package-lock.json
+
     - name: Install Dependencies
       run: npm install
       
-    - name: Build
-      run: npm run build # This checks that your React app builds without errors
+    - name: Lint Code
+      run: npm run lint # Runs your Oxlint check automatically
+
+    - name: Build Project
+      run: npm run build # Runs 'vite build' as defined in your package.json
