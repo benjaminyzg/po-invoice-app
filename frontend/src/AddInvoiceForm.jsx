@@ -40,21 +40,21 @@ function AddInvoiceForm({ token, onInvoiceAdded }) {
       });
 
       if (response.ok) {
-        // Clear fields on successful submit
         setInvoiceNumber('');
         setVendorName('');
         setAmount('');
         setDueDate('');
         onInvoiceAdded(); // Tells App.jsx to refresh the list!
+        alert("Invoice saved successfully!");
       } else {
         const errorData = await response.json();
+        console.log("Server error details:", errorData); // Look at this in the console
         setError(JSON.stringify(errorData));
       }
     } catch (err) {
       setError('Failed to submit invoice to the backend server.');
     }
   };
-
   return (
     <div style={{ backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '30px' }}>
       <h4>Add New Invoice</h4>
@@ -74,5 +74,4 @@ function AddInvoiceForm({ token, onInvoiceAdded }) {
     </div>
   );
 }
-
 export default AddInvoiceForm;
