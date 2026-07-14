@@ -10,7 +10,7 @@ from core_app.models import Invoice
 @permission_classes([IsAuthenticated])
 def manage_invoices(request):
     if request.method == 'GET':
-        invoices = Invoice.objects.filter(user=request.user)
+        invoices = Invoice.objects.all()
         serializer = InvoiceSerializer(invoices, many=True)
         return Response(serializer.data)
         
@@ -21,6 +21,15 @@ def manage_invoices(request):
             serializer.save(user=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_invoices(request):
+    print(f"DEBUG: Total Invoice count in DB is: {Invoice.objects.all().count()}") # Add this
+    # Fetch all invoices (or filter by user if required)
+    invoices = Invoice.objects.all()
+    serializer = InvoiceSerializer(invoices, many=True)
+    return Response(serializer.data)
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])

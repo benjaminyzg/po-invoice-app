@@ -29,22 +29,27 @@ function App() {
   }).then(() => { setEditingId(null); fetchInvoices(); });
   };
 
-  const fetchInvoices = () => {
-    if (!token) return;
-    fetch('http://127.0.0.1:8000/api/invoices/', {
+  const fetchInvoices = async () => {
+    const token = localStorage.getItem('token'); // Retrieve the saved token
+
+    const response = await fetch('http://127.0.0.1:8000/api/invoices/', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Token ${token}`
+        // This is the missing piece:
+        'Authorization': `Token ${token}` 
       }
-    })
-    .then(response => {
-      if (!response.ok) throw new Error('Failed to fetch invoices');
-      return response.json();
-    })
-    .then(data => setInvoices(data))
-    .catch(err => setError(err.message));
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+        setInvoices(data);    
+      } else {
+        console.error("Failed to fetch, status:", response.status);    
+      }
   };
+
+
 
   const deleteInvoice = (id) => {
   fetch(`http://127.0.0.1:8000/api/invoices/${id}/delete/`, {
@@ -91,10 +96,14 @@ function App() {
         if (!response.ok) throw new Error('Failed to fetch invoices');
         return response.json();
       })
-      .then(data => setInvoices(data))
-      .catch(err => setError(err.message));
+      .then(data => {
+      console.log('Fetched Invoices:', data); 
+      setInvoices(data);
+    })
+    .catch(err => setError(err.message));
     }
   }, [token]);
+
 
   const handleLoginSuccess = () => setToken(localStorage.getItem('token'));
   
@@ -152,7 +161,7 @@ function App() {
       />
 
       {/* 2. Then, pass your filtered list to your table */}
-      {filteredInvoices.length === 0 ? (
+      {invoices.length === 0 ? (
         <p>No invoices found.</p>
       ) : (
         <table>

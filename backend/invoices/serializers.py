@@ -1,3 +1,4 @@
+from django.db import connection # Add this import at the top
 from rest_framework import serializers
 from .models import Invoice
 # If you have LineItem, keep this line, otherwise remove it:
