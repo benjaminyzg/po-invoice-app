@@ -7,6 +7,10 @@ function AddInvoiceForm({ token, onInvoiceAdded }) {
   const [status, setStatus] = useState('PENDING');
   const [dueDate, setDueDate] = useState('');
   const [error, setError] = useState('');
+  const [poNumber, setPoNumber] = useState('');
+  const [description, setDescription] = useState('');
+  const [address, setAddress] = useState('');
+  
 
   const [items, setItems] = useState([{ description: '', quantity: 1, unit_price: 0 }]);
 
@@ -21,7 +25,10 @@ function AddInvoiceForm({ token, onInvoiceAdded }) {
       vendor_name: vendorName,
       amount: parseFloat(amount),
       status: status,
-      due_date: dueDate
+      due_date: dueDate,
+      po_number: poNumber,
+      vendor_address: address,
+      item_description: description
     };
 
     const payload = {
@@ -64,6 +71,9 @@ function AddInvoiceForm({ token, onInvoiceAdded }) {
         <input type="text" placeholder="Vendor Name" value={vendorName} onChange={e => setVendorName(e.target.value)} required />
         <input type="number" step="0.01" placeholder="Amount ($)" value={amount} onChange={e => setAmount(e.target.value)} style={{ padding: '8px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ccc' }} required />        <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required />
         <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{ padding: '8px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ccc' }} required />
+        <input placeholder="PO Number" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
+        <input placeholder="Vendor Address" value={address} onChange={e => setAddress(e.target.value)} />
+        <textarea placeholder="Item Description" value={description} onChange={e => setDescription(e.target.value)} />
         <select value={status} onChange={e => setStatus(e.target.value)} style={{ padding: '6px', backgroundColor: '#fff', color: '#333' }}>
           <option value="PENDING">Pending</option>
           <option value="PAID">Paid</option>
@@ -71,7 +81,7 @@ function AddInvoiceForm({ token, onInvoiceAdded }) {
         </select>
         <button type="submit" style={{ backgroundColor: '#28a745', color: '#fff', padding: '8px', cursor: 'pointer', border: 'none', borderRadius: '4px' }}>Save Invoice</button>
       </form>
-    </div>
+    </div>    
   );
 }
 export default AddInvoiceForm;
