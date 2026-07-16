@@ -6,8 +6,10 @@ class Invoice(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     invoice_number = models.CharField(max_length=30)
     invoice_date = models.DateField()
-    # You might also want to add a status field if your views use it
     status = models.CharField(max_length=20, default='PENDING') 
+    po_number = models.CharField(max_length=50, blank=True, null=True)
+    item_description = models.TextField(blank=True, null=True)
+    vendor_address = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.invoice_number

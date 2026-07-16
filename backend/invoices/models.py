@@ -16,6 +16,9 @@ class Invoice(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
     due_date = models.DateField()
+    po_number = models.CharField(max_length=50, blank=True, null=True)
+    item_description = models.TextField(blank=True, null=True)
+    vendor_address = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.invoice_number} - {self.vendor_name}"

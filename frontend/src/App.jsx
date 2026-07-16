@@ -1,23 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import Login from './Login'; 
 import AddInvoiceForm from './AddInvoiceForm';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  // Add all of these hooks at the very top:
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [invoices, setInvoices] = useState([]);
-  const [error, setError] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [vendorName, setVendorName] = useState('');
+  const [amount, setAmount] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [poNumber, setPoNumber] = useState('');
+  const [address, setAddress] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState('PENDING');
   const [searchTerm, setSearchTerm] = useState('');
+  const [error, setError] = useState(''); // Add this to your state block
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
-
-  const editInputStyle = {
-    padding: '5px',
-    backgroundColor: '#ffffff', // Sets the box to white
-    color: '#000000',           // Sets text to black
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    width: '90%'                // Ensures it fits nicely in the table cell
-  };
+  
+const inputStyle = {
+  padding: '8px',
+  border: '1px solid #ccc',
+  borderRadius: '4px',
+  width: '100%',
+  marginBottom: '10px'
+};
   
   const saveEdit = (id) => {
   fetch(`http://127.0.0.1:8000/api/invoices/${id}/update/`, {
@@ -48,8 +57,6 @@ function App() {
         console.error("Failed to fetch, status:", response.status);    
       }
   };
-
-
 
   const deleteInvoice = (id) => {
   fetch(`http://127.0.0.1:8000/api/invoices/${id}/delete/`, {
@@ -113,6 +120,44 @@ function App() {
     setInvoices([]);
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const invoiceData = {
+    invoice_number: invoiceNumber,
+    vendor_name: vendorName,
+    amount: parseFloat(amount),
+    status: status,
+    due_date: dueDate,
+    po_number: poNumber,
+    vendor_address: address,
+    item_description: description
+    };
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/invoices/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`
+        },
+        body: JSON.stringify(invoiceData)
+      });
+
+      if (response.ok) {
+        // Refresh the list after saving
+        fetchInvoices(); 
+        // Clear the form
+        setInvoiceNumber('');
+        setVendorName('');
+        setAmount('');
+        setPoNumber('');
+        setAddress('');
+        setDescription('');
+      }
+    } catch (error) {
+      console.error("Error saving invoice:", error);
+    }
+  };
+
   if (!token) return <Login onLoginSuccess={handleLoginSuccess} />;
 
   // PLACE IT HERE: This creates a new array of invoices that match your search
@@ -129,6 +174,20 @@ function App() {
   }, 0);
   // ----------------------------------
   
+  // Calculate totals for the chart
+  const pendingTotal = filteredInvoices
+  .filter(inv => inv.status === 'PENDING')
+  .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
+
+  const paidTotal = filteredInvoices
+  .filter(inv => inv.status === 'PAID')
+  .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
+
+  const chartData = [
+  { name: 'Pending', amount: pendingTotal },
+  { name: 'Paid', amount: paidTotal },
+  ];
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm mt-6 overflow-hidden">
       <div className="overflow-x-auto">
@@ -149,6 +208,18 @@ function App() {
         </p>
       </div>
       {/* ----------------------------------------- */}
+
+      <div style={{ width: '100%', height: 300, marginBottom: '20px' }}>
+        <ResponsiveContainer>
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="amount" fill="#8884d8" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
 
       {/* Your Small & Short Search Input */}
       <h3>Your Invoices</h3>
@@ -177,27 +248,42 @@ function App() {
         <p style={{ color: '#666', fontStyle: 'italic' }}>No invoices found. Your connection is working perfectly!</p>
       ) : (
         <table className="min-w-full divide-y divide-gray-200 mt-4">
-        <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <input style={inputStyle} placeholder="Invoice Number" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} required />
+        <input style={inputStyle} placeholder="Vendor Name" value={vendorName} onChange={e => setVendorName(e.target.value)} required />
+        <input style={inputStyle} type="number" placeholder="Amount ($)" value={amount} onChange={e => setAmount(e.target.value)} />
+        <input style={inputStyle} type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+        <input style={inputStyle} placeholder="PO Number" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
+        <textarea 
+          style={{ ...inputStyle, height: '80px', resize: 'vertical' }} 
+          placeholder="Vendor Address" 
+          value={address} 
+          onChange={e => setAddress(e.target.value)} 
+        />
+      
+      <textarea 
+        style={{ ...inputStyle, height: '120px', resize: 'vertical' }} 
+        placeholder="Item Description" 
+        value={description} 
+        onChange={e => setDescription(e.target.value)} 
+      />
+
+      <button type="submit" style={{ padding: '10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px' }}>
+        Save Invoice
+      </button>
+    </form>
           <tbody className="bg-white divide-y divide-gray-200">
           {filteredInvoices.map(invoice => (
             <tr key={invoice.id} className="hover:bg-gray-100">
               {/* Invoice Number Cell */}
               <td className="px-6 py-4 whitespace-nowrap">
-                {editingId === invoice.id ? 
+                {editingId === invoice.id ? (
                   <input 
                     style={editInputStyle} 
-                    defaultValue={invoice.vendor_name} 
-                    onChange={(e) => setEditData({...editData, vendor_name: e.target.value})} 
-                  /> 
-                  : invoice.vendor_name}
+                    defaultValue={invoice.invoice_number} 
+                    onChange={(e) => setEditData({...editData, invoice_number: e.target.value})} 
+                  />
+                ) : invoice.invoice_number}
               </td>
               {/* Vendor Name Cell */}
               <td className="px-6 py-4 whitespace-nowrap">
@@ -208,6 +294,16 @@ function App() {
                     onChange={(e) => setEditData({...editData, vendor_name: e.target.value})} 
                   /> 
                   : invoice.vendor_name}
+              </td>
+              {/* PO Number Cell */}
+              <td className="px-6 py-4 whitespace-nowrap">
+                {editingId === invoice.id ? (
+                  <input 
+                    style={editInputStyle} 
+                    defaultValue={invoice.po_number} 
+                    onChange={(e) => setEditData({...editData, po_number: e.target.value})} 
+                  />
+                ) : invoice.po_number}
               </td>
               {/* Amount Cell */}
               <td className="px-6 py-4 whitespace-nowrap">
