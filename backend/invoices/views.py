@@ -22,6 +22,16 @@ def manage_invoices(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def update_invoice(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
+    serializer = InvoiceSerializer(invoice, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_invoices(request):
@@ -47,14 +57,6 @@ def mark_as_paid(request, pk):
     invoice.save()
     return Response({'message': 'Invoice marked as paid'})
 
-@api_view(['PATCH'])
-@permission_classes([IsAuthenticated])
-def update_invoice(request, pk):
-    invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
-    serializer = InvoiceSerializer(invoice, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
