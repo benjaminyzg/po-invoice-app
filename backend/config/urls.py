@@ -8,5 +8,5 @@ urlpatterns = [
     path('api/health/', health_check),
     path('api/login/', views.obtain_auth_token),
     # Use the string-based include to avoid import-time loops
-    path('api/', include('invoices.urls')), 
+    path('api/invoices/', include('invoices.urls')), 
 ]
