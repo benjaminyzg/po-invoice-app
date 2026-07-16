@@ -28,6 +28,29 @@ const inputStyle = {
   marginBottom: '10px'
 };
   
+  const saveInvoice = async (e) => {
+    e.preventDefault();
+    const url = editingId 
+      ? `http://127.0.0.1:8000/api/invoices/${editingId}/update/` 
+      : `http://127.0.0.1:8000/api/invoices/`;
+    
+    const method = editingId ? 'PATCH' : 'POST';
+
+    await fetch(url, {
+      method: method,
+      headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Token ${token}`
+     },
+     body: JSON.stringify(formData)
+    });
+
+    //Reset states
+    setEditingId(null);
+    setFormData({ /* reset to empty */ });
+    fetchInvoices();
+  };  
+
   const saveEdit = (id) => {
   fetch(`http://127.0.0.1:8000/api/invoices/${id}/update/`, {
     method: 'PATCH',
@@ -66,9 +89,11 @@ const inputStyle = {
     }
     })
     .then(response => {
-      if (response.ok) {
-        fetchInvoices(); // Refresh the list after successful deletion
-      }
+    if (response.ok) {
+      fetchInvoices(); // Refresh the list
+    } else {
+      console.error("Failed to delete");
+    }
     });
   };
 
@@ -334,10 +359,15 @@ const inputStyle = {
               <td className="px-6 py-4 whitespace-nowrap">
               <div className="flex space-x-2">
                 {editingId === invoice.id ? 
-                  <button onClick={() => saveEdit(invoice.id)} className="text-blue-500 hover:text-blue-700">
+                  <button onClick={() => 
+                  saveEdit(invoice.id)} 
+                  className="text-blue-500 hover:text-blue-700">
                     Save
                   </button> : 
-                  <button onClick={() => { setEditingId(invoice.id); setEditData(invoice); }} className="text-blue-500 hover:text-blue-700">
+                  <button onClick={() => { 
+                    setEditingId(invoice.id); 
+                    setEditData(invoice); 
+                    }} className="text-blue-500 hover:text-blue-700">
                     Edit
                   </button>
                 }
