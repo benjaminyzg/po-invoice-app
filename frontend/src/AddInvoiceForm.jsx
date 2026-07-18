@@ -1,47 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-function AddInvoiceForm({ token, onInvoiceAdded, editData, setEditData }) {
-// 1. Remove all individual useState hooks (invoiceNumber, vendorName, etc.)
-// 2. Just use editData and setEditData directly in your inputs
-
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  // Your existing POST/PATCH logic here using 'editData'
-};
-
-return (
-  <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '10px' }}>
-    <input 
-      type="text" 
-      placeholder="Invoice Number" 
-      value={editData?.invoice_number || ''} 
-      onChange={(e) => setEditData({...editData, invoice_number: e.target.value})} 
-    />
-    <input 
-      type="text" 
-      placeholder="Vendor Name" 
-      value={editData?.vendor_name || ''} 
-      onChange={(e) => setEditData({...editData, vendor_name: e.target.value})} 
-    />
-    <input 
-      type="number" 
-      step="0.01" 
-      placeholder="Amount ($)" 
-      value={editData?.amount || ''} 
-      onChange={(e) => setEditData({...editData, amount: e.target.value})} 
-    />
-    <input 
-      type="date" 
-      value={editData?.due_date || ''} 
-      onChange={(e) => setEditData({...editData, due_date: e.target.value})} 
-    />
-    {/* Add the rest of your fields following this same pattern */}
-    <button type="submit">Save Invoice</button>
-  </form>
-);
-}
-
-function AddInvoiceForm({ token, onInvoiceAdded, editData, setEditData}) {
+function AddInvoiceForm({ token, onInvoiceAdded, editData = {}, setEditData}) {
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [vendorName, setVendorName] = useState('');
   const [amount, setAmount] = useState('');
@@ -115,15 +74,10 @@ function AddInvoiceForm({ token, onInvoiceAdded, editData, setEditData}) {
       <h4>Add New Invoice</h4>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '10px' }}>
-        <input type="text" placeholder="Invoice Number" value={editData.invoice_number || ''} onChange={(e) => setEditData({...editData, invoice_number: e.target.value})} />
-        <input type="text" placeholder="Vendor Name" value={editData.vendor_name || ''} onChange={(e) => setEditData({...editData, vendor_name: e.target.value})} />
-        <input type="number" step="0.01" placeholder="Amount ($)" value={editData.amount || ''} onChange={(e) => setEditData({...editData, amount: e.target.value})} style={{ padding: '8px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ccc' }} />
-        <input type="date" value={editData.due_date || ''} onChange={(e) => setEditData({...editData, due_date: e.target.value})} required />
-        <input type="date" value={editData.due_date || ''} onChange={(e) => setEditData({...editData, due_date: e.target.value})} style={{ padding: '8px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ccc' }} required />
-        <input type="text" placeholder="Invoice Number" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} required />
-        <input type="text" placeholder="Vendor Name" value={vendorName} onChange={e => setVendorName(e.target.value)} required />
-        <input type="number" step="0.01" placeholder="Amount ($)" value={amount} onChange={e => setAmount(e.target.value)} style={{ padding: '8px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ccc' }} required />        <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required />
-        <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={{ padding: '8px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ccc' }} required />
+        <input type="text" placeholder="Invoice Number" value={editData?.invoice_number || ''} onChange={(e) => setEditData({...editData, invoice_number: e.target.value})} />
+        <input type="text" placeholder="Vendor Name" value={editData?.vendor_name || ''} onChange={(e) => setEditData({...editData, vendor_name: e.target.value})} />
+        <input type="number" step="0.01" placeholder="Amount ($)" value={editData?.amount || ''} onChange={(e) => setEditData({...editData, amount: e.target.value})} style={{ padding: '8px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ccc' }} />
+        <input type="date" value={editData?.due_date || ''} onChange={(e) => setEditData({...editData, due_date: e.target.value})} required />
         <input placeholder="PO Number" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
         <input placeholder="Vendor Address" value={address} onChange={e => setAddress(e.target.value)} />
         <textarea placeholder="Item Description" value={description} onChange={e => setDescription(e.target.value)} />
