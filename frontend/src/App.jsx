@@ -41,8 +41,8 @@ const inputStyle = {
       headers: {
       'Content-Type': 'application/json',
       'Authorization': `Token ${token}`
-     },
-     body: JSON.stringify(formData)
+      },
+      body: JSON.stringify(formData)
     });
 
     //Reset states
@@ -98,20 +98,20 @@ const inputStyle = {
   };
 
   const markAsPaid = async (id) => {
-    try {
-      const response = await fetch(`http://127.0.0.1:8000/api/invoices/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Token ${token}`
-        }
-      });
-      if (response.ok) {
-        fetchInvoices(); // Refresh the list
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/invoices/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Token ${token}`
       }
-    } catch (err) {
-      console.error('Error marking as paid:', err);
+    });
+    if (response.ok) {
+      fetchInvoices(); // Refresh the list
     }
+  } catch (err) {
+    console.error('Error marking as paid:', err);
+  }
   };
 
   // Fetch invoices from backend when the component mounts or when token changes
@@ -219,9 +219,7 @@ const inputStyle = {
         <h2>Focus Machinery: PO & Invoicing Workspace</h2>
         <button onClick={handleLogout} style={{ padding: '6px 12px', cursor: 'pointer' }}>Log Out</button>
       </div>
-
       <hr />
-
       {/* --- ADD THE SUMMARY RENDER BLOCK HERE --- */}
       <div className="p-6 bg-white border border-gray-200 rounded-xl shadow-sm mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-2">Dashboard Summary</h3>
@@ -233,7 +231,6 @@ const inputStyle = {
         </p>
       </div>
       {/* ----------------------------------------- */}
-
       <div style={{ width: '100%', height: 300, marginBottom: '20px' }}>
         <ResponsiveContainer>
           <BarChart data={chartData}>
@@ -268,10 +265,10 @@ const inputStyle = {
       {/* Add the form component here */}
       <AddInvoiceForm token={token} onInvoiceAdded={fetchInvoices} />
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      
       {invoices.length === 0 ? (
         <p style={{ color: '#666', fontStyle: 'italic' }}>No invoices found. Your connection is working perfectly!</p>
       ) : (
+        
         <table className="min-w-full divide-y divide-gray-200 mt-4">
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <input style={inputStyle} placeholder="Invoice Number" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} required />
@@ -285,18 +282,17 @@ const inputStyle = {
           value={address} 
           onChange={e => setAddress(e.target.value)} 
         />
-      
+
       <textarea 
         style={{ ...inputStyle, height: '120px', resize: 'vertical' }} 
         placeholder="Item Description" 
         value={description} 
         onChange={e => setDescription(e.target.value)} 
       />
-
       <button type="submit" style={{ padding: '10px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '4px' }}>
         Save Invoice
       </button>
-    </form>
+        </form>
           <tbody className="bg-white divide-y divide-gray-200">
           {filteredInvoices.map(invoice => (
             <tr key={invoice.id} className="hover:bg-gray-100">
