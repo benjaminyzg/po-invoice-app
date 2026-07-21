@@ -213,6 +213,13 @@ const inputStyle = {
   { name: 'Paid', amount: paidTotal },
   ];
 
+  const editInputStyle = {
+  padding: '4px 8px',
+  border: '1px solid #d1d5db',
+  borderRadius: '4px',
+  width: '100%'
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm mt-6 overflow-hidden">
       <div className="overflow-x-auto">
@@ -233,10 +240,9 @@ const inputStyle = {
       {/* ----------------------------------------- */}
       <div style={{ width: '100%', height: 300, marginBottom: '20px' }}>
         <ResponsiveContainer>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
+          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 40, bottom: 5 }}>
             <XAxis dataKey="name" />
-            <YAxis />
+            <YAxis width={70} /> {/* <-- Increase width so large numbers fit */}
             <Tooltip />
             <Bar dataKey="amount" fill="#8884d8" />
           </BarChart>
