@@ -10,22 +10,36 @@ function AddInvoiceForm({ token, onInvoiceAdded, editData = {}, setEditData}) {
   const [poNumber, setPoNumber] = useState('');
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
-  
+  const [items, setItems] = useState([{ description: '', quantity: 1, unit_price: 0 }]);
+
   useEffect(() => {
-    if (editData) {
+    if (editData && editData.id) {
       setInvoiceNumber(editData.invoice_number || '');
       setVendorName(editData.vendor_name || '');
       // ... repeat for other fields
+    } else {
+      // Clear fields when not editing
+      setInvoiceNumber('');
+      setVendorName('');
     }
-  }, [editData]);
-
-  const [items, setItems] = useState([{ description: '', quantity: 1, unit_price: 0 }]);
+  }, [editData?.id]); // <--- Key change here!
 
   const addItem = () => setItems([...items, { description: '', quantity: 1, unit_price: 0 }]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const inputStyle = {
+      width: '100%',
+      padding: '8px 12px',
+      border: '1px solid #ccc',
+      borderRadius: '4px',
+      backgroundColor: '#ffffff',
+      color: '#333333',
+      fontSize: '14px',
+      boxSizing: 'border-box'
+    };
 
     const invoiceData = {
       invoice_number: invoiceNumber,
@@ -69,25 +83,84 @@ function AddInvoiceForm({ token, onInvoiceAdded, editData = {}, setEditData}) {
       setError('Failed to submit invoice to the backend server.');
     }
   };
+
+  // --- ADD inputStyle HERE ---
+  const inputStyle = {
+    width: '100%',
+    padding: '8px 12px',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    backgroundColor: '#ffffff',
+    color: '#333333',
+    fontSize: '14px',
+    boxSizing: 'border-box'
+  };
+
   return (
     <div style={{ backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '30px' }}>
       <h4>Add New Invoice</h4>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '10px' }}>
-        <input type="text" placeholder="Invoice Number" value={editData?.invoice_number || ''} onChange={(e) => setEditData({...editData, invoice_number: e.target.value})} />
-        <input type="text" placeholder="Vendor Name" value={editData?.vendor_name || ''} onChange={(e) => setEditData({...editData, vendor_name: e.target.value})} />
-        <input type="number" step="0.01" placeholder="Amount ($)" value={editData?.amount || ''} onChange={(e) => setEditData({...editData, amount: e.target.value})} style={{ padding: '8px', backgroundColor: '#ffffff', color: '#000000', border: '1px solid #ccc' }} />
-        <input type="date" value={editData?.due_date || ''} onChange={(e) => setEditData({...editData, due_date: e.target.value})} required />
-        <input placeholder="PO Number" value={poNumber} onChange={e => setPoNumber(e.target.value)} />
-        <input placeholder="Vendor Address" value={address} onChange={e => setAddress(e.target.value)} />
-        <textarea placeholder="Item Description" value={description} onChange={e => setDescription(e.target.value)} />
-        <select value={status} onChange={e => setStatus(e.target.value)} style={{ padding: '6px', backgroundColor: '#fff', color: '#333' }}>
-          <option value="PENDING">Pending</option>
-          <option value="PAID">Paid</option>
-          <option value="CANCELLED">Cancelled</option>
-        </select>
-        <button type="submit" style={{ backgroundColor: '#28a745', color: '#fff', padding: '8px', cursor: 'pointer', border: 'none', borderRadius: '4px' }}>Save Invoice</button>
-      </form>
+  <input
+    type="text"
+    placeholder="Invoice Number"
+    value={invoiceNumber}
+    onChange={(e) => setInvoiceNumber(e.target.value)}
+    style={inputStyle}
+  />
+  <input
+    type="text"
+    placeholder="Vendor Name"
+    value={vendorName}
+    onChange={(e) => setVendorName(e.target.value)}
+    style={inputStyle}
+  />
+  <input
+    type="text"
+    inputMode="decimal"
+    placeholder="Amount ($) e.g. 1500.00"
+    value={amount}
+    onChange={(e) => setAmount(e.target.value)}
+    style={inputStyle}
+  />
+  <input
+    type="date"
+    value={dueDate}
+    onChange={(e) => setDueDate(e.target.value)}
+    style={inputStyle}
+  />
+  <input
+    placeholder="PO Number"
+    value={poNumber}
+    onChange={(e) => setPoNumber(e.target.value)}
+    style={inputStyle}
+  />
+  <input
+    placeholder="Vendor Address"
+    value={address}
+    onChange={(e) => setAddress(e.target.value)}
+    style={inputStyle}
+  />
+  <textarea
+    placeholder="Item Description"
+    value={description}
+    onChange={(e) => setDescription(e.target.value)}
+    style={{ ...inputStyle, minHeight: '60px', fontFamily: 'inherit' }}
+  />
+  <select
+    value={status}
+    onChange={(e) => setStatus(e.target.value)}
+    style={inputStyle}
+  >
+    <option value="PENDING">Pending</option>
+    <option value="PAID">Paid</option>
+    <option value="CANCELLED">Cancelled</option>
+  </select>
+
+  <button type="submit" style={{ backgroundColor: '#28a745', color: '#fff', padding: '10px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+    Save Invoice
+  </button>
+</form>
     </div>    
   );
 }
