@@ -9,6 +9,22 @@ class CatalogItem(models.Model):
     def __str__(self):
         return f"{self.name} (${self.unit_price})"
 
+class Invoice(models.Model):
+    invoice_number = models.CharField(max_length=50, unique=True)
+    vendor_name = models.CharField(max_length=255)
+    po_number = models.CharField(max_length=50, blank=True, null=True)
+    status = models.CharField(max_length=20, default='PENDING')
+
+    def __str__(self):
+        return f"Invoice {self.invoice_number} - {self.vendor_name}"
+
+    @property
+    def total_amount(self):
+        """Dynamically calculates total from related line items."""
+        return sum(
+            (item.quantity or 0) * (item.unit_price or 0)
+            for item in self.items.all()
+        )
 
 # 2. Purchase Order Model
 class PurchaseOrder(models.Model):

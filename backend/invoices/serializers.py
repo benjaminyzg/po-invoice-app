@@ -1,12 +1,24 @@
 from rest_framework import serializers
 from .models import Invoice, InvoiceItem, CatalogItem, PurchaseOrder
 
+class InvoiceItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoiceItem
+        fields = ['id', 'description', 'quantity', 'unit_price']
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    items = InvoiceItemSerializer(many=True, required=False)
+    total_amount = serializers.ReadOnlyField()  # 👈 Reads @property from model
+
+    class Meta:
+        model = Invoice
+        fields = ['id', 'invoice_number', 'vendor_name', 'po_number', 'status', 'items', 'total_amount']
+
 # 1. Catalog Item Serializer
 class CatalogItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CatalogItem
         fields = '__all__'
-
 
 # 2. Purchase Order Serializer
 class PurchaseOrderSerializer(serializers.ModelSerializer):
