@@ -20,5 +20,6 @@ class InvoiceItemInline(admin.TabularInline):
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = ('invoice_number', 'vendor_name', 'po_number', 'status', 'created_at')
+    list_display = ('invoice_number', 'vendor_name', 'po_number', 'status', 'total_amount')
+    readonly_fields = ('total_amount',)  # 👈 Displays total_amount in Admin page
     inlines = [InvoiceItemInline]
