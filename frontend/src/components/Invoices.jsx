@@ -295,20 +295,19 @@ export default function Invoices({ token, baseUrl }) {
   const [invoices, setInvoices] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);
   const [hoveredInvoiceId, setHoveredInvoiceId] = useState(null);
+  const today = new Date().toISOString().split('T')[0];
 
-  // --- Form State ---
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [vendorName, setVendorName] = useState('');
   const [poNumber, setPoNumber] = useState('');
+  const [issuedDate, setIssuedDate] = useState(today); // <-- Add this single state variable
   const [selectedCatalogId, setSelectedCatalogId] = useState('');
   const [lineItems, setLineItems] = useState([{ description: '', quantity: 1, unit_price: 0 }]);
 
   // --- Inline Edit State ---
   const [editingId, setEditingId] = useState(null);
-  const [editFormData, setEditFormData] = useState({
-    po_number: '',
-    status: 'PENDING',
-  });
+  const [editFormData, setEditFormData] = useState({ po_number: '', status: 'PENDING'});
+  
 
   // Helper to format numbers like 1965000 -> $1,965,000.00
   const formatCurrency = (value) => {
@@ -546,6 +545,17 @@ export default function Invoices({ token, baseUrl }) {
                 onChange={(e) => setVendorName(e.target.value)}
                 required
                 style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Issued Date *</label>
+              <input
+                type="date"
+                id="issued_date"
+                value={issuedDate}
+                onChange={(e) => setIssuedDate(e.target.value)}
+                style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
+                required
               />
             </div>
             <div>

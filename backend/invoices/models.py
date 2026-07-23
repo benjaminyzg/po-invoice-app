@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 # 1. Catalog Item Model
 class CatalogItem(models.Model):
@@ -55,6 +56,7 @@ class Invoice(models.Model):
     po_number = models.CharField(max_length=50, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
+    issued_date = models.DateField(default=timezone.now)
 
     @property
     def total_amount(self):
