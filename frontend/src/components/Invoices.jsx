@@ -480,6 +480,27 @@ export default function Invoices({ token, baseUrl }) {
     }
   };
 
+  // 6. Change in Invoice Status
+  const handleStatusChange = async (invoiceId, newStatus) => {
+  try {
+    // 1. Send update to Django API
+    const response = await fetch(`/api/invoices/${invoiceId}/`, {
+      method: 'PATCH', // or PUT
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    if (!response.ok) throw new Error('Failed to update status');
+
+    // 2. Update local state on success
+    setInvoices(prev =>
+      prev.map(inv => (inv.id === invoiceId ? { ...inv, status: newStatus } : inv))
+    );
+  } catch (error) {
+    console.error('Error updating status:', error);
+  }
+  };
+
   return (
     <div style={{ maxWidth: '850px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       
