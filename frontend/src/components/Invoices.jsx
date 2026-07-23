@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import FormField from './common/FormField';
 import { formatCurrency, calculateGrandTotal, formatDate } from '../utils/formatters';
 
 // Isolated Popover Preview Component
@@ -525,49 +526,51 @@ export default function Invoices({ token, baseUrl }) {
 
         <form onSubmit={handleCreateInvoice}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Invoice Number *</label>
-              <input
-                type="text"
-                placeholder="INV-1001"
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
-                required
-                style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Vendor Name *</label>
-              <input
-                type="text"
-                placeholder="Vendor Pte Ltd"
-                value={vendorName}
-                onChange={(e) => setVendorName(e.target.value)}
-                required
-                style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>Issued Date *</label>
-              <input
-                type="date"
-                id="issued_date"
-                value={issuedDate}
-                onChange={(e) => setIssuedDate(e.target.value)}
-                style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
-                required
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: 'bold' }}>PO Number (Optional)</label>
-              <input
-                type="text"
-                placeholder="PO-9901"
-                value={poNumber}
-                onChange={(e) => setPoNumber(e.target.value)}
-                style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
-              />
-            </div>
+            {/* --- Form Fields Grid Container --- */}
+{/* --- Form Fields Grid (Full Width, 4 Equal Columns) --- */}
+{/* --- Form Fields Grid --- */}
+{/* --- Form Fields Grid --- */}
+<div style={{ 
+  display: 'grid', 
+  gridTemplateColumns: '130px 380px 130px 130px', // 3 short fixed-width fields + massive Vendor field
+  width: '100%', 
+  gap: '12px', 
+  marginTop: '15px',
+  marginBottom: '15px',
+  boxSizing: 'border-box'
+}}>
+  <FormField
+    label="Invoice Number"
+    value={invoiceNumber}
+    onChange={(e) => setInvoiceNumber(e.target.value)}
+    placeholder="INV-1001"
+    required
+  />
+
+  <FormField
+    label="Vendor Name"
+    value={vendorName}
+    onChange={(e) => setVendorName(e.target.value)}
+    placeholder="e.g. Vendor Name Pte Ltd"
+    required
+  />
+
+  <FormField
+    label="Issued Date"
+    type="date"
+    id="issued_date"
+    value={issuedDate}
+    onChange={(e) => setIssuedDate(e.target.value)}
+    required
+  />
+
+  <FormField
+    label="PO Number (Optional)"
+    value={poNumber}
+    onChange={(e) => setPoNumber(e.target.value)}
+    placeholder="PO-9901"
+  />
+</div>
           </div>
 
           <hr style={{ border: 'none', borderTop: '3px solid #b0b0b0', margin: '20px 0 15px 0', borderRadius: '2px' }} />         
