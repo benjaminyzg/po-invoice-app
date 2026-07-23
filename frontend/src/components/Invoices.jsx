@@ -11,7 +11,7 @@ function InvoicePopover({ invoice, position }) {
     <div
       style={{
         position: 'fixed',
-        top: position?.top || 0,
+        top: position?.top ? position.top - 10 : 0,
         left: position?.left || 0,
         zIndex: 9999,
         backgroundColor: '#ffffff',
