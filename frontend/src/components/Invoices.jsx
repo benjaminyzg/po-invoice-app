@@ -285,10 +285,10 @@ function DataTable({ title, headers, children }) {
 export default function Invoices({ token, baseUrl }) {
 
   const invoiceHeaders = [
-    { label: 'Invoice #' },
-    { label: 'Vendor' },
-    { label: 'PO #' },
-    { label: 'Amount', align: 'right' },
+    { label: 'Invoice #', align: 'left' },
+    { label: 'Vendor', align: 'center' },  // Centralized
+    { label: 'PO #', align: 'center' },    // Centralized
+    { label: 'Amount', align: 'center' },  // Centralized
     { label: 'Status', align: 'center' },
     { label: 'Actions', align: 'center' },
   ];
@@ -528,51 +528,48 @@ export default function Invoices({ token, baseUrl }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
             {/* --- Form Fields Grid Container --- */}
 {/* --- Form Fields Grid (Full Width, 4 Equal Columns) --- */}
-{/* --- Form Fields Grid --- */}
-{/* --- Form Fields Grid --- */}
-<div style={{ 
-  display: 'grid', 
-  gridTemplateColumns: '130px 380px 130px 130px', // 3 short fixed-width fields + massive Vendor field
-  width: '100%', 
-  gap: '12px', 
-  marginTop: '15px',
-  marginBottom: '15px',
-  boxSizing: 'border-box'
-}}>
-  <FormField
-    label="Invoice Number"
-    value={invoiceNumber}
-    onChange={(e) => setInvoiceNumber(e.target.value)}
-    placeholder="INV-1001"
-    required
-  />
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: '130px 380px 130px 130px', // 3 short fixed-width fields + massive Vendor field
+              width: '100%', 
+              gap: '12px', 
+              marginTop: '15px',
+              marginBottom: '15px',
+              boxSizing: 'border-box'
+            }}>
+              <FormField
+                label="Invoice Number"
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+                placeholder="INV-1001"
+                required
+              />
 
-  <FormField
-    label="Vendor Name"
-    value={vendorName}
-    onChange={(e) => setVendorName(e.target.value)}
-    placeholder="e.g. Vendor Name Pte Ltd"
-    required
-  />
+              <FormField
+                label="Vendor Name"
+                value={vendorName}
+                onChange={(e) => setVendorName(e.target.value)}
+                placeholder="e.g. Vendor Name Pte Ltd"
+                required
+              />
 
-  <FormField
-    label="Issued Date"
-    type="date"
-    id="issued_date"
-    value={issuedDate}
-    onChange={(e) => setIssuedDate(e.target.value)}
-    required
-  />
+              <FormField
+                label="Issued Date"
+                type="date"
+                id="issued_date"
+                value={issuedDate}
+                onChange={(e) => setIssuedDate(e.target.value)}
+                required
+              />
 
-  <FormField
-    label="PO Number (Optional)"
-    value={poNumber}
-    onChange={(e) => setPoNumber(e.target.value)}
-    placeholder="PO-9901"
-  />
-</div>
+              <FormField
+                label="PO Number (Optional)"
+                value={poNumber}
+                onChange={(e) => setPoNumber(e.target.value)}
+                placeholder="PO-9901"
+              />
+            </div>
           </div>
-
           <hr style={{ border: 'none', borderTop: '3px solid #b0b0b0', margin: '20px 0 15px 0', borderRadius: '2px' }} />         
         <div 
           style={{ 
