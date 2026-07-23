@@ -12,7 +12,15 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = ['id', 'invoice_number', 'vendor_name', 'po_number', 'status', 'items', 'total_amount']
+        fields = [
+            'id', 
+            'invoice_number', 
+            'vendor_name', 
+            'po_number', 
+            'issued_date',  # <-- Add this field
+            'status', 
+            'items', 
+        ]
 
 # 1. Catalog Item Serializer
 class CatalogItemSerializer(serializers.ModelSerializer):
