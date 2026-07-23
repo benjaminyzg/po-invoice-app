@@ -33,7 +33,6 @@ class PurchaseOrder(models.Model):
         ('Approved', 'Approved'),
         ('Fulfilled', 'Fulfilled'),
     ]
-
     po_number = models.CharField(max_length=50, unique=True)
     vendor_name = models.CharField(max_length=255)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -47,11 +46,10 @@ class PurchaseOrder(models.Model):
 # 3. Invoice Header Model
 class Invoice(models.Model):
     STATUS_CHOICES = [
-        ('PENDING', 'Pending'),
-        ('PAID', 'Paid'),
-        ('CANCELLED', 'Cancelled'),
+        ('Pending', 'Pending'),
+        ('Paid', 'Paid'),
+        ('Cancelled', 'Cancelled'),
     ]
-
     invoice_number = models.CharField(max_length=50, unique=True)
     vendor_name = models.CharField(max_length=255)
     po_number = models.CharField(max_length=50, blank=True, null=True)
