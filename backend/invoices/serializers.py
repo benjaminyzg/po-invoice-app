@@ -2,13 +2,23 @@ from rest_framework import serializers
 from .models import Invoice, InvoiceItem, CatalogItem, PurchaseOrder
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
+        
     class Meta:
-        model = InvoiceItem
-        fields = ['id', 'description', 'quantity', 'unit_price']
+        model = Invoice
+        fields = [
+            'id',
+            'invoice_number',
+            'vendor_name',
+            'status',
+            'total_amount',
+        ]
 
 class InvoiceSerializer(serializers.ModelSerializer):
     items = InvoiceItemSerializer(many=True, required=False)
     total_amount = serializers.ReadOnlyField()  # 👈 Reads @property from model
+
+    # Overrides total_amount to output as a formatted string
+    total_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
@@ -21,6 +31,10 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'status', 
             'items', 
         ]
+
+    def get_total_amount(self, obj):
+        # Returns "2,200,000.00"
+        return f'{obj.total_amount:,.2f}'
 
 # 1. Catalog Item Serializer
 class CatalogItemSerializer(serializers.ModelSerializer):
