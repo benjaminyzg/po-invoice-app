@@ -186,3 +186,30 @@
     border-right-color: var(--border);
   }
 }
+
+/* Shared grid layout for both header and rows */
+.line-item-grid {
+  display: grid;
+  /* 
+    1fr    : Description takes remaining flexible space
+    80px   : Fixed width for Quantity
+    110px  : Fixed width for Unit Price
+    90px   : Fixed width for Total Amount display
+    30px   : Fixed width for Delete button (X)
+  */
+  grid-template-columns: 1fr 80px 110px 90px 30px;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Align text to match input alignment */
+.line-item-header {
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.line-item-header .col-desc {
+  text-align: center; /* or left */
+}
