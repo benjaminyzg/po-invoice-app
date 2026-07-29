@@ -16,6 +16,16 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
     serializer_class = PurchaseOrderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    # inside PurchaseOrderViewSet or view method
+    def partial_update(self, request, *args, **kwargs):
+        print(f"\n[BACKEND TRACK 1] Incoming PATCH request for PO ID: {kwargs.get('pk')}")
+        print(f"[BACKEND TRACK 2] Payload received: {request.data}")
+        
+        response = super().partial_update(request, *args, **kwargs)
+        
+        print(f"[BACKEND TRACK 3] Response status code: {response.status_code}")
+        return response
+
 class InvoiceViewSet(viewsets.ModelViewSet):
     queryset = Invoice.objects.all().order_by('-created_at')
     serializer_class = InvoiceSerializer

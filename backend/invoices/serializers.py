@@ -44,10 +44,10 @@ class CatalogItemSerializer(serializers.ModelSerializer):
 
 # 2. Purchase Order Serializer
 class PurchaseOrderSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = PurchaseOrder
         fields = '__all__'
-
 
 # 3. Invoice Item Serializer (Line Items)
 class InvoiceItemSerializer(serializers.ModelSerializer):
@@ -56,7 +56,6 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceItem
         fields = ['id', 'description', 'quantity', 'unit_price', 'total_price']
-
 
 # 4. Main Invoice Serializer (Nested Line Items)
 class InvoiceSerializer(serializers.ModelSerializer):
