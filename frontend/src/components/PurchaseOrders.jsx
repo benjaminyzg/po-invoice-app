@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-
+  
 export default function PurchaseOrders({ token, baseUrl }) {
+  // Multi-line items state
+  const [items, setItems] = useState([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   const [pos, setPos] = useState([]);
   const [formData, setFormData] = useState({po_number: '', vendor_name: '', total_amount: '', status: 'Pending'});
   const [error, setError] = useState('');
@@ -12,45 +14,25 @@ export default function PurchaseOrders({ token, baseUrl }) {
   const [currency, setCurrency] = useState('SGD');
   const [status, setStatus] = useState('Pending');
   const [purchaseOrders, setPurchaseOrders] = useState([]);
-
-  // Multi-line items state
-  const [items, setItems] = useState([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
-
-  // Helper: Handle change in individual item row
+  
+  // Handler function for updating a item row field:
   const handleItemChange = (index, field, value) => {
-    const updatedItems = [...items];
-    updatedItems[index][field] = value;
-    setItems(updatedItems);
+  setItems((prevItems) => {
+    const updated = [...prevItems];
+    updated[index] = { ...updated[index], [field]: value };
+    return updated;
+  });
   };
-
   // Helper: Add a new line item
   const handleAddItem = () => {
     setItems([...items, { description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
-
   // Helper: Remove a line item
   const handleRemoveItem = (index) => {
     if (items.length > 1) {
       setItems(items.filter((_, i) => i !== index));
     }
   };
-
-  // Helper: Calculate totals grouped by currency
-  const totalsByCurrency = items.reduce((acc, item) => {
-    const lineTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
-    const curr = item.currency || 'SGD';
-    acc[curr] = (acc[curr] || 0) + lineTotal;
-    return acc;
-  }, {});
-
-  // Auto-calculate total amount based on quantity and unit price
-  const totalAmount = (parseFloat(qty) || 0) * (parseFloat(unitPrice) || 0);
-
-  const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Token ${token}`
-  });
-
   const fetchPOs = async () => {
     try {
       const res = await fetch(`${baseUrl}/purchase-orders/`, { headers: getHeaders() });
@@ -61,91 +43,118 @@ export default function PurchaseOrders({ token, baseUrl }) {
       setError(err.message);
     }
   };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    // 1. Filter out empty line items before submitting
+    const validItems = items.filter(
+      (item) => item.description.trim() !== '' && Number(item.unitPrice) > 0
+    );
+    if (validItems.length === 0) {
+      setError('Please enter at least one valid line item with a description and unit price.');
+      return;
+    }
+    // 2. Calculate grand total
+    const grandTotal = validItems.reduce(
+      (sum, item) => sum + (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0),
+      0
+    );
+    // 3. Construct snake_case payload for Django DRF
+    const payload = {
+      po_number: poNumber,
+      vendor_name: vendor,
+      status: status, // Make sure case matches backend (e.g., 'Pending', 'Fulfilled')
+      total_amount: grandTotal,
+      items: validItems.map((item) => ({
+        description: item.description,
+        quantity: Number(item.qty),
+        unit_price: parseFloat(item.unitPrice),
+        currency: item.currency || 'SGD',
+      })),
+    };
+    try {
+      const response = await fetch(`${baseUrl}/api/purchase-orders/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        // Clear form & refresh table
+        setPoNumber('');
+        setVendor('');
+        setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
+        await fetchPOs();
+      } else {
+        const errData = await response.json();
+        console.error('Backend validation error:', errData);
+        setError(`Failed to create purchase order: ${JSON.stringify(errData)}`);
+      }
+    } catch (err) {
+      console.error('Network Error:', err);
+      setError('Network error occurred while creating purchase order.');
+    }
+  };
+  const handleStatusChange = async (poId, newStatus) => {
+     
+    
+    // Point 1: Check if click handler was triggered and inspect arguments
+    console.log(`[PO Track 1] handleStatusChange called | PO ID: ${poId} | Target Status: "${newStatus}"`);
+
+    try {
+      // Point 2: Confirm request setup before dispatching
+      console.log(`[PO Track 2] Dispatching PATCH request to /api/purchase-orders/${poId}/...`);
+
+      const response = await fetch(`http://localhost:8000/api/purchase-orders/${poId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      // Point 3: Log HTTP Status Code
+      console.log(`[PO Track 3] API Response received | Status Code: ${response.status}`);
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Point 4: Success path confirmation
+        console.log('[PO Track 4 SUCCESS] Update successful:', data);
+        await fetchPurchaseOrders(); // Re-fetch to update UI
+      } else {
+        // Point 4: Error path confirmation
+        console.error('[PO Track 4 ERROR] Backend validation failed:', data);
+      }
+    } catch (err) {
+      console.error('[PO Track EXCEPTION] Request threw error:', err);
+    }
+  };
 
   useEffect(() => {
     fetchPOs();
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  // Helper: Calculate totals grouped by currency
+  const totalsByCurrency = items.reduce((acc, item) => {
+    const lineTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
+    const curr = item.currency || 'SGD';
+    acc[curr] = (acc[curr] || 0) + lineTotal;
+    return acc;
+  }, {});
+  // Auto-calculate total amount based on quantity and unit price
+  const totalAmount = (parseFloat(qty) || 0) * (parseFloat(unitPrice) || 0);
 
-    try {
-      const res = await fetch(`${baseUrl}/purchase-orders/`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(formData)
-      });
-      if (!res.ok) throw new Error('Failed to create purchase order.');
-
-      const newPO = await res.json();
-      setPos([...pos, newPO]);
-      setFormData({ po_number: '', vendor_name: '', total_amount: '', status: 'Pending' });
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleStatusChange = async (targetId, newStatus) => {
-  if (!targetId) {
-    setError('Cannot update: PO ID is missing.');
-    return;
-  }
-
-  // Retrieve token from local storage if state isn't populated
-  const authToken = token || localStorage.getItem('token') || localStorage.getItem('access_token');
-
-  console.log('Using Auth Token:', authToken ? 'Token present' : 'MISSING TOKEN!');
-
-  if (!authToken) {
-    setError('Authentication required. Please log in again.');
-    return;
-  }
-
-  const cleanBaseUrl = baseUrl.replace(/\/+$/, '');
-  const path = cleanBaseUrl.endsWith('/api')
-    ? `/purchase-orders/${targetId}/`
-    : `/api/purchase-orders/${targetId}/`;
-
-  const endpointUrl = `${cleanBaseUrl}${path}`;
-
-  try {
-    setError('');
-
-    const response = await fetch(endpointUrl, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        // Try 'Bearer ' or 'Token ' depending on your backend (Django DRF usually uses Token or Bearer)
-        Authorization: authToken.startsWith('Bearer ') || authToken.startsWith('Token ') 
-          ? authToken 
-          : `Bearer ${authToken}` 
-      },
-      body: JSON.stringify({ status: newStatus })
-    });
-
-    if (response.status === 401) {
-      throw new Error('Your session has expired or the authorization token is invalid. Please log out and log back in.');
-    }
-
-    if (!response.ok) {
-      throw new Error(`Server responded with status ${response.status}`);
-    }
-
-    // Update local state on success
-    setPos((prevPos) =>
-      prevPos.map((item) =>
-        (item.id === targetId || item._id === targetId)
-          ? { ...item, status: newStatus }
-          : item
-      )
-    );
-  } catch (err) {
-    console.error('Status Update Error:', err);
-    setError('Failed to update status: ' + err.message);
-  }
-  };
-
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Token ${token}`
+  });
+    
   const formatCurrency = (amount) => {
     const num = Number(amount) || 0;
     return num.toLocaleString('en-US', {
@@ -153,304 +162,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
       maximumFractionDigits: 2,
     });
   };
-
-  
-  /* 1. Header Details */
-  function PoHeaderDetails({ poNumber, setPoNumber, vendor, setVendor, status, setStatus }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-      <div>
-        <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
-          PO Number
-        </label>
-        <input
-          type="text"
-          placeholder="e.g. PO-2026-001"
-          value={poNumber}
-          onChange={(e) => setPoNumber(e.target.value)}
-          required
-          style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box' }}
-        />
-      </div>
-
-      <div>
-        <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
-          Vendor Name
-        </label>
-        <input
-          type="text"
-          placeholder="Vendor Name"
-          value={vendor}
-          onChange={(e) => setVendor(e.target.value)}
-          required
-          style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box' }}
-        />
-      </div>
-
-      <div>
-        <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
-          Status
-        </label>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', backgroundColor: '#fff', boxSizing: 'border-box' }}
-        >
-          <option value="Pending">Pending</option>
-          <option value="Fulfilled">Fulfilled</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-      </div>
-    </div>
-  );
-  }
-
-  /* 2. Dynamic Line Items */
-  function PoLineItems({ items, handleItemChange, handleAddItem, handleRemoveItem }) {
-  return (
-    <div>
-      {/* Section Header */}
-      <label 
-        style={{ 
-          fontWeight: 'bold', 
-          fontSize: '14px', 
-          color: '#333', 
-          display: 'block', 
-          marginBottom: '8px', 
-          textAlign: 'center' 
-        }}
-      >
-        Enter Purchase Order Record
-      </label>
-
-      {/* Horizontal Divider Line */}
-      <hr 
-        style={{ 
-          border: '0', 
-          borderTop: '1px solid #e2e8f0', 
-          margin: '0 0 12px 0' 
-        }} 
-      />
-
-      {/* Column Headers */}
-      <div 
-        style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '3.5fr 0.8fr 1.2fr 0.9fr 1.3fr 32px', 
-          gap: '8px', 
-          marginBottom: '6px',
-          padding: '0 2px'
-        }}
-      >
-        <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Description</span>
-        <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Qty</span>
-        <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Unit Price ($)</span>
-        <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Cur</span>
-        <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Total Amt ($)</span>
-        <span></span>
-      </div>
-
-      {/* Item Rows */}
-      {items.map((item, index) => {
-        const lineTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
-
-        return (
-          <div 
-            key={index} 
-            style={{ 
-              display: 'grid', 
-              gridTemplateColumns: '3.5fr 0.8fr 1.2fr 0.9fr 1.3fr 32px', 
-              gap: '8px', 
-              alignItems: 'center', 
-              marginBottom: '10px' 
-            }}
-          >
-            <input
-              type="text"
-              placeholder="Item Description"
-              value={item.description}
-              onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-              required
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box' }}
-            />
-
-            <input
-              type="number"
-              min="1"
-              placeholder="1"
-              value={item.qty}
-              onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
-              required
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
-            />
-
-            <input
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={item.unitPrice}
-              onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-              required
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box' }}
-            />
-
-            <select
-              value={item.currency}
-              onChange={(e) => handleItemChange(index, 'currency', e.target.value)}
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff', width: '100%', boxSizing: 'border-box' }}
-            >
-              <option value="SGD">SGD</option>
-              <option value="USD">USD</option>
-              <option value="MYR">MYR</option>
-              <option value="JPY">JPY</option>
-            </select>
-
-            <div style={{ 
-              padding: '8px', 
-              borderRadius: '4px', 
-              backgroundColor: '#f8f9fa', 
-              border: '1px solid #e0e0e0', 
-              fontSize: '13px', 
-              fontWeight: '600', 
-              textAlign: 'right',
-              whiteSpace: 'nowrap'
-            }}>
-              {item.currency} ${lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleRemoveItem(index)}
-              disabled={items.length === 1}
-              style={{
-                width: '32px',
-                height: '35px',
-                backgroundColor: items.length === 1 ? '#e0e0e0' : '#dc3545',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: items.length === 1 ? 'not-allowed' : 'pointer',
-                fontWeight: 'bold',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        );
-      })}
-
-      <button
-        type="button"
-        onClick={handleAddItem}
-        style={{
-          marginTop: '4px',
-          padding: '6px 12px',
-          backgroundColor: '#6c757d',
-          color: '#ffffff',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '13px'
-        }}
-      >
-        + Add Item
-      </button>
-    </div>
-  );
-  }
-
-  /* 3. Summary Block (Currency Breakdown) */
-  function PoSummary({ totalsByCurrency }) {
-  return (
-    <div style={{ padding: '12px', backgroundColor: '#f1f5f9', borderRadius: '6px', marginTop: '5px' }}>
-      <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px', color: '#475569' }}>
-        Total Summary:
-      </div>
-      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-        {Object.entries(totalsByCurrency).map(([curr, total]) => (
-          <span key={curr} style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>
-            {curr}: ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-  }
-  
-  /* 4. PO List */
-  function PoTable({ purchaseOrders, handleStatusChange, handleEdit }) {
-  return (
-    <div>
-      <h4 style={{ textAlign: 'center', margin: '20px 0 10px 0' }}>Purchase Order History</h4>
-      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-            <th style={{ padding: '10px 8px' }}>PO Number</th>
-            <th style={{ padding: '10px 8px' }}>Vendor</th>
-            <th style={{ padding: '10px 8px', textAlign: 'right' }}>Amount ($)</th>
-            <th style={{ padding: '10px 8px', textAlign: 'center' }}>Status</th>
-            <th style={{ padding: '10px 8px', textAlign: 'center' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {purchaseOrders.map((po) => (
-            <tr key={po.id} style={{ borderBottom: '1px solid #e9ecef' }}>
-              <td style={{ padding: '10px 8px', fontWeight: 'bold' }}>{po.poNumber}</td>
-              <td style={{ padding: '10px 8px' }}>{po.vendor}</td>
-              <td style={{ padding: '10px 8px', textAlign: 'right' }}>
-                ${po.totalAmount ? po.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
-              </td>
-              <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                <span style={{
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  color: '#fff',
-                  backgroundColor: po.status === 'Fulfilled' ? '#28a745' : po.status === 'Cancelled' ? '#dc3545' : '#17a2b8'
-                }}>
-                  {po.status}
-                </span>
-              </td>
-              <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                  {po.status !== 'Fulfilled' && po.status !== 'Cancelled' && (
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange(po.id, 'Fulfilled')}
-                      style={{ backgroundColor: '#28a745', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
-                    >
-                      Receive
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(po)}
-                    style={{ backgroundColor: '#6c757d', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
-                  >
-                    Edit
-                  </button>
-                  {po.status !== 'Cancelled' && (
-                  <button
-                    type="button"
-                    onClick={() => handleStatusChange(po.id || po._id, 'Cancelled')}
-                    style={{ backgroundColor: '#dc3545', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer'
-                    }}
-                  >
-                    Cancel
-                  </button>
-                )}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-  }
 
   return (
     <div style={{ padding: '10px 0' }}>
@@ -512,7 +223,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
       >
         Create Purchase Order
       </button>
-    </form>
+      </form>
 
       {/* 4. PO Table */}
       <PoTable 
@@ -523,3 +234,297 @@ export default function PurchaseOrders({ token, baseUrl }) {
     </div>
   );
 }
+
+/* 1. Header Details */
+  function PoHeaderDetails({ poNumber, setPoNumber, vendor, setVendor, status, setStatus }) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+        <div>
+          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
+            PO Number
+          </label>
+          {/* PO Number Input */}
+          <input
+            type="text"
+            placeholder="e.g. PO-2026-001"
+            value={poNumber}
+            onChange={(e) => setPoNumber(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
+            Vendor Name
+          </label>
+          {/* Vendor Name Input */}
+          <input
+            type="text"
+            placeholder="Vendor Name"
+            value={vendor}
+            onChange={(e) => setVendor(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
+            Status
+          </label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', backgroundColor: '#fff', boxSizing: 'border-box' }}
+          >
+            <option value="Pending">Pending</option>
+            <option value="Fulfilled">Fulfilled</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+    );
+  }
+  /* 2. Dynamic Line Items */
+  function PoLineItems({ items, handleItemChange, handleAddItem, handleRemoveItem }) {
+    return (
+      <div>
+        {/* Section Header */}
+        <label 
+          style={{ 
+            fontWeight: 'bold', 
+            fontSize: '14px', 
+            color: '#333', 
+            display: 'block', 
+            marginBottom: '8px', 
+            textAlign: 'center' 
+          }}
+        >
+          Enter Purchase Order Record
+        </label>
+
+        {/* Horizontal Divider Line */}
+        <hr 
+          style={{ 
+            border: '0', 
+            borderTop: '1px solid #e2e8f0', 
+            margin: '0 0 12px 0' 
+          }} 
+        />
+
+        {/* Column Headers */}
+        <div 
+          style={{ 
+            display: 'grid', 
+            gridTemplateColumns: '3.5fr 0.8fr 1.2fr 0.9fr 1.3fr 32px', 
+            gap: '8px', 
+            marginBottom: '6px',
+            padding: '0 2px'
+          }}
+        >
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Description</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Qty</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Unit Price ($)</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Cur</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Total Amt ($)</span>
+          <span></span>
+        </div>
+
+        {/* Item Rows */}
+        {items.map((item, index) => {
+          const lineTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
+
+          return (
+            <div 
+              key={index} 
+              style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '3.5fr 0.8fr 1.2fr 0.9fr 1.3fr 32px', 
+                gap: '8px', 
+                alignItems: 'center', 
+                marginBottom: '10px' 
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Item Description"
+                value={item.description}
+                onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                required
+                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box' }}
+              />
+
+              <input
+                type="number"
+                min="1"
+                placeholder="1"
+                value={item.qty}
+                onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
+                required
+                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box', textAlign: 'center' }}
+              />
+
+              <input
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={item.unitPrice}
+                onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
+                required
+                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', boxSizing: 'border-box' }}
+              />
+
+              <select
+                value={item.currency}
+                onChange={(e) => handleItemChange(index, 'currency', e.target.value)}
+                style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff', width: '100%', boxSizing: 'border-box' }}
+              >
+                <option value="SGD">SGD</option>
+                <option value="USD">USD</option>
+                <option value="MYR">MYR</option>
+                <option value="JPY">JPY</option>
+              </select>
+
+              <div style={{ 
+                padding: '8px', 
+                borderRadius: '4px', 
+                backgroundColor: '#f8f9fa', 
+                border: '1px solid #e0e0e0', 
+                fontSize: '13px', 
+                fontWeight: '600', 
+                textAlign: 'right',
+                whiteSpace: 'nowrap'
+              }}>
+                {item.currency} ${lineTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleRemoveItem(index)}
+                disabled={items.length === 1}
+                style={{
+                  width: '32px',
+                  height: '35px',
+                  backgroundColor: items.length === 1 ? '#e0e0e0' : '#dc3545',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: items.length === 1 ? 'not-allowed' : 'pointer',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={handleAddItem}
+          style={{
+            marginTop: '4px',
+            padding: '6px 12px',
+            backgroundColor: '#6c757d',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '13px'
+          }}
+        >
+          + Add Item
+        </button>
+      </div>
+    );
+  }
+  /* 3. Summary Block (Currency Breakdown) */
+  function PoSummary({ totalsByCurrency }) {
+    return (
+      <div style={{ padding: '12px', backgroundColor: '#f1f5f9', borderRadius: '6px', marginTop: '5px' }}>
+        <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px', color: '#475569' }}>
+          Total Summary:
+        </div>
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          {Object.entries(totalsByCurrency).map(([curr, total]) => (
+            <span key={curr} style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>
+              {curr}: ${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  /* 4. PO List */
+  function PoTable({ purchaseOrders, handleStatusChange, handleEdit }) {
+    return (
+      <div>
+        <h4 style={{ textAlign: 'center', margin: '20px 0 10px 0' }}>Purchase Order History</h4>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+              <th style={{ padding: '10px 8px' }}>PO Number</th>
+              <th style={{ padding: '10px 8px', textAlign: 'center'}}>Vendor</th>
+              <th style={{ padding: '10px 8px', textAlign: 'right' }}>Amount ($)</th>
+              <th style={{ padding: '10px 8px', textAlign: 'center' }}>Status</th>
+              <th style={{ padding: '10px 8px', textAlign: 'center' }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {purchaseOrders.map((po) => (
+              <tr key={po.id} style={{ borderBottom: '1px solid #e9ecef' }}>
+                <td style={{ padding: '10px 8px' }}>{po.po_number || po.poNumber || 'N/A'}</td>
+                <td style={{ padding: '10px 8px' }}>{po.vendor_name || po.vendor || 'N/A'}</td>
+                <td style={{ padding: '10px 8px', textAlign: 'right' }}>
+                  ${po.totalAmount ? po.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
+                </td>
+                <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#fff',
+                    backgroundColor: po.status === 'Fulfilled' ? '#28a745' : po.status === 'Cancelled' ? '#dc3545' : '#17a2b8'
+                  }}>
+                    {po.status}
+                  </span>
+                </td>
+                <td style={{ padding: '10px 8px', textAlign: 'center' }}>
+                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                    {po.status !== 'Fulfilled' && po.status !== 'Cancelled' && (
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(po)}
+                        style={{ backgroundColor: '#28a745', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        Receive
+                      </button>
+                    )}
+                    {po.status !== 'Cancelled' && po.status !== 'Pending' && (
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange(po.id, 'Fulfilled')}
+                      style={{ backgroundColor: '#6c757d', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px' }}
+                    >
+                      Edit
+                    </button>
+                    )}
+                    {po.status !== 'Pending' && po.status !== 'Fulfilled' && (
+                    <button
+                      type="button"
+                      onClick={() => handleStatusChange(po.id || po._id, 'Cancelled')}
+                      style={{ backgroundColor: '#dc3545', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer'
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
