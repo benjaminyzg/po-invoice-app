@@ -13,6 +13,11 @@ A full-stack Invoice Management Dashboard designed to streamline tracking, searc
     * **Delete**: Remove records securely.
 * **Responsive UI**: Clean interface built with React and Vite.
 
+## Purchase Order (PO) Tab Updates
+* **Features Added:** Implemented new PO tab workflow and data entry options.
+* **Bug Fixes:** Resolved display issues in PO summary tables.
+* **Merged Work:** Refreshed components integrated into `main`.
+
 ## Tech Stack
 * **Frontend**: React, Vite, JavaScript
 * **Backend**: Django, Django REST Framework
@@ -31,3 +36,9 @@ A full-stack Invoice Management Dashboard designed to streamline tracking, searc
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\\Scripts\\activate
+
+## Recent Updates
+### Version / Date - PO Tab Update
+* **Features Added:** Implemented new PO tab workflow and data entry options.
+* **Bug Fixes:** Resolved display issues in PO summary tables.
+* **Merged Work:** Refreshed components integrated into `main`.
