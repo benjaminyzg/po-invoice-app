@@ -18,9 +18,9 @@ from django.utils import timezone
 # 3. Invoice Header Model
 class Invoice(models.Model):
     STATUS_CHOICES = [
-        ('Pending', 'Pending'),
-        ('Paid', 'Paid'),
-        ('Cancelled', 'Cancelled'),
+        ('pending', 'Pending'),
+        ('fulfilled', 'Fulfilled'),
+        ('cancelled', 'Cancelled'),
     ]
 
     invoice_number = models.CharField(max_length=50, unique=True)
@@ -46,7 +46,7 @@ class Invoice(models.Model):
 class PurchaseOrder(models.Model):
     STATUS_CHOICES = [
         ('Pending', 'Pending'),
-        ('Approved', 'Approved'),
+        ('Cancelled', 'Cancelled'),
         ('Fulfilled', 'Fulfilled'),
     ]
     po_number = models.CharField(max_length=50, unique=True)
