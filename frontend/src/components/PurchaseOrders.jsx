@@ -43,28 +43,32 @@ export default function PurchaseOrders({ token, baseUrl }) {
       setError(err.message);
     }
   };
+  
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  e.preventDefault();
+  setError('');
 
-    // 1. Filter out empty line items before submitting
+    // 1. Filter out empty/unfilled line items
     const validItems = items.filter(
-      (item) => item.description.trim() !== '' && Number(item.unitPrice) > 0
+      (item) => item.description && item.description.trim() !== '' && Number(item.unitPrice) > 0
     );
+
     if (validItems.length === 0) {
-      setError('Please enter at least one valid line item with a description and unit price.');
+      setError('Please provide at least one valid line item with a description and unit price.');
       return;
     }
-    // 2. Calculate grand total
+
+    // 2. Calculate total amount
     const grandTotal = validItems.reduce(
       (sum, item) => sum + (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0),
       0
     );
-    // 3. Construct snake_case payload for Django DRF
+
+    // 3. Format payload in snake_case expected by Django REST Framework
     const payload = {
       po_number: poNumber,
       vendor_name: vendor,
-      status: status, // Make sure case matches backend (e.g., 'Pending', 'Fulfilled')
+      status: status, // Matches choice field (e.g. 'Pending', 'Fulfilled')
       total_amount: grandTotal,
       items: validItems.map((item) => ({
         description: item.description,
@@ -73,8 +77,9 @@ export default function PurchaseOrders({ token, baseUrl }) {
         currency: item.currency || 'SGD',
       })),
     };
+
     try {
-      const response = await fetch(`${baseUrl}/api/purchase-orders/`, {
+      const response = await fetch(`${baseUrl}/purchase-orders/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,22 +88,39 @@ export default function PurchaseOrders({ token, baseUrl }) {
         body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        // Clear form & refresh table
-        setPoNumber('');
-        setVendor('');
-        setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
-        await fetchPOs();
-      } else {
+      if (response.ok || response.status === 201) {
+      console.log('Purchase Order Created Successfully!');
+      // Reset form state
+      setPoNumber('');
+      setVendor('');
+      setStatus('Pending');
+      setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
+      
+      // Refresh the PO table list
+      await fetchPOs();
+    } else {
+      // Safely check content type to prevent SyntaxError on HTML error responses
+      const contentType = response.headers.get('content-type');
+      let errorMessage = '';
+
+      if (contentType && contentType.includes('application/json')) {
         const errData = await response.json();
-        console.error('Backend validation error:', errData);
-        setError(`Failed to create purchase order: ${JSON.stringify(errData)}`);
+        console.error('Django REST Framework Errors:', errData);
+        errorMessage = JSON.stringify(errData);
+      } else {
+        const textData = await response.text();
+        console.error(`Backend returned non-JSON response (${response.status}):`, textData);
+        errorMessage = `HTTP ${response.status}: Route not found or Server Error`;
       }
+
+      setError(`Failed to create PO: ${errorMessage}`);
+    }
     } catch (err) {
-      console.error('Network Error:', err);
-      setError('Network error occurred while creating purchase order.');
+      console.error('Network Error during PO creation:', err);
+      setError('Network error occurred while connecting to backend.');
     }
   };
+  
   const handleStatusChange = async (poId, newStatus) => {
      
     
