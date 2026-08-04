@@ -33,16 +33,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
       setItems(items.filter((_, i) => i !== index));
     }
   };
-  const fetchPOs = async () => {
-    try {
-      const res = await fetch(`${baseUrl}/purchase-orders/`, { headers: getHeaders() });
-      if (!res.ok) throw new Error('Failed to fetch purchase orders.');
-      const data = await res.json();
-      setPos(data);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
   
   const handleSubmit = async (e) => {
   e.preventDefault();
@@ -62,7 +52,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
   const grandTotal = validItems.reduce(
       (sum, item) => sum + (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0),
       0
-    );
+  );
 
     // 3. Format payload in snake_case expected by Django REST Framework
   const payload = {
@@ -87,7 +77,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
         },
         body: JSON.stringify(payload),
       });
-
       if (response.ok || response.status === 201) {
       console.log('Purchase Order Created Successfully!');
       // Reset form state
@@ -154,7 +143,18 @@ export default function PurchaseOrders({ token, baseUrl }) {
       console.error('[PO Track EXCEPTION] Request threw error:', err);
     }
   };
-
+  
+  const fetchPOs = async () => {
+    try {
+      const res = await fetch(`${baseUrl}/purchase-orders/`, { headers: getHeaders() });
+      if (!res.ok) throw new Error('Failed to fetch purchase orders.');
+      const data = await res.json();
+      setPos(data);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  
   useEffect(() => {
     fetchPOs();
   }, []);
@@ -245,16 +245,16 @@ export default function PurchaseOrders({ token, baseUrl }) {
       </form>
 
       {/* 4. PO Table */}
-      <PoTable 
+      {/* <PoTable 
         purchaseOrders={pos} 
         handleStatusChange={handleStatusChange || (() => {})} 
         handleEdit={() => {}} 
-      />
+      /> */}
     </div>
   );
 }
 
-/* 1. Header Details */
+  /* 1. Header Details */
   function PoHeaderDetails({ poNumber, setPoNumber, vendor, setVendor, status, setStatus }) {
     return (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
@@ -496,9 +496,9 @@ export default function PurchaseOrders({ token, baseUrl }) {
                 <td style={{ padding: '10px 8px' }}>{po.po_number || po.poNumber || 'N/A'}</td>
                 <td style={{ padding: '10px 8px' }}>{po.vendor_name || po.vendor || 'N/A'}</td>
                 <td style={{ padding: '10px 8px', textAlign: 'right' }}>
-  ${(po.total_amount || po.totalAmount) 
-    ? Number(po.total_amount || po.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
-    : '0.00'}
+                  ${(po.total_amount || po.totalAmount) 
+                    ? Number(po.total_amount || po.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+                    : '0.00'}
                   </td>
                   <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                     <span style={{
