@@ -11,16 +11,12 @@ class CatalogItem(models.Model):
     def __str__(self):
         return f"{self.name} (${self.unit_price})"
 
-from decimal import Decimal
-from django.db import models
-from django.utils import timezone
-
 # 3. Invoice Header Model
 class Invoice(models.Model):
     STATUS_CHOICES = [
-        ('Pending', 'Pending'),
-        ('Paid', 'Paid'),
-        ('Cancelled', 'Cancelled'),
+        ('pending', 'Pending'),
+        ('fulfilled', 'Fulfilled'),
+        ('cancelled', 'Cancelled'),
     ]
 
     invoice_number = models.CharField(max_length=50, unique=True)
@@ -44,19 +40,41 @@ class Invoice(models.Model):
 
 # 2. Purchase Order Model
 class PurchaseOrder(models.Model):
-    STATUS_CHOICES = [
-        ('Pending', 'Pending'),
-        ('Approved', 'Approved'),
-        ('Fulfilled', 'Fulfilled'),
-    ]
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        APPROVED = 'APPROVED', 'Approved'
+        RECEIVED = 'RECEIVED', 'Received'
+        PAID = 'PAID', 'Paid'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+
     po_number = models.CharField(max_length=50, unique=True)
     vendor_name = models.CharField(max_length=255)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.po_number} - {self.vendor_name}"
+        return f"{self.po_number} - {self.vendor_name} ({self.status})"
+
+# 4. Purchase Order Item Model
+class PurchaseOrderItem(models.Model):
+    purchase_order = models.ForeignKey(
+        PurchaseOrder, 
+        related_name='items',  # This allows po.items.all() in Django and "items" in the serializer
+        on_delete=models.CASCADE
+    )
+    description = models.CharField(max_length=255)
+    quantity = models.IntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=10, default='SGD')
+
+    def __str__(self):
+        return f"{self.description} ({self.quantity})"
 
 # 4. Invoice Line Items Model
 class InvoiceItem(models.Model):

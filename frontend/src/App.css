@@ -213,3 +213,43 @@
 .line-item-header .col-desc {
   text-align: center; /* or left */
 }
+
+.main-po-table, .items-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.main-po-table th, .main-po-table td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 8px;
+  font-size: 12px;
+}
+
+.po-details-row {
+  background-color: #f9f9f9;
+}
+
+.po-details-container {
+  padding: 12px 20px;
+  border-left: 3px solid #007bff;
+  margin: 8px 0;
+}
+
+.items-table th, .items-table td {
+  padding: 6px 8px;
+  font-size: 0.9em;
+  border-bottom: 1px solid #eee;
+}
+
+.empty-msg {
+  color: #888;
+  font-style: italic;
+}
