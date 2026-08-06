@@ -14,6 +14,9 @@ export default function PurchaseOrders({ token, baseUrl }) {
   const [currency, setCurrency] = useState('SGD');
   const [status, setStatus] = useState('PENDING');
   const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [selectedPoToEdit, setSelectedPoToEdit] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingPoId, setEditingPoId] = useState(null);
   
   // Handler function for updating a item row field:
   const handleItemChange = (index, field, value) => {
@@ -36,79 +39,40 @@ export default function PurchaseOrders({ token, baseUrl }) {
   
   const handleSubmit = async (e) => {
   e.preventDefault();
-  setError('');
-
-  // 1. Filter out empty/unfilled line items
-  const validItems = items.filter(
-      (item) => item.description && item.description.trim() !== '' && Number(item.unitPrice) > 0
-    );
-
-    if (validItems.length === 0) {
-      setError('Please provide at least one valid line item with a description and unit price.');
-      return;
-    }
-
-    // 2. Calculate total amount
-  const grandTotal = validItems.reduce(
-      (sum, item) => sum + (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0),
-      0
-  );
-
-    // 3. Format payload in snake_case expected by Django REST Framework
+  
   const payload = {
-      po_number: poNumber,
-      vendor_name: vendor,
-      status: status, // Matches choice field (e.g. 'Pending', 'Fulfilled')
-      total_amount: grandTotal,
-      items: validItems.map((item) => ({
-        description: item.description,
-        quantity: Number(item.qty),
-        unit_price: parseFloat(item.unitPrice),
-        currency: item.currency || 'SGD',
-      })),
-    };
-
-    try {
-      const response = await fetch(`${baseUrl}/purchase-orders/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-      if (response.ok || response.status === 201) {
-      console.log('Purchase Order Created Successfully!');
-      // Reset form state
-      setPoNumber('');
-      setVendor('');
-      setStatus('PENDING');
-      setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
-      
-      // Refresh the PO table list
-      await fetchPOs();
-    } else {
-      // Safely check content type to prevent SyntaxError on HTML error responses
-      const contentType = response.headers.get('content-type');
-      let errorMessage = '';
-
-      if (contentType && contentType.includes('application/json')) {
-        const errData = await response.json();
-        console.error('Django REST Framework Errors:', errData);
-        errorMessage = JSON.stringify(errData);
-      } else {
-        const textData = await response.text();
-        console.error(`Backend returned non-JSON response (${response.status}):`, textData);
-        errorMessage = `HTTP ${response.status}: Route not found or Server Error`;
-      }
-
-      setError(`Failed to create PO: ${errorMessage}`);
-    }
-    } catch (err) {
-      console.error('Network Error during PO creation:', err);
-      setError('Network error occurred while connecting to backend.');
-    }
+    po_number: poNumber,
+    vendor_name: vendor,
+    status: status,
+    items: items,
+    total_amount: totalAmount
   };
+
+  try {
+    const url = editingPoId 
+      ? `${baseUrl}/purchase-orders/${editingPoId}` 
+      : `${baseUrl}/purchase-orders`;
+
+    const method = editingPoId ? 'PUT' : 'POST';
+
+    const res = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error('Failed to save Purchase Order');
+
+    // Reset form & edit state
+    handleResetForm();
+    fetchPOs(); // Refresh table data
+  } catch (err) {
+    setError(err.message);
+  }
+};
   
   const handleStatusChange = async (poId, newStatus) => { 
     // Point 1: Check if click handler was triggered and inspect arguments
@@ -190,6 +154,15 @@ export default function PurchaseOrders({ token, baseUrl }) {
     });
   };
 
+const handleResetForm = () => {
+  setEditingPoId(null);
+  setSelectedPoToEdit(null);
+  setPoNumber('');
+  setVendor('');
+  setStatus('PENDING');
+  setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
+};
+
   console.log("Current pos state:", pos);
 
   return (
@@ -236,29 +209,80 @@ export default function PurchaseOrders({ token, baseUrl }) {
       <PoSummary totalsByCurrency={totalsByCurrency}/>
 
       {/* Submit Button */}
-      <button
-        type="submit"
-        style={{
-          padding: '12px',
-          backgroundColor: '#2b7fff',
-          color: '#ffffff',
-          border: 'none',
-          borderRadius: '6px',
-          fontWeight: 'bold',
-          fontSize: '15px',
-          cursor: 'pointer',
-          marginTop: '5px'
-        }}
-      >
-        Create Purchase Order
-      </button>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+  <button 
+    type="submit"
+    style={{
+      flex: 1,
+      padding: '12px',
+      backgroundColor: editingPoId ? '#28a745' : '#0d6efd', // Green for update, blue for create
+      color: '#ffffff',
+      border: 'none',
+      borderRadius: '6px',
+      fontWeight: 'bold',
+      fontSize: '15px',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s'
+    }}
+  >
+    {editingPoId ? 'Update Purchase Order' : 'Create Purchase Order'}
+  </button>
+
+  {editingPoId && (
+    <button 
+      type="button" 
+      onClick={handleResetForm} 
+      style={{ 
+        padding: '12px 20px', 
+        backgroundColor: '#6c757d', 
+        color: '#ffffff', 
+        border: 'none', 
+        borderRadius: '6px', 
+        fontWeight: 'bold', 
+        fontSize: '15px', 
+        cursor: 'pointer' 
+      }}
+    >
+      Cancel Edit
+    </button>
+  )}
+</div>
+      
+      
+
       </form>
 
       {/* 4. PO Table */}
-      <PoTable 
-        purchaseOrders={pos} 
-        handleStatusChange={handleStatusChange || (() => {})} 
-        handleEdit={() => {}} 
+      <PoTable
+        purchaseOrders={pos}
+        handleStatusChange={handleStatusChange || (() => {})}
+        handleEdit={(po) => {
+          setEditingPoId(po.id);
+          setSelectedPoToEdit(po);
+
+          // Populate top-level fields
+          setPoNumber(po.po_number || '');
+          setVendor(po.vendor_name || '');
+          setStatus(po.status || 'PENDING');
+
+          // Populate line items (if attached to the PO object)
+          if (po.items && po.items.length > 0) {
+            setItems(po.items.map(item => ({
+              description: item.description || '',
+              qty: item.qty || item.quantity || 1,
+              unitPrice: item.unit_price || item.unitPrice || '',
+              currency: item.currency || 'SGD'
+            })));
+          }
+
+          // Scroll up to form
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        handleCancel={(po) => {
+          if (window.confirm(`Are you sure you want to cancel PO ${po.po_number}?`)) {
+            handleStatusChange(po.id, 'CANCELLED');
+          }
+        }}
       />
     </div>
   );
@@ -486,79 +510,71 @@ export default function PurchaseOrders({ token, baseUrl }) {
     );
   }
   /* 4. PO List */
-  function PoTable({ purchaseOrders, handleStatusChange, handleEdit }) {
-    return (
-      <div>
-        <h4 style={{ textAlign: 'center', margin: '20px 0 10px 0' }}>Purchase Order History</h4>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-              <th style={{ padding: '10px 8px' }}>PO Number</th>
-              <th style={{ padding: '10px 8px', textAlign: 'center'}}>Vendor</th>
-              <th style={{ padding: '10px 8px', textAlign: 'right' }}>Amount ($)</th>
-              <th style={{ padding: '10px 8px', textAlign: 'center' }}>Status</th>
-              <th style={{ padding: '10px 8px', textAlign: 'center' }}>Actions</th>
-            </tr> 
-          </thead>
-          <tbody>
-            {purchaseOrders.map((po) => (
-              <tr key={po.id} style={{ borderBottom: '1px solid #e9ecef' }}>
-                <td style={{ padding: '10px 8px' }}>{po.po_number || po.poNumber || 'N/A'}</td>
-                <td style={{ padding: '10px 8px' }}>{po.vendor_name || po.vendor || 'N/A'}</td>
-                <td style={{ padding: '10px 8px', textAlign: 'right' }}>
-                  ${(po.total_amount || po.totalAmount) 
-                    ? Number(po.total_amount || po.totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
-                    : '0.00'}
-                  </td>
-                  <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                    <span style={{
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
+  function PoTable({ purchaseOrders, editingPoId, handleStatusChange, handleEdit, handleCancel }) {
+    
+  return (
+    <div>
+      <h4 style={{ textAlign: 'center', margin: '20px 0 10px 0' }}>Purchase Order History</h4>
+      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <thead>
+          <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #ee2e6' }}>
+            <th>PO Number</th>
+            <th>Vendor</th>
+            <th>Amount ($)</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {purchaseOrders && purchaseOrders.map((po) => (
+            <tr key={po.id || po.po_number} style={{ borderBottom: '1px solid #eee' }}>
+              <td>{po.po_number}</td>
+              <td>{po.vendor_name}</td>
+              {/* Formatted with thousand commas */}
+              <td>${Number(po.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td>
+                <span style={{
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  backgroundColor: po.status === 'CANCELLED' ? '#f8d7da' : '#d4edda',
+                  color: po.status === 'CANCELLED' ? '#721c24' : '#155724'
+                }}>
+                  {po.status}
+                </span>
+              </td>
+              <td>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {/* Edit Button */}
+                  <button 
+                    onClick={() => handleEdit(po)}
+                    style={{ padding: '4px 8px', cursor: 'pointer' }}
+                  >
+                    Edit
+                  </button>
+                  
+                  {/* Cancel Button */}
+                  <button 
+                    onClick={() => handleCancel && handleCancel(po)}
+                    disabled={po.status === 'CANCELLED'}
+                    style={{ 
+                      padding: '4px 8px', 
+                      cursor: po.status === 'CANCELLED' ? 'not-allowed' : 'pointer',
+                      backgroundColor: po.status === 'CANCELLED' ? '#ccc' : '#dc3545',
                       color: '#fff',
-                      backgroundColor: po.status === 'RECEIVED' ? '#28a745' : po.status === 'CANCELLED' ? '#dc3545' : '#17a2b8'
-                    }}>
-                      {po.status}
-                    </span>
-                  </td>
-                <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                    {/* Receive Button: Show if NOT already Received or Cancelled */}
-                    {po.status !== 'RECEIVED' && po.status !== 'CANCELLED' && (
-                      <button
-                        type="button"
-                        onClick={() => handleStatusChange(po.id, 'RECEIVED')}
-                        style={{ backgroundColor: '#28a745', color: '#fff', border: 'none', padding: '4px 8px' }}
-                      >
-                        Receive
-                      </button>
-                    )}
-                    {/* Edit Button */}
-                    {po.status !== 'CANCELLED' && po.status !== 'RECEIVED' && (
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(po)}
-                        style={{ backgroundColor: '#6c757d', color: '#fff', border: 'none', padding: '4px 8px' }}
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {/* Cancel Button: Show if NOT already Cancelled or Received */}
-                    {po.status !== 'CANCELLED' && po.status !== 'RECEIVED' && (
-                      <button
-                        type="button"
-                        onClick={() => handleStatusChange(po.id, 'CANCELLED')}
-                        style={{ backgroundColor: '#dc3545', color: '#fff', border: 'none', padding: '4px 8px' }}
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
+                      border: 'none',
+                      borderRadius: '3px'
+                    }}
+                  >
+                    Cancel
+                  </button> 
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
