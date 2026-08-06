@@ -146,10 +146,18 @@ export default function PurchaseOrders({ token, baseUrl }) {
   
   const fetchPOs = async () => {
     try {
+      // const res = await fetch('/api/purchase-orders/');
+      // const data = await res.json();
+      // Ensure you pass the array directly:
+      // setPurchaseOrders(Array.isArray(data) ? data : data.results || []);
+
       const res = await fetch(`${baseUrl}/purchase-orders/`, { headers: getHeaders() });
       if (!res.ok) throw new Error('Failed to fetch purchase orders.');
       const data = await res.json();
-      setPos(data);
+      
+      //setPos(data);
+
+      setPos(Array.isArray(data) ? data : data.results || []);
     } catch (err) {
       setError(err.message);
     }
@@ -181,6 +189,8 @@ export default function PurchaseOrders({ token, baseUrl }) {
       maximumFractionDigits: 2,
     });
   };
+
+  console.log("Current pos state:", pos);
 
   return (
     <div style={{ padding: '10px 0' }}>
@@ -245,11 +255,11 @@ export default function PurchaseOrders({ token, baseUrl }) {
       </form>
 
       {/* 4. PO Table */}
-      {/* <PoTable 
+      <PoTable 
         purchaseOrders={pos} 
         handleStatusChange={handleStatusChange || (() => {})} 
         handleEdit={() => {}} 
-      /> */}
+      />
     </div>
   );
 }
@@ -488,7 +498,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
               <th style={{ padding: '10px 8px', textAlign: 'right' }}>Amount ($)</th>
               <th style={{ padding: '10px 8px', textAlign: 'center' }}>Status</th>
               <th style={{ padding: '10px 8px', textAlign: 'center' }}>Actions</th>
-            </tr>
+            </tr> 
           </thead>
           <tbody>
             {purchaseOrders.map((po) => (
