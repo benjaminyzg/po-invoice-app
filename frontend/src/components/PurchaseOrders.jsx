@@ -154,14 +154,14 @@ export default function PurchaseOrders({ token, baseUrl }) {
     });
   };
 
-const handleResetForm = () => {
+  const handleResetForm = () => {
   setEditingPoId(null);
   setSelectedPoToEdit(null);
   setPoNumber('');
   setVendor('');
   setStatus('PENDING');
   setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
-};
+  };
 
   console.log("Current pos state:", pos);
 
@@ -210,46 +210,43 @@ const handleResetForm = () => {
 
       {/* Submit Button */}
       <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-  <button 
-    type="submit"
-    style={{
-      flex: 1,
-      padding: '12px',
-      backgroundColor: editingPoId ? '#28a745' : '#0d6efd', // Green for update, blue for create
-      color: '#ffffff',
-      border: 'none',
-      borderRadius: '6px',
-      fontWeight: 'bold',
-      fontSize: '15px',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s'
-    }}
-  >
-    {editingPoId ? 'Update Purchase Order' : 'Create Purchase Order'}
-  </button>
+        <button 
+          type="submit"
+          style={{
+            flex: 1,
+            padding: '12px',
+            backgroundColor: editingPoId ? '#28a745' : '#0d6efd', // Green for update, blue for create
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '6px',
+            fontWeight: 'bold',
+            fontSize: '15px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s'
+          }}
+        >
+          {editingPoId ? 'Update Purchase Order' : 'Create Purchase Order'}
+        </button>
 
-  {editingPoId && (
-    <button 
-      type="button" 
-      onClick={handleResetForm} 
-      style={{ 
-        padding: '12px 20px', 
-        backgroundColor: '#6c757d', 
-        color: '#ffffff', 
-        border: 'none', 
-        borderRadius: '6px', 
-        fontWeight: 'bold', 
-        fontSize: '15px', 
-        cursor: 'pointer' 
-      }}
-    >
-      Cancel Edit
-    </button>
-  )}
-</div>
-      
-      
-
+        {editingPoId && (
+          <button 
+            type="button" 
+            onClick={handleResetForm} 
+            style={{ 
+              padding: '12px 20px', 
+              backgroundColor: '#6c757d', 
+              color: '#ffffff', 
+              border: 'none', 
+              borderRadius: '6px', 
+              fontWeight: 'bold', 
+              fontSize: '15px', 
+              cursor: 'pointer' 
+            }}
+          >
+            Cancel Edit
+          </button>
+        )}
+      </div>
       </form>
 
       {/* 4. PO Table */}
@@ -266,13 +263,25 @@ const handleResetForm = () => {
           setStatus(po.status || 'PENDING');
 
           // Populate line items (if attached to the PO object)
-          if (po.items && po.items.length > 0) {
-            setItems(po.items.map(item => ({
-              description: item.description || '',
-              qty: item.qty || item.quantity || 1,
-              unitPrice: item.unit_price || item.unitPrice || '',
-              currency: item.currency || 'SGD'
-            })));
+          // if (po.items && po.items.length > 0) {
+          //  setItems(po.items.map(item => ({
+          //    description: item.description || '',
+          //    qty: item.qty || item.quantity || 1,
+          //    unitPrice: item.unit_price || item.unitPrice || '',
+          //    currency: item.currency || 'SGD'
+          //  })));
+          // }
+          if (po.items && Array.isArray(po.items) && po.items.length > 0) {
+            setItems(
+              po.items.map((item) => ({
+                description: item.description || '',
+                qty: item.qty || item.quantity || 1,
+                unitPrice: item.unit_price || item.unitPrice || '',
+                currency: item.currency || 'SGD'
+              }))
+            );
+          } else {
+            setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
           }
 
           // Scroll up to form
@@ -285,7 +294,7 @@ const handleResetForm = () => {
         }}
       />
     </div>
-  );
+  )
 }
 
   /* 1. Header Details */
@@ -517,13 +526,13 @@ const handleResetForm = () => {
       <h4 style={{ textAlign: 'center', margin: '20px 0 10px 0' }}>Purchase Order History</h4>
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
         <thead>
-          <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #ee2e6' }}>
-            <th>PO Number</th>
-            <th>Vendor</th>
-            <th>Amount ($)</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
+          <th style={{ textAlign: 'left' }}>PO Number</th>
+            {/* 1. Center the Vendor header */}
+            <th style={{ textAlign: 'center' }}>Vendor</th>
+            <th style={{ textAlign: 'left' }}>Amount ($)</th>
+            {/* 2. Center Status and Actions headers */}
+            <th style={{ textAlign: 'center' }}>Status</th>
+            <th style={{ textAlign: 'center' }}>Actions</th>
         </thead>
         <tbody>
           {purchaseOrders && purchaseOrders.map((po) => (
