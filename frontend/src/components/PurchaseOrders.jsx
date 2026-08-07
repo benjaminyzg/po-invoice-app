@@ -44,14 +44,20 @@ export default function PurchaseOrders({ token, baseUrl }) {
     po_number: poNumber,
     vendor_name: vendor,
     status: status,
-    items: items,
+    // Ensure numbers are properly formatted
+    items: items.map(item => ({
+      description: item.description,
+      qty: Number(item.qty),
+      unit_price: Number(item.unitPrice),
+      currency: item.currency || 'SGD'
+    })),
     total_amount: totalAmount
   };
 
   try {
     const url = editingPoId 
-      ? `${baseUrl}/purchase-orders/${editingPoId}` 
-      : `${baseUrl}/purchase-orders`;
+      ? `${baseUrl}/purchase-orders/${editingPoId}/` 
+      : `${baseUrl}/purchase-orders/`;
 
     const method = editingPoId ? 'PUT' : 'POST';
 
@@ -64,12 +70,15 @@ export default function PurchaseOrders({ token, baseUrl }) {
       body: JSON.stringify(payload)
     });
 
-    if (!res.ok) throw new Error('Failed to save Purchase Order');
-
+    if (!res.ok){
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || errorData.error || `Server returned status ${res.status}`);
+    }
     // Reset form & edit state
     handleResetForm();
     fetchPOs(); // Refresh table data
   } catch (err) {
+    console.error('Save Error:', err);
     setError(err.message);
   }
 };
@@ -163,7 +172,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
   setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
 
-  console.log("Current pos state:", pos);
+  // console.log("Current pos state:", pos);
 
   return (
     <div style={{ padding: '10px 0' }}>
