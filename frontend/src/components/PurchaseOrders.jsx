@@ -40,18 +40,25 @@ export default function PurchaseOrders({ token, baseUrl }) {
   const handleSubmit = async (e) => {
   e.preventDefault();
   
+  const calculatedTotal = items.reduce((sum, item) => {
+    const qty = Number(item.qty || item.quantity || 1);
+    const price = Number(item.unitPrice || item.unit_price || 0);
+    return sum + (qty * price);
+  }, 0);
+
   const payload = {
     po_number: poNumber,
     vendor_name: vendor,
     status: status,
-    // Ensure numbers are properly formatted
+    total_amount: calculatedTotal,  
     items: items.map(item => ({
       description: item.description,
-      qty: Number(item.qty),
-      unit_price: Number(item.unitPrice),
+      // Change 'qty' to 'quantity'
+      quantity: Number(item.qty || item.quantity || 1),
+      unit_price: Number(item.unitPrice || item.unit_price || 0),
       currency: item.currency || 'SGD'
     })),
-    total_amount: totalAmount
+    
   };
 
   try {
@@ -751,12 +758,14 @@ export default function PurchaseOrders({ token, baseUrl }) {
                               {po.items.map((item, idx) => {
                                 const qty = Number(item.qty || item.quantity || 1);
                                 const price = Number(item.unit_price || item.unitPrice || 0);
+                                const rowTotal = qty * price;
+          
                                 return (
                                   <tr key={idx} style={{ borderBottom: '1px solid #f1f3f5' }}>
                                     <td style={{ padding: '6px', textAlign: 'left' }}>{item.description}</td>
-                                    <td style={{ padding: '6px', textAlign: 'center' }}>{qty}</td>
-                                    <td style={{ padding: '6px', textAlign: 'right' }}>${price.toFixed(2)}</td>
-                                    <td style={{ padding: '6px', textAlign: 'right' }}>${(qty * price).toFixed(2)}</td>
+                                    <td style={{ padding: '6px', textAlign: 'center' }}>{qty.toLocaleString('en-US')}</td>
+                                    <td style={{ padding: '6px', textAlign: 'right' }}>${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    <td style={{ padding: '6px', textAlign: 'right' }}>${rowTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                   </tr>
                                 );
                               })}
