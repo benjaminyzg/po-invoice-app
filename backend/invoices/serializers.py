@@ -65,6 +65,25 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             'items'  # 2. Add 'items' to the serializer fields
         ]
 
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', None)
+
+        # Update parent PurchaseOrder attributes
+        instance.po_number = validated_data.get('po_number', instance.po_number)
+        instance.vendor_name = validated_data.get('vendor_name', instance.vendor_name)
+        instance.status = validated_data.get('status', instance.status)
+        instance.total_amount = validated_data.get('total_amount', instance.total_amount)
+        instance.save()
+
+        # Update nested items if provided
+        if items_data is not None:
+            # Clear existing items and replace with updated set
+            instance.items.all().delete()
+            for item_data in items_data:
+                PurchaseOrderItem.objects.create(purchase_order=instance, **item_data)
+
+        return instance
+
     def create(self, validated_data):
         items_data = validated_data.pop('items', [])
         purchase_order = PurchaseOrder.objects.create(**validated_data)
