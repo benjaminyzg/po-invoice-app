@@ -520,68 +520,102 @@ export default function PurchaseOrders({ token, baseUrl }) {
   }
   /* 4. PO List */
   function PoTable({ purchaseOrders, editingPoId, handleStatusChange, handleEdit, handleCancel }) {
-    
+    // Track expanded row IDs
+    const [expandedPoIds, setExpandedPoIds] = useState([]);
+
+    const toggleExpand = (id) => {
+      setExpandedPoIds((prev) =>
+        prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      );
+    };
+
   return (
     <div>
       <h4 style={{ textAlign: 'center', margin: '20px 0 10px 0' }}>Purchase Order History</h4>
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
         <thead>
+          <th></th>
           <th style={{ textAlign: 'left' }}>PO Number</th>
             {/* 1. Center the Vendor header */}
             <th style={{ textAlign: 'center' }}>Vendor</th>
-            <th style={{ textAlign: 'left' }}>Amount ($)</th>
+            <th style={{ textAlign: 'right' }}>Amount ($)</th>
             {/* 2. Center Status and Actions headers */}
             <th style={{ textAlign: 'center' }}>Status</th>
             <th style={{ textAlign: 'center' }}>Actions</th>
         </thead>
         <tbody>
-          {purchaseOrders && purchaseOrders.map((po) => (
-            <tr key={po.id || po.po_number} style={{ borderBottom: '1px solid #eee' }}>
-              <td>{po.po_number}</td>
-              <td>{po.vendor_name}</td>
-              {/* Formatted with thousand commas */}
-              <td>${Number(po.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-              <td>
-                <span style={{
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  backgroundColor: po.status === 'CANCELLED' ? '#f8d7da' : '#d4edda',
-                  color: po.status === 'CANCELLED' ? '#721c24' : '#155724'
-                }}>
-                  {po.status}
-                </span>
-              </td>
-              <td>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {/* Edit Button */}
-                  <button 
-                    onClick={() => handleEdit(po)}
-                    style={{ padding: '4px 8px', cursor: 'pointer' }}
-                  >
-                    Edit
-                  </button>
-                  
-                  {/* Cancel Button */}
-                  <button 
-                    onClick={() => handleCancel && handleCancel(po)}
-                    disabled={po.status === 'CANCELLED'}
-                    style={{ 
-                      padding: '4px 8px', 
-                      cursor: po.status === 'CANCELLED' ? 'not-allowed' : 'pointer',
-                      backgroundColor: po.status === 'CANCELLED' ? '#ccc' : '#dc3545',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '3px'
-                    }}
-                  >
-                    Cancel
-                  </button> 
-                </div>
-              </td>
-            </tr>
-          ))}
+          
+          
+
+
+          {purchaseOrders && purchaseOrders.map((po) => {
+            const isExpanded = expandedPoIds.includes(po.id);
+            return (
+              <React.Fragment key={po.id || po.po_number}>
+                <tr style={{ borderBottom: '1px solid #eee' }}>
+                  {/* Expand Toggle Button */}
+                  <td style={{ textAlign: 'center', width: '30px' }}>
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(po.id)}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                      {isExpanded ? '▼' : '►'}
+                    </button>
+                  </td>
+                  <td style={{ textAlign: 'left', padding: '8px' }}>{po.po_number}</td>
+                  <td style={{ textAlign: 'left', padding: '8px' }}>{po.vendor_name}</td>
+                  <td style={{ textAlign: 'right', padding: '8px' }}>
+                    ${Number(po.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{po.status}</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>
+                    <button onClick={() => handleEdit(po)}> Edit </button>
+
+                    <button onClick={() => handleCancel(po)} disabled={po.status === 'CANCELLED'}>
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+
+                {/* Expanded Item Details Sub-Table */}
+                {isExpanded && (
+                  <tr>
+                    <td colSpan="6" style={{ backgroundColor: '#fdfdfd', padding: '10px 20px' }}>
+                      <strong>Line Items:</strong>
+                      {po.items && po.items.length > 0 ? (
+                        <table style={{ width: '100%', marginTop: '5px', fontSize: '13px', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid #ccc', color: '#555' }}>
+                              <th style={{ textAlign: 'left' }}>Description</th>
+                              <th style={{ textAlign: 'center' }}>Qty</th>
+                              <th style={{ textAlign: 'right' }}>Unit Price ($)</th>
+                              <th style={{ textAlign: 'right' }}>Total ($)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {po.items.map((item, idx) => (
+                              <tr key={idx} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                <td>{item.description}</td>
+                                <td style={{ textAlign: 'center' }}>{item.qty || item.quantity}</td>
+                                <td style={{ textAlign: 'right' }}>${Number(item.unit_price || item.unitPrice || 0).toFixed(2)}</td>
+                                <td style={{ textAlign: 'right' }}>
+                                  ${(Number(item.qty || item.quantity || 1) * Number(item.unit_price || item.unitPrice || 0)).toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p style={{ margin: '5px 0', color: '#777', fontSize: '13px' }}>No line items recorded for this PO.</p>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
+
         </tbody>
       </table>
     </div>
