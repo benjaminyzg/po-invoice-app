@@ -77,11 +77,24 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
         # Update nested items if provided
         if items_data is not None:
-            # Clear existing items and replace with updated set
             instance.items.all().delete()
-            for item_data in items_data:
-                PurchaseOrderItem.objects.create(purchase_order=instance, **item_data)
+            calculated_total = 0
 
+            for item_data in items_data:
+                qty = item_data.pop('quantity', item_data.pop('qty', 1))
+                price = item_data.get('unit_price', 0)
+                calculated_total += (qty * price)
+
+                PurchaseOrderItem.objects.create(
+                    purchase_order=instance,
+                    quantity=qty,
+                    **item_data
+                )
+            
+                # Automatically update the parent total amount
+                instance.total_amount = calculated_total
+
+        instance.save()
         return instance
 
     def create(self, validated_data):
@@ -89,8 +102,13 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         purchase_order = PurchaseOrder.objects.create(**validated_data)
         
         for item_data in items_data:
-            PurchaseOrderItem.objects.create(purchase_order=purchase_order, **item_data)
-            
+            qty = item_data.pop('quantity', item_data.pop('qty', 1))
+            PurchaseOrderItem.objects.create(
+                purchase_order=purchase_order,
+                quantity=qty,
+                **item_data
+            )
+
         return purchase_order
 
 # 4. Purchase Order Status Serializer
