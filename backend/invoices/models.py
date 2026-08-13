@@ -57,6 +57,7 @@ class PurchaseOrder(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    supporting_document = models.FileField(upload_to='po_docs/', null=True, blank=True)
 
     def __str__(self):
         return f"{self.po_number} - {self.vendor_name} ({self.status})"

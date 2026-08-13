@@ -17,7 +17,8 @@ export default function PurchaseOrders({ token, baseUrl }) {
   const [selectedPoToEdit, setSelectedPoToEdit] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingPoId, setEditingPoId] = useState(null);
-  
+  const [file, setFile] = useState(null);
+
   // Handler function for updating a item row field:
   const handleItemChange = (index, field, value) => {
   setItems((prevItems) => {
@@ -36,60 +37,52 @@ export default function PurchaseOrders({ token, baseUrl }) {
       setItems(items.filter((_, i) => i !== index));
     }
   };
-  
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  const calculatedTotal = items.reduce((sum, item) => {
-    const qty = Number(item.qty || item.quantity || 1);
-    const price = Number(item.unitPrice || item.unit_price || 0);
-    return sum + (qty * price);
-  }, 0);
+    e.preventDefault();
 
-  const payload = {
-    po_number: poNumber,
-    vendor_name: vendor,
-    status: status,
-    total_amount: calculatedTotal,  
-    items: items.map(item => ({
-      description: item.description,
-      // Change 'qty' to 'quantity'
-      quantity: Number(item.qty || item.quantity || 1),
-      unit_price: Number(item.unitPrice || item.unit_price || 0),
-      currency: item.currency || 'SGD'
-    })),
-    
-  };
+    const formData = new FormData();
+    formData.append('po_number', poNumber);
+    formData.append('vendor_name', vendor); // Ensure this uses 'vendor_name'
+    formData.append('status', status);
+    formData.append('items', JSON.stringify(items));
 
-  try {
-    const url = editingPoId 
-      ? `${baseUrl}/purchase-orders/${editingPoId}/` 
-      : `${baseUrl}/purchase-orders/`;
-
-    const method = editingPoId ? 'PUT' : 'POST';
-
-    const res = await fetch(url, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok){
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.message || errorData.error || `Server returned status ${res.status}`);
+    // Append the file if the user selected one
+    if (file) {
+      formData.append('supporting_document', file);
     }
-    // Reset form & edit state
-    handleResetForm();
-    fetchPOs(); // Refresh table data
-  } catch (err) {
-    console.error('Save Error:', err);
-    setError(err.message);
-  }
-};
-  
+
+    try {
+      const response = await fetch(`${baseUrl}/purchase-orders/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          // Note: Do NOT set 'Content-Type': 'application/json' here. 
+          // The browser needs to set the multipart/form-data boundary automatically.
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create purchase order');
+      }
+
+      // Reset form fields and file state upon success
+      setPoNumber('');
+      setVendor('');
+      setStatus('Pending');
+      setItems([]);
+      setFile(null);
+      
+      // Refresh the purchase order list
+      if (typeof fetchPOs === 'function') {
+        fetchPOs();
+      }
+      alert('Purchase Order created successfully with supporting document!');
+    } catch (err) {
+      console.error('Error creating PO:', err);
+      alert(err.message);
+    }
+  };
   const handleStatusChange = async (poId, newStatus) => { 
     // Point 1: Check if click handler was triggered and inspect arguments
     console.log(`[PO Track 1] handleStatusChange called | PO ID: ${poId} | Target Status: "${newStatus}"`);
@@ -123,7 +116,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
       console.error('[PO Track EXCEPTION] Request threw error:', err);
     }
   };
-  
   const fetchPOs = async () => {
     try {
       // const res = await fetch('/api/purchase-orders/');
@@ -142,11 +134,9 @@ export default function PurchaseOrders({ token, baseUrl }) {
       setError(err.message);
     }
   };
-  
   useEffect(() => {
     fetchPOs();
   }, []);
-
   // Helper: Calculate totals grouped by currency
   const totalsByCurrency = items.reduce((acc, item) => {
     const lineTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
@@ -161,7 +151,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
   });
-    
   const formatCurrency = (amount) => {
     const num = Number(amount) || 0;
     return num.toLocaleString('en-US', {
@@ -169,7 +158,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
       maximumFractionDigits: 2,
     });
   };
-
   const handleResetForm = () => {
   setEditingPoId(null);
   setSelectedPoToEdit(null);
@@ -178,9 +166,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
   setStatus('PENDING');
   setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
-
-  // console.log("Current pos state:", pos);
-
+  // console.log("Current pos state:", pos)
   return (
     <div style={{ padding: '10px 0' }}>
       <h3 style={{ textAlign: 'center' }}>📦 Purchase Orders (PO)</h3>
@@ -223,7 +209,18 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
       {/* 3. Summary Block */}
       <PoSummary totalsByCurrency={totalsByCurrency}/>
-
+      {/* 4. Supporting Document Upload */}
+      <div style={{ marginTop: '12px', marginBottom: '12px', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
+        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>
+          Attach Supporting Document (PDF / Doc):
+        </label>
+        <input 
+          type="file" 
+          onChange={(e) => setFile(e.target.files[0])} 
+          accept=".pdf,.doc,.docx"
+          style={{ fontSize: '14px' }}
+        />
+      </div>
       {/* Submit Button */}
       <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
         <button 
@@ -787,4 +784,4 @@ export default function PurchaseOrders({ token, baseUrl }) {
       </table>
     </div>
   );
-}
+  }

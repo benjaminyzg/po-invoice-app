@@ -62,7 +62,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             'status', 
             'created_at', 
             'updated_at', 
-            'items'  # 2. Add 'items' to the serializer fields
+            'items',
+            'supporting_document',  # 2. Add 'items' to the serializer fields
         ]
 
     def update(self, instance, validated_data):
