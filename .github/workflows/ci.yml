@@ -9,6 +9,12 @@ on:
 
 jobs:
   test-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
     runs-runs-on: ubuntu-latest  # Runs on a clean cloud server
 
     steps:
@@ -22,6 +28,9 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
 
       # 3. Install packages (fast, clean install)
       - name: Install dependencies
