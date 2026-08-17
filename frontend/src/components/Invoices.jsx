@@ -225,7 +225,7 @@ function InvoiceRow({
       {/* 4. Amount ($) */}
       {/* ✅ Updated with formatCurrency */}
       <td style={{ fontWeight: 'bold', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-        {formatCurrency(inv.total_amount)}
+      {formatCurrency(inv.total_amount)}
       </td>
 
       {/* 5. Status Column */}
@@ -527,7 +527,7 @@ export default function Invoices({ token, baseUrl }) {
         <form onSubmit={handleCreateInvoice}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
             {/* --- Form Fields Grid Container --- */}
-{/* --- Form Fields Grid (Full Width, 4 Equal Columns) --- */}
+            {/* --- Form Fields Grid (Full Width, 4 Equal Columns) --- */}
             <div style={{ 
               display: 'grid', 
               gridTemplateColumns: '130px 380px 130px 130px', // 3 short fixed-width fields + massive Vendor field
@@ -581,10 +581,11 @@ export default function Invoices({ token, baseUrl }) {
             fontSize: '0.85rem', 
             color: '#555' 
           }}
->
+          >
+          
           <span style={{ flex: 1, textAlign: 'center' }}>Description</span>
           <span style={{ width: '60px', textAlign: 'left' }}>Qty</span>
-          <span style={{ width: '80px', textAlign: 'center' }}>Unit Price</span>
+          <span style={{ width: '80px', textAlign: 'left' }}>Unit Price</span>
           <span style={{ width: '80px', textAlign: 'right' }}>Total Amt </span>
           </div>
           <hr style={{ border: 'none', borderTop: '3px solid #b0b0b0', margin: '20px 0 15px 0', borderRadius: '2px' }} />         
