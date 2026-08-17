@@ -51,8 +51,10 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     # Add nested serializer (use the related_name from your ForeignKey, e.g. 'items')
     items = PurchaseOrderItemSerializer(many=True, required=False)
+    items_detail = PurchaseOrderItemSerializer(many=True, read_only=True, source='items')
+    items = serializers.JSONField(write_only=True, required=False, allow_null=True)
     
-    class Meta:
+    
         model = PurchaseOrder
         fields = [
             'id', 
@@ -63,8 +65,12 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             'created_at', 
             'updated_at', 
             'items',
-            'supporting_document',  # 2. Add 'items' to the serializer fields
+            'items_detail',  # 1. Add 'items_detail' to the serializer fields
+            'supporting_document',  # 2. Add 'supporting_document' to the serializer fields
         ]
+        extra_kwargs = {
+            'po_number': {'validators': []} # Disable default unique validator here and handle manually if needed, or let DRF scope it
+        }
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)

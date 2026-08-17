@@ -18,19 +18,28 @@ export default function PurchaseOrders({ token, baseUrl }) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingPoId, setEditingPoId] = useState(null);
   const [file, setFile] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
   // Handler function for updating a item row field:
   const handleItemChange = (index, field, value) => {
-  setItems((prevItems) => {
-    const updated = [...prevItems];
-    updated[index] = { ...updated[index], [field]: value };
-    return updated;
-  });
+    setItems((prevItems) => {
+      const updated = [...prevItems];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
   // Helper: Add a new line item
   const handleAddItem = () => {
     setItems([...items, { description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
+  const handleEdit = (po) => {
+    console.log('Editing PO:', po); // check if po.id exists
+    setEditingId(po.id); // <-- Populates the ID needed for PATCH
+    setPoNumber(po.po_number);
+    setVendor(po.vendor_name || po.vendor);
+    setStatus(po.status);
+    setItems(po.items || po.items_detail || []);
+  };  
   // Helper: Remove a line item
   const handleRemoveItem = (index) => {
     if (items.length > 1) {
@@ -42,45 +51,57 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
     const formData = new FormData();
     formData.append('po_number', poNumber);
-    formData.append('vendor_name', vendor); // Ensure this uses 'vendor_name'
+    formData.append('vendor_name', vendor); 
     formData.append('status', status);
     formData.append('items', JSON.stringify(items));
 
-    // Append the file if the user selected one
     if (file) {
-      formData.append('supporting_document', file);
+        formData.append('supporting_document', file);
     }
 
     try {
-      const response = await fetch(`${baseUrl}/purchase-orders/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          // Note: Do NOT set 'Content-Type': 'application/json' here. 
-          // The browser needs to set the multipart/form-data boundary automatically.
-        },
-        body: formData,
-      });
+        let activeId = null;
+        if (typeof editingId !== 'undefined' && editingId !== null) activeId = editingId;
+        else if (typeof editId !== 'undefined' && editId !== null) activeId = editId;
+        else if (typeof currentId !== 'undefined' && currentId !== null) activeId = currentId;
 
-      if (!response.ok) {
-        throw new Error('Failed to create purchase order');
-      }
+        const url = activeId 
+            ? `${baseUrl}/purchase-orders/${activeId}/` 
+            : `${baseUrl}/purchase-orders/`;
+        
+        const method = activeId ? 'PATCH' : 'POST';
 
-      // Reset form fields and file state upon success
-      setPoNumber('');
-      setVendor('');
-      setStatus('Pending');
-      setItems([]);
-      setFile(null);
-      
-      // Refresh the purchase order list
-      if (typeof fetchPOs === 'function') {
-        fetchPOs();
-      }
-      alert('Purchase Order created successfully with supporting document!');
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Authorization': `Token ${token}`
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('Server validation error:', errorData);
+            throw new Error(activeId ? 'Failed to update purchase order' : 'Failed to create purchase order');
+        }
+
+        setPoNumber('');
+        setVendor('');
+        setStatus('Pending');
+        setItems([]);
+        setFile(null);
+
+        if (typeof setEditingId === 'function') setEditingId(null);
+        if (typeof setEditId === 'function') setEditId(null);
+
+        if (typeof fetchPOs === 'function') {
+            fetchPOs();
+        }
+        
+        alert(activeId ? 'Purchase Order updated successfully!' : 'Purchase Order created successfully with supporting document!');
     } catch (err) {
-      console.error('Error creating PO:', err);
-      alert(err.message);
+        console.error('Error handling PO:', err);
+        alert(err.message);
     }
   };
   const handleStatusChange = async (poId, newStatus) => { 
@@ -159,12 +180,12 @@ export default function PurchaseOrders({ token, baseUrl }) {
     });
   };
   const handleResetForm = () => {
-  setEditingPoId(null);
-  setSelectedPoToEdit(null);
-  setPoNumber('');
-  setVendor('');
-  setStatus('PENDING');
-  setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
+    setEditingPoId(null);
+    setSelectedPoToEdit(null);
+    setPoNumber('');
+    setVendor('');
+    setStatus('PENDING');
+    setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
   // console.log("Current pos state:", pos)
   return (
@@ -274,16 +295,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
           setPoNumber(po.po_number || '');
           setVendor(po.vendor_name || '');
           setStatus(po.status || 'PENDING');
-
-          // Populate line items (if attached to the PO object)
-          // if (po.items && po.items.length > 0) {
-          //  setItems(po.items.map(item => ({
-          //    description: item.description || '',
-          //    qty: item.qty || item.quantity || 1,
-          //    unitPrice: item.unit_price || item.unitPrice || '',
-          //    currency: item.currency || 'SGD'
-          //  })));
-          // }
+          
           if (po.items && Array.isArray(po.items) && po.items.length > 0) {
             setItems(
               po.items.map((item) => ({
@@ -533,99 +545,99 @@ export default function PurchaseOrders({ token, baseUrl }) {
   }
   /* 4. PO List */
   function PoTable_1({ purchaseOrders, editingPoId, handleStatusChange, handleEdit, handleCancel }) {
-    // Track expanded row IDs
-    const [expandedPoIds, setExpandedPoIds] = useState([]);
+      // Track expanded row IDs
+      const [expandedPoIds, setExpandedPoIds] = useState([]);
 
-    const toggleExpand = (id) => {
-      setExpandedPoIds((prev) =>
-        prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-      );
-    };
-  return (
-    <div>
-      <h4 style={{ textAlign: 'center', margin: '20px 0 10px 0' }}>Purchase Order History</h4>
-      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-        <thead>
-          <th></th>
-          <th style={{ textAlign: 'left' }}>PO Number</th>
-            {/* 1. Center the Vendor header */}
-            <th style={{ textAlign: 'center' }}>Vendor</th>
-            <th style={{ textAlign: 'right' }}>Amount ($)</th>
-            {/* 2. Center Status and Actions headers */}
-            <th style={{ textAlign: 'center' }}>Status</th>
-            <th style={{ textAlign: 'center' }}>Actions</th>
-        </thead>
-        <tbody>
-          {purchaseOrders && purchaseOrders.map((po) => {
-            const isExpanded = expandedPoIds.includes(po.id);
-            return (
-              <React.Fragment key={po.id || po.po_number}>
-                <tr style={{ borderBottom: '1px solid #eee' }}>
-                  {/* Expand Toggle Button */}
-                  <td style={{ textAlign: 'center', width: '30px' }}>
-                    <button
-                      type="button"
-                      onClick={() => toggleExpand(po.id)}
-                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}
-                    >
-                      {isExpanded ? '▼' : '►'}
-                    </button>
-                  </td>
-                  <td style={{ textAlign: 'left', padding: '8px' }}>{po.po_number}</td>
-                  <td style={{ textAlign: 'left', padding: '8px' }}>{po.vendor_name}</td>
-                  <td style={{ textAlign: 'right', padding: '8px' }}>
-                    ${Number(po.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                  <td style={{ textAlign: 'center', padding: '8px' }}>{po.status}</td>
-                  <td style={{ textAlign: 'center', padding: '8px' }}>
-                    <button onClick={() => handleEdit(po)}> Edit </button>
+      const toggleExpand = (id) => {
+        setExpandedPoIds((prev) =>
+          prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+        );
+      };
+    return (
+      <div>
+        <h4 style={{ textAlign: 'center', margin: '20px 0 10px 0' }}>Purchase Order History</h4>
+        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <thead>
+            <th></th>
+            <th style={{ textAlign: 'left' }}>PO Number</th>
+              {/* 1. Center the Vendor header */}
+              <th style={{ textAlign: 'center' }}>Vendor</th>
+              <th style={{ textAlign: 'right' }}>Amount ($)</th>
+              {/* 2. Center Status and Actions headers */}
+              <th style={{ textAlign: 'center' }}>Status</th>
+              <th style={{ textAlign: 'center' }}>Actions</th>
+          </thead>
+          <tbody>
+            {purchaseOrders && purchaseOrders.map((po) => {
+              const isExpanded = expandedPoIds.includes(po.id);
+              return (
+                <React.Fragment key={po.id || po.po_number}>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    {/* Expand Toggle Button */}
+                    <td style={{ textAlign: 'center', width: '30px' }}>
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(po.id)}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+                      >
+                        {isExpanded ? '▼' : '►'}
+                      </button>
+                    </td>
+                    <td style={{ textAlign: 'left', padding: '8px' }}>{po.po_number}</td>
+                    <td style={{ textAlign: 'left', padding: '8px' }}>{po.vendor_name}</td>
+                    <td style={{ textAlign: 'right', padding: '8px' }}>
+                      ${Number(po.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ textAlign: 'center', padding: '8px' }}>{po.status}</td>
+                    <td style={{ textAlign: 'center', padding: '8px' }}>
+                      <button onClick={() => handleEdit(po)}> Edit </button>
 
-                    <button onClick={() => handleCancel(po)} disabled={po.status === 'CANCELLED'}>
-                      Cancel
-                    </button>
-                  </td>
-                </tr>
-                {/* Expanded Item Details Sub-Table */}
-                {isExpanded && (
-                  <tr>
-                    <td colSpan="6" style={{ backgroundColor: '#fdfdfd', padding: '10px 20px' }}>
-                      <strong>Line Items:</strong>
-                      {po.items && po.items.length > 0 ? (
-                        <table style={{ width: '100%', marginTop: '5px', fontSize: '13px', borderCollapse: 'collapse' }}>
-                          <thead>
-                            <tr style={{ borderBottom: '1px solid #ccc', color: '#555' }}>
-                              <th style={{ textAlign: 'left' }}>Description</th>
-                              <th style={{ textAlign: 'center' }}>Qty</th>
-                              <th style={{ textAlign: 'right' }}>Unit Price ($)</th>
-                              <th style={{ textAlign: 'right' }}>Total ($)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {po.items.map((item, idx) => (
-                              <tr key={idx} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                <td>{item.description}</td>
-                                <td style={{ textAlign: 'center' }}>{item.qty || item.quantity}</td>
-                                <td style={{ textAlign: 'right' }}>${Number(item.unit_price || item.unitPrice || 0).toFixed(2)}</td>
-                                <td style={{ textAlign: 'right' }}>
-                                  ${(Number(item.qty || item.quantity || 1) * Number(item.unit_price || item.unitPrice || 0)).toFixed(2)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <p style={{ margin: '5px 0', color: '#777', fontSize: '13px' }}>No line items recorded for this PO.</p>
-                      )}
+                      <button onClick={() => handleCancel(po)} disabled={po.status === 'CANCELLED'}>
+                        Cancel
+                      </button>
                     </td>
                   </tr>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
+                  {/* Expanded Item Details Sub-Table */}
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan="6" style={{ backgroundColor: '#fdfdfd', padding: '10px 20px' }}>
+                        <strong>Line Items:</strong>
+                        {po.items && po.items.length > 0 ? (
+                          <table style={{ width: '100%', marginTop: '5px', fontSize: '13px', borderCollapse: 'collapse' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '1px solid #ccc', color: '#555' }}>
+                                <th style={{ textAlign: 'left' }}>Description</th>
+                                <th style={{ textAlign: 'center' }}>Qty</th>
+                                <th style={{ textAlign: 'right' }}>Unit Price ($)</th>
+                                <th style={{ textAlign: 'right' }}>Total ($)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {po.items.map((item, idx) => (
+                                <tr key={idx} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                  <td>{item.description}</td>
+                                  <td style={{ textAlign: 'center' }}>{item.qty || item.quantity}</td>
+                                  <td style={{ textAlign: 'right' }}>${Number(item.unit_price || item.unitPrice || 0).toFixed(2)}</td>
+                                  <td style={{ textAlign: 'right' }}>
+                                    ${(Number(item.qty || item.quantity || 1) * Number(item.unit_price || item.unitPrice || 0)).toFixed(2)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p style={{ margin: '5px 0', color: '#777', fontSize: '13px' }}>No line items recorded for this PO.</p>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
   }
   /* 4. PO List - Working Version */
   function PoTable({ purchaseOrders, handleStatusChange, handleEdit, handleCancel }) {
