@@ -1,4 +1,3 @@
-import json
 from rest_framework import serializers
 from .models import Invoice, InvoiceItem, CatalogItem, PurchaseOrder, PurchaseOrderItem
 
@@ -51,9 +50,8 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
 # 3. Purchase Order Serializer
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     # Add nested serializer (use the related_name from your ForeignKey, e.g. 'items')
-    # items = PurchaseOrderItemSerializer(many=True, required=False)
-    items = serializers.JSONField(write_only=True, required=False)
-
+    items = PurchaseOrderItemSerializer(many=True, required=False)
+    
     class Meta:
         model = PurchaseOrder
         fields = [
@@ -69,15 +67,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         ]
 
     def update(self, instance, validated_data):
-        # 1. Pop the items payload
         items_data = validated_data.pop('items', None)
-        if items_data is None and hasattr(self, 'initial_data'):
-            items_data = self.initial_data.get('items', None)
-
-        # Update standard parent fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
 
         # Update parent PurchaseOrder attributes
         instance.po_number = validated_data.get('po_number', instance.po_number)
@@ -86,43 +76,26 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         instance.total_amount = validated_data.get('total_amount', instance.total_amount)
         instance.save()
 
-        # 2. Update all other standard fields (vendor_name, status, po_number, etc.)
-        # Update standard PO fields (vendor, status, po_number, supporting_document, etc.)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        # 3. Explicitly parse and handle the items data
         # Update nested items if provided
         if items_data is not None:
-            # If it came through FormData as a JSON string, load it into a Python list
-            if isinstance(items_data, str):
-                try:
-                    items_data = json.loads(items_data)
-                except json.JSONDecodeError:
-                    items_data = []
-
-            # Clear old items to replace them with the updated list
             instance.items.all().delete()
             calculated_total = 0
-            
-            for item_data in items_data:
-                qty = int(item_data.pop('quantity', item_data.pop('qty', 1)))
-                price = float(item_data.get('unit_price', item_data.pop('unitPrice', 0)))
 
+            for item_data in items_data:
+                qty = item_data.pop('quantity', item_data.pop('qty', 1))
+                price = item_data.get('unit_price', 0)
                 calculated_total += (qty * price)
-                
+
                 PurchaseOrderItem.objects.create(
                     purchase_order=instance,
                     quantity=qty,
-                    unit_price=price, #explicity pass the cleaned snake_case field
                     **item_data
                 )
             
-            # Automatically update the parent total amount
-            instance.total_amount = calculated_total
-            instance.save()
+                # Automatically update the parent total amount
+                instance.total_amount = calculated_total
 
+        instance.save()
         return instance
 
     def create(self, validated_data):
