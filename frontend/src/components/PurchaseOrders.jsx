@@ -4,7 +4,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
   // Multi-line items state
   const [items, setItems] = useState([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   const [pos, setPos] = useState([]);
-  const [formData, setFormData] = useState({po_number: '', vendor_name: '', total_amount: '', status: 'Pending'});
+  const [formData, setFormData] = useState({po_number: '', vendor_name: '', total_amount: '', status: 'PENDING'});
   const [error, setError] = useState('');
   const [poNumber, setPoNumber] = useState('');
   const [vendor, setVendor] = useState('');
@@ -12,9 +12,13 @@ export default function PurchaseOrders({ token, baseUrl }) {
   const [qty, setQty] = useState('');
   const [unitPrice, setUnitPrice] = useState('');
   const [currency, setCurrency] = useState('SGD');
-  const [status, setStatus] = useState('Pending');
+  const [status, setStatus] = useState('PENDING');
   const [purchaseOrders, setPurchaseOrders] = useState([]);
-  
+  const [selectedPoToEdit, setSelectedPoToEdit] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingPoId, setEditingPoId] = useState(null);
+  const [file, setFile] = useState(null);
+
   // Handler function for updating a item row field:
   const handleItemChange = (index, field, value) => {
   setItems((prevItems) => {
@@ -33,100 +37,55 @@ export default function PurchaseOrders({ token, baseUrl }) {
       setItems(items.filter((_, i) => i !== index));
     }
   };
-  const fetchPOs = async () => {
-    try {
-      const res = await fetch(`${baseUrl}/purchase-orders/`, { headers: getHeaders() });
-      if (!res.ok) throw new Error('Failed to fetch purchase orders.');
-      const data = await res.json();
-      setPos(data);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-  
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
+    e.preventDefault();
 
-    // 1. Filter out empty/unfilled line items
-    const validItems = items.filter(
-      (item) => item.description && item.description.trim() !== '' && Number(item.unitPrice) > 0
-    );
+    const formData = new FormData();
+    formData.append('po_number', poNumber);
+    formData.append('vendor_name', vendor); // Ensure this uses 'vendor_name'
+    formData.append('status', status);
+    formData.append('items', JSON.stringify(items));
 
-    if (validItems.length === 0) {
-      setError('Please provide at least one valid line item with a description and unit price.');
-      return;
+    // Append the file if the user selected one
+    if (file) {
+      formData.append('supporting_document', file);
     }
-
-    // 2. Calculate total amount
-    const grandTotal = validItems.reduce(
-      (sum, item) => sum + (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0),
-      0
-    );
-
-    // 3. Format payload in snake_case expected by Django REST Framework
-    const payload = {
-      po_number: poNumber,
-      vendor_name: vendor,
-      status: status, // Matches choice field (e.g. 'Pending', 'Fulfilled')
-      total_amount: grandTotal,
-      items: validItems.map((item) => ({
-        description: item.description,
-        quantity: Number(item.qty),
-        unit_price: parseFloat(item.unitPrice),
-        currency: item.currency || 'SGD',
-      })),
-    };
 
     try {
       const response = await fetch(`${baseUrl}/purchase-orders/`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${token}`,
+          'Authorization': `Token ${token}`,
+          // Note: Do NOT set 'Content-Type': 'application/json' here. 
+          // The browser needs to set the multipart/form-data boundary automatically.
         },
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
-      if (response.ok || response.status === 201) {
-      console.log('Purchase Order Created Successfully!');
-      // Reset form state
+      if (!response.ok) {
+        throw new Error('Failed to create purchase order');
+      }
+
+      // Reset form fields and file state upon success
       setPoNumber('');
       setVendor('');
       setStatus('Pending');
-      setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
+      setItems([]);
+      setFile(null);
       
-      // Refresh the PO table list
-      await fetchPOs();
-    } else {
-      // Safely check content type to prevent SyntaxError on HTML error responses
-      const contentType = response.headers.get('content-type');
-      let errorMessage = '';
-
-      if (contentType && contentType.includes('application/json')) {
-        const errData = await response.json();
-        console.error('Django REST Framework Errors:', errData);
-        errorMessage = JSON.stringify(errData);
-      } else {
-        const textData = await response.text();
-        console.error(`Backend returned non-JSON response (${response.status}):`, textData);
-        errorMessage = `HTTP ${response.status}: Route not found or Server Error`;
+      // Refresh the purchase order list
+      if (typeof fetchPOs === 'function') {
+        fetchPOs();
       }
-
-      setError(`Failed to create PO: ${errorMessage}`);
-    }
+      alert('Purchase Order created successfully with supporting document!');
     } catch (err) {
-      console.error('Network Error during PO creation:', err);
-      setError('Network error occurred while connecting to backend.');
+      console.error('Error creating PO:', err);
+      alert(err.message);
     }
   };
-  
-  const handleStatusChange = async (poId, newStatus) => {
-     
-    
+  const handleStatusChange = async (poId, newStatus) => { 
     // Point 1: Check if click handler was triggered and inspect arguments
     console.log(`[PO Track 1] handleStatusChange called | PO ID: ${poId} | Target Status: "${newStatus}"`);
-
     try {
       // Point 2: Confirm request setup before dispatching
       console.log(`[PO Track 2] Dispatching PATCH request to /api/purchase-orders/${poId}/...`);
@@ -157,11 +116,27 @@ export default function PurchaseOrders({ token, baseUrl }) {
       console.error('[PO Track EXCEPTION] Request threw error:', err);
     }
   };
+  const fetchPOs = async () => {
+    try {
+      // const res = await fetch('/api/purchase-orders/');
+      // const data = await res.json();
+      // Ensure you pass the array directly:
+      // setPurchaseOrders(Array.isArray(data) ? data : data.results || []);
 
+      const res = await fetch(`${baseUrl}/purchase-orders/`, { headers: getHeaders() });
+      if (!res.ok) throw new Error('Failed to fetch purchase orders.');
+      const data = await res.json();
+      
+      //setPos(data);
+
+      setPos(Array.isArray(data) ? data : data.results || []);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
   useEffect(() => {
     fetchPOs();
   }, []);
-
   // Helper: Calculate totals grouped by currency
   const totalsByCurrency = items.reduce((acc, item) => {
     const lineTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
@@ -176,7 +151,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
   });
-    
   const formatCurrency = (amount) => {
     const num = Number(amount) || 0;
     return num.toLocaleString('en-US', {
@@ -184,7 +158,15 @@ export default function PurchaseOrders({ token, baseUrl }) {
       maximumFractionDigits: 2,
     });
   };
-
+  const handleResetForm = () => {
+  setEditingPoId(null);
+  setSelectedPoToEdit(null);
+  setPoNumber('');
+  setVendor('');
+  setStatus('PENDING');
+  setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
+  };
+  // console.log("Current pos state:", pos)
   return (
     <div style={{ padding: '10px 0' }}>
       <h3 style={{ textAlign: 'center' }}>📦 Purchase Orders (PO)</h3>
@@ -227,37 +209,108 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
       {/* 3. Summary Block */}
       <PoSummary totalsByCurrency={totalsByCurrency}/>
-
+      {/* 4. Supporting Document Upload */}
+      <div style={{ marginTop: '12px', marginBottom: '12px', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
+        <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>
+          Attach Supporting Document (PDF / Doc):
+        </label>
+        <input 
+          type="file" 
+          onChange={(e) => setFile(e.target.files[0])} 
+          accept=".pdf,.doc,.docx"
+          style={{ fontSize: '14px' }}
+        />
+      </div>
       {/* Submit Button */}
-      <button
-        type="submit"
-        style={{
-          padding: '12px',
-          backgroundColor: '#2b7fff',
-          color: '#ffffff',
-          border: 'none',
-          borderRadius: '6px',
-          fontWeight: 'bold',
-          fontSize: '15px',
-          cursor: 'pointer',
-          marginTop: '5px'
-        }}
-      >
-        Create Purchase Order
-      </button>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+        <button 
+          type="submit"
+          style={{
+            flex: 1,
+            padding: '12px',
+            backgroundColor: editingPoId ? '#28a745' : '#0d6efd', // Green for update, blue for create
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '6px',
+            fontWeight: 'bold',
+            fontSize: '15px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s'
+          }}
+        >
+          {editingPoId ? 'Update Purchase Order' : 'Create Purchase Order'}
+        </button>
+
+        {editingPoId && (
+          <button 
+            type="button" 
+            onClick={handleResetForm} 
+            style={{ 
+              padding: '12px 20px', 
+              backgroundColor: '#6c757d', 
+              color: '#ffffff', 
+              border: 'none', 
+              borderRadius: '6px', 
+              fontWeight: 'bold', 
+              fontSize: '15px', 
+              cursor: 'pointer' 
+            }}
+          >
+            Cancel Edit
+          </button>
+        )}
+      </div>
       </form>
 
       {/* 4. PO Table */}
-      <PoTable 
-        purchaseOrders={pos} 
-        handleStatusChange={handleStatusChange || (() => {})} 
-        handleEdit={() => {}} 
+      <PoTable
+        purchaseOrders={pos}
+        handleStatusChange={handleStatusChange || (() => {})}
+        handleEdit={(po) => {
+          setEditingPoId(po.id);
+          setSelectedPoToEdit(po);
+
+          // Populate top-level fields
+          setPoNumber(po.po_number || '');
+          setVendor(po.vendor_name || '');
+          setStatus(po.status || 'PENDING');
+
+          // Populate line items (if attached to the PO object)
+          // if (po.items && po.items.length > 0) {
+          //  setItems(po.items.map(item => ({
+          //    description: item.description || '',
+          //    qty: item.qty || item.quantity || 1,
+          //    unitPrice: item.unit_price || item.unitPrice || '',
+          //    currency: item.currency || 'SGD'
+          //  })));
+          // }
+          if (po.items && Array.isArray(po.items) && po.items.length > 0) {
+            setItems(
+              po.items.map((item) => ({
+                description: item.description || '',
+                qty: item.qty || item.quantity || 1,
+                unitPrice: item.unit_price || item.unitPrice || '',
+                currency: item.currency || 'SGD'
+              }))
+            );
+          } else {
+            setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
+          }
+
+          // Scroll up to form
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        handleCancel={(po) => {
+          if (window.confirm(`Are you sure you want to cancel PO ${po.po_number}?`)) {
+            handleStatusChange(po.id, 'CANCELLED');
+          }
+        }}
       />
     </div>
-  );
+  )
 }
 
-/* 1. Header Details */
+  /* 1. Header Details */
   function PoHeaderDetails({ poNumber, setPoNumber, vendor, setVendor, status, setStatus }) {
     return (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
@@ -296,9 +349,10 @@ export default function PurchaseOrders({ token, baseUrl }) {
             onChange={(e) => setStatus(e.target.value)}
             style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', backgroundColor: '#fff', boxSizing: 'border-box' }}
           >
-            <option value="Pending">Pending</option>
-            <option value="Fulfilled">Fulfilled</option>
-            <option value="Cancelled">Cancelled</option>
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Fulfilled</option>
+            <option value="RECEIVED">Received</option>
+            <option value="CANCELLED">Cancelled</option>
           </select>
         </div>
       </div>
@@ -344,7 +398,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
           <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Description</span>
           <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Qty</span>
           <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Unit Price ($)</span>
-          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Cur</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Cur ($)</span>
           <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Total Amt ($)</span>
           <span></span>
         </div>
@@ -478,75 +532,256 @@ export default function PurchaseOrders({ token, baseUrl }) {
     );
   }
   /* 4. PO List */
-  function PoTable({ purchaseOrders, handleStatusChange, handleEdit }) {
-    return (
-      <div>
-        <h4 style={{ textAlign: 'center', margin: '20px 0 10px 0' }}>Purchase Order History</h4>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-              <th style={{ padding: '10px 8px' }}>PO Number</th>
-              <th style={{ padding: '10px 8px', textAlign: 'center'}}>Vendor</th>
-              <th style={{ padding: '10px 8px', textAlign: 'right' }}>Amount ($)</th>
-              <th style={{ padding: '10px 8px', textAlign: 'center' }}>Status</th>
-              <th style={{ padding: '10px 8px', textAlign: 'center' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {purchaseOrders.map((po) => (
-              <tr key={po.id} style={{ borderBottom: '1px solid #e9ecef' }}>
-                <td style={{ padding: '10px 8px' }}>{po.po_number || po.poNumber || 'N/A'}</td>
-                <td style={{ padding: '10px 8px' }}>{po.vendor_name || po.vendor || 'N/A'}</td>
-                <td style={{ padding: '10px 8px', textAlign: 'right' }}>
-                  ${po.totalAmount ? po.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'}
-                </td>
-                <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '12px',
-                    color: '#fff',
-                    backgroundColor: po.status === 'Fulfilled' ? '#28a745' : po.status === 'Cancelled' ? '#dc3545' : '#17a2b8'
-                  }}>
-                    {po.status}
-                  </span>
-                </td>
-                <td style={{ padding: '10px 8px', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                    {po.status !== 'Fulfilled' && po.status !== 'Cancelled' && (
-                      <button
-                        type="button"
-                        onClick={() => handleStatusChange(po)}
-                        style={{ backgroundColor: '#28a745', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer' }}
-                      >
-                        Receive
-                      </button>
-                    )}
-                    {po.status !== 'Cancelled' && po.status !== 'Pending' && (
+  function PoTable_1({ purchaseOrders, editingPoId, handleStatusChange, handleEdit, handleCancel }) {
+    // Track expanded row IDs
+    const [expandedPoIds, setExpandedPoIds] = useState([]);
+
+    const toggleExpand = (id) => {
+      setExpandedPoIds((prev) =>
+        prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      );
+    };
+  return (
+    <div>
+      <h4 style={{ textAlign: 'center', margin: '20px 0 10px 0' }}>Purchase Order History</h4>
+      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <thead>
+          <th></th>
+          <th style={{ textAlign: 'left' }}>PO Number</th>
+            {/* 1. Center the Vendor header */}
+            <th style={{ textAlign: 'center' }}>Vendor</th>
+            <th style={{ textAlign: 'right' }}>Amount ($)</th>
+            {/* 2. Center Status and Actions headers */}
+            <th style={{ textAlign: 'center' }}>Status</th>
+            <th style={{ textAlign: 'center' }}>Actions</th>
+        </thead>
+        <tbody>
+          {purchaseOrders && purchaseOrders.map((po) => {
+            const isExpanded = expandedPoIds.includes(po.id);
+            return (
+              <React.Fragment key={po.id || po.po_number}>
+                <tr style={{ borderBottom: '1px solid #eee' }}>
+                  {/* Expand Toggle Button */}
+                  <td style={{ textAlign: 'center', width: '30px' }}>
                     <button
                       type="button"
-                      onClick={() => handleStatusChange(po.id, 'Fulfilled')}
-                      style={{ backgroundColor: '#6c757d', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px' }}
+                      onClick={() => toggleExpand(po.id)}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}
                     >
-                      Edit
+                      {isExpanded ? '▼' : '►'}
                     </button>
-                    )}
-                    {po.status !== 'Pending' && po.status !== 'Fulfilled' && (
-                    <button
-                      type="button"
-                      onClick={() => handleStatusChange(po.id || po._id, 'Cancelled')}
-                      style={{ backgroundColor: '#dc3545', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer'
-                      }}
-                    >
+                  </td>
+                  <td style={{ textAlign: 'left', padding: '8px' }}>{po.po_number}</td>
+                  <td style={{ textAlign: 'left', padding: '8px' }}>{po.vendor_name}</td>
+                  <td style={{ textAlign: 'right', padding: '8px' }}>
+                    ${Number(po.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>{po.status}</td>
+                  <td style={{ textAlign: 'center', padding: '8px' }}>
+                    <button onClick={() => handleEdit(po)}> Edit </button>
+
+                    <button onClick={() => handleCancel(po)} disabled={po.status === 'CANCELLED'}>
                       Cancel
                     </button>
-                  )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  </td>
+                </tr>
+                {/* Expanded Item Details Sub-Table */}
+                {isExpanded && (
+                  <tr>
+                    <td colSpan="6" style={{ backgroundColor: '#fdfdfd', padding: '10px 20px' }}>
+                      <strong>Line Items:</strong>
+                      {po.items && po.items.length > 0 ? (
+                        <table style={{ width: '100%', marginTop: '5px', fontSize: '13px', borderCollapse: 'collapse' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid #ccc', color: '#555' }}>
+                              <th style={{ textAlign: 'left' }}>Description</th>
+                              <th style={{ textAlign: 'center' }}>Qty</th>
+                              <th style={{ textAlign: 'right' }}>Unit Price ($)</th>
+                              <th style={{ textAlign: 'right' }}>Total ($)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {po.items.map((item, idx) => (
+                              <tr key={idx} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                <td>{item.description}</td>
+                                <td style={{ textAlign: 'center' }}>{item.qty || item.quantity}</td>
+                                <td style={{ textAlign: 'right' }}>${Number(item.unit_price || item.unitPrice || 0).toFixed(2)}</td>
+                                <td style={{ textAlign: 'right' }}>
+                                  ${(Number(item.qty || item.quantity || 1) * Number(item.unit_price || item.unitPrice || 0)).toFixed(2)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <p style={{ margin: '5px 0', color: '#777', fontSize: '13px' }}>No line items recorded for this PO.</p>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+  }
+  /* 4. PO List - Working Version */
+  function PoTable({ purchaseOrders, handleStatusChange, handleEdit, handleCancel }) {
+  const [expandedPoIds, setExpandedPoIds] = useState([]);
+
+  const toggleExpand = (id) => {
+    setExpandedPoIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+  };
+
+  return (
+    <div>
+      <h4 style={{ textAlign: 'center', margin: '20px 0 15px 0', color: '#333' }}>
+        Purchase Order History
+      </h4>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+        <thead>
+          <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #e9ecef' }}>
+            <th style={{ width: '30px', padding: '10px 4px' }}></th>
+            <th style={{ textAlign: 'left', padding: '10px' }}>PO Number</th>
+            <th style={{ textAlign: 'center', padding: '10px' }}>Vendor</th>
+            <th style={{ textAlign: 'right', padding: '10px' }}>Amount ($)</th>
+            <th style={{ textAlign: 'center', padding: '10px' }}>Status</th>
+            <th style={{ textAlign: 'center', padding: '10px' }}>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {purchaseOrders && purchaseOrders.map((po) => {
+            const isExpanded = expandedPoIds.includes(po.id);
+            return (
+              <React.Fragment key={po.id || po.po_number}>
+                {/* Main PO Row */}
+                <tr style={{ borderBottom: '1px solid #f1f3f5', transition: 'background-color 0.15s' }}>
+                  <td style={{ textAlign: 'center', padding: '10px 4px' }}>
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(po.id)}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        color: '#6c757d',
+                        padding: '2px 4px'
+                      }}
+                    >
+                      {isExpanded ? '▼' : '►'}
+                    </button>
+                  </td>
+                  <td style={{ textAlign: 'left', padding: '10px', fontWeight: '500' }}>
+                    {po.po_number}
+                  </td>
+                  <td style={{ textAlign: 'left', padding: '10px' }}>
+                    {po.vendor_name}
+                  </td>
+                  <td style={{ textAlign: 'right', padding: '10px' }}>
+                    ${Number(po.total_amount || 0).toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
+                  </td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>
+                    <span style={{
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      backgroundColor: po.status === 'CANCELLED' ? '#f8d7da' : '#d1e7dd',
+                      color: po.status === 'CANCELLED' ? '#842029' : '#0f5132'
+                    }}>
+                      {po.status}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'center', padding: '10px' }}>
+                    <div style={{ display: 'inline-flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(po)}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          backgroundColor: '#f8f9fa',
+                          border: '1px solid #ced4da',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCancel && handleCancel(po)}
+                        disabled={po.status === 'CANCELLED'}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '12px',
+                          cursor: po.status === 'CANCELLED' ? 'not-allowed' : 'pointer',
+                          backgroundColor: po.status === 'CANCELLED' ? '#e9ecef' : '#dc3545',
+                          color: po.status === 'CANCELLED' ? '#adb5bd' : '#ffffff',
+                          border: 'none',
+                          borderRadius: '4px'
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {/* Integrated Itemized Preview Sub-Table */}
+                {isExpanded && (
+                  <tr>
+                    <td colSpan="6" style={{ backgroundColor: '#fdfdfd', padding: '12px 24px', borderBottom: '1px solid #e9ecef' }}>
+                      <div style={{ fontSize: '13px' }}>
+                        <span style={{ fontWeight: '600', color: '#495057' }}>Line Items Detail</span>
+                        {po.items && po.items.length > 0 ? (
+                          <table style={{ width: '100%', marginTop: '8px', borderCollapse: 'collapse', fontSize: '12px' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '1px solid #dee2e6', color: '#6c757d' }}>
+                                <th style={{ textAlign: 'left', padding: '6px' }}>Description</th>
+                                <th style={{ textAlign: 'center', padding: '6px', width: '60px' }}>Qty</th>
+                                <th style={{ textAlign: 'right', padding: '6px', width: '100px' }}>Unit Price ($)</th>
+                                <th style={{ textAlign: 'right', padding: '6px', width: '100px' }}>Total ($)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {po.items.map((item, idx) => {
+                                const qty = Number(item.qty || item.quantity || 1);
+                                const price = Number(item.unit_price || item.unitPrice || 0);
+                                const rowTotal = qty * price;
+          
+                                return (
+                                  <tr key={idx} style={{ borderBottom: '1px solid #f1f3f5' }}>
+                                    <td style={{ padding: '6px', textAlign: 'left' }}>{item.description}</td>
+                                    <td style={{ padding: '6px', textAlign: 'center' }}>{qty.toLocaleString('en-US')}</td>
+                                    <td style={{ padding: '6px', textAlign: 'right' }}>${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                    <td style={{ padding: '6px', textAlign: 'right' }}>${rowTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p style={{ margin: '6px 0 0 0', color: '#868e96', fontStyle: 'italic', fontSize: '12px' }}>
+                            No line items recorded for this PO.
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
   }
