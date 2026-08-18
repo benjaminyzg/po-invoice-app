@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Login from './Login';
 import POList from './components/POList';
 import Invoices from './components/Invoices';
-import PurchaseOrders from './components/PurchaseOrders';
+import PurchaseOrders from './components/purchase-orders/PurchaseOrders';
 import PurchaseOrderList from './components/PurchaseOrderList';
 import CatalogItems from './components/CatalogItems';
 import './App.css'; 
@@ -45,7 +45,7 @@ export default function App() {
       {activeTab === 'purchaseOrders' && (<div className="purchase-orders-tab-container">
       
       {/* 1. Form component for creating new POs */}
-      <PurchaseOrders token={token} baseUrl={BASE_URL} /> 
+      <PurchaseOrders token="YOUR_AUTH_TOKEN" baseUrl="http://localhost:8000/api" />      
       <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #ddd' }} />
 
       {/* 2. Expandable table component for viewing existing POs */}
