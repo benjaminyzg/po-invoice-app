@@ -33,10 +33,16 @@ export default function PurchaseOrders({ token, baseUrl }) {
     setItems([...items, { description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
   const handleEdit = (po) => {
-    console.log('Editing PO:', po); // check if po.id exists
-    setEditingId(po.id); // <-- Populates the ID needed for PATCH
+    console.log("Clicked PO object:", po);
+    // Fallback check to capture the primary key regardless of property name
+    const targetId = po.id || po.po_id || po.pk;
+    console.log("Setting edit ID:", targetId);
+    
+    setEditingId(targetId); // Ensures editingId gets the numeric primary key
+    if (typeof setIsEditing === 'function') setIsEditing(true);
+    
     setPoNumber(po.po_number);
-    setVendor(po.vendor_name || po.vendor);
+    setVendor(po.vendor_name || po.vendor || '');
     setStatus(po.status);
     setItems(po.items || po.items_detail || []);
   };  
@@ -48,7 +54,16 @@ export default function PurchaseOrders({ token, baseUrl }) {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
+   
+    // Resolve active ID cleanly across possible state variable names
+    const activeId = editingId;
+    const method = activeId ? 'PATCH' : 'POST';
+    const url = activeId 
+        ? `${baseUrl}/purchase-orders/${activeId}/` 
+        : `${baseUrl}/purchase-orders/`;
 
+    console.log(`[SUBMIT] Method: ${method}, URL: ${url}, activeId: ${activeId}`);
+    
     const formData = new FormData();
     formData.append('po_number', poNumber);
     formData.append('vendor_name', vendor); 
@@ -60,17 +75,18 @@ export default function PurchaseOrders({ token, baseUrl }) {
     }
 
     try {
-        let activeId = null;
-        if (typeof editingId !== 'undefined' && editingId !== null) activeId = editingId;
-        else if (typeof editId !== 'undefined' && editId !== null) activeId = editId;
-        else if (typeof currentId !== 'undefined' && currentId !== null) activeId = currentId;
+        // 1. ADD THIS: Read the active ID from state
+        const activeId = editingId;
 
+        // 2. ADD THIS: Dynamically choose HTTP method and URL
+        const method = activeId ? 'PATCH' : 'POST';
         const url = activeId 
             ? `${baseUrl}/purchase-orders/${activeId}/` 
             : `${baseUrl}/purchase-orders/`;
-        
-        const method = activeId ? 'PATCH' : 'POST';
 
+        console.log(`[SUBMIT] Method: ${method}, URL: ${url}, activeId: ${activeId}`);
+
+        // 3. Perform fetch with the dynamically computed method & url
         const response = await fetch(url, {
             method: method,
             headers: {
@@ -84,23 +100,19 @@ export default function PurchaseOrders({ token, baseUrl }) {
             console.error('Server validation error:', errorData);
             throw new Error(activeId ? 'Failed to update purchase order' : 'Failed to create purchase order');
         }
-
         setPoNumber('');
         setVendor('');
         setStatus('Pending');
         setItems([]);
         setFile(null);
+        setEditingId(null);
 
-        if (typeof setEditingId === 'function') setEditingId(null);
-        if (typeof setEditId === 'function') setEditId(null);
+        if (typeof setIsEditing === 'function') setIsEditing(false);
 
-        if (typeof fetchPOs === 'function') {
-            fetchPOs();
-        }
-        
+        if (typeof fetchPOs === 'function') fetchPOs();
         alert(activeId ? 'Purchase Order updated successfully!' : 'Purchase Order created successfully with supporting document!');
-      }catch (err) {
-        console.error('Error handling PO:', err);
+    } catch (err) {
+        console.error('Error handling PO Submission:', err);
         alert(err.message);
     }
   };
@@ -716,7 +728,11 @@ export default function PurchaseOrders({ token, baseUrl }) {
                       <div style={{ display: 'inline-flex', gap: '6px' }}>
                         <button
                           type="button"
-                          onClick={() => handleEdit(po)}
+                          onClick={() =>{
+                              console.log("Clicked Edit for PO:", po);
+                              console.log("PO ID is:", po?.id);
+                              handleEdit(po);
+                          }}
                           style={{
                             padding: '4px 8px',
                             fontSize: '12px',
