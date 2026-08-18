@@ -57,10 +57,10 @@ export default function PurchaseOrders({ token, baseUrl }) {
    
     // Resolve active ID cleanly across possible state variable names
     const activeId = editingId;
-    const method = activeId ? 'PATCH' : 'POST';
-    const url = activeId 
-        ? `${baseUrl}/purchase-orders/${activeId}/` 
-        : `${baseUrl}/purchase-orders/`;
+    const url = editingId 
+      ? `${baseUrl}/purchase-orders/${editingId}/` 
+      : `${baseUrl}/purchase-orders/`;
+    const method = editingId ? 'PATCH' : 'POST';
 
     console.log(`[SUBMIT] Method: ${method}, URL: ${url}, activeId: ${activeId}`);
     
