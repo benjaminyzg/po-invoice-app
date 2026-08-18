@@ -45,7 +45,7 @@ export default function App() {
       {activeTab === 'purchaseOrders' && (<div className="purchase-orders-tab-container">
       
       {/* 1. Form component for creating new POs */}
-      <PurchaseOrders token="YOUR_AUTH_TOKEN" baseUrl="http://localhost:8000/api" />      
+      <PurchaseOrders token={token} baseUrl="http://localhost:8000/api" />      
       <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #ddd' }} />
 
       {/* 2. Expandable table component for viewing existing POs */}
