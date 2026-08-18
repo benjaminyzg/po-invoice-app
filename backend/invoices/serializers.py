@@ -50,11 +50,10 @@ class PurchaseOrderItemSerializer(serializers.ModelSerializer):
 # 3. Purchase Order Serializer
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     # Add nested serializer (use the related_name from your ForeignKey, e.g. 'items')
-    items = PurchaseOrderItemSerializer(many=True, required=False)
     items_detail = PurchaseOrderItemSerializer(many=True, read_only=True, source='items')
     items = serializers.JSONField(write_only=True, required=False, allow_null=True)
-    
-    
+        
+    class Meta:
         model = PurchaseOrder
         fields = [
             'id', 
