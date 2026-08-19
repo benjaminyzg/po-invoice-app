@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Login from './Login';
 import POList from './components/POList';
-import Invoices from './components/Invoices';
+import Invoices from './components/invoices/Invoices';
 import PurchaseOrders from './components/purchase-orders/PurchaseOrders';
 import PurchaseOrderList from './components/PurchaseOrderList';
 import CatalogItems from './components/CatalogItems';
@@ -41,7 +41,9 @@ export default function App() {
 
       {/* Tab Views */}
       <main>
-      {activeTab === 'invoices' && (<Invoices token={token} baseUrl={BASE_URL} />)}
+      {/* {activeTab === 'invoices' && <Invoices />} */}
+      {activeTab === 'invoices' && <Invoices token={token} baseUrl={BASE_URL} />}
+      {/* {activeTab === 'invoices' && (<Invoices token={token} baseUrl={BASE_URL} />)} */}
       {activeTab === 'purchaseOrders' && (<div className="purchase-orders-tab-container">
       
       {/* 1. Form component for creating new POs */}

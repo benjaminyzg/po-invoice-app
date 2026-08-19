@@ -7,7 +7,6 @@ import { formatCurrency, calculateGrandTotal, formatDate } from '../utils/format
 function InvoicePopover({ invoice, position }) {
   // Safely extract line items (handles undefined/null without crashing)
   const items = invoice?.items || invoice?.line_items || [];
-
   return (
     <div
       style={{
@@ -29,7 +28,7 @@ function InvoicePopover({ invoice, position }) {
       </h5>
 
       {items.length === 0 ? (
-        <span style={{ fontSize: '0.8rem', color: '#888' }}>No items recorded</span>
+      <span style={{ fontSize: '0.8rem', color: '#888' }}>No items recorded</span>
       ) : (
         <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '0.8rem', color: '#444' }}>
           {items.map((item, idx) => (
@@ -45,7 +44,6 @@ function InvoicePopover({ invoice, position }) {
     </div>
   );
 }
-
 // 1. Status Badge & Editor Component
 function StatusBadge({ isEditing, status, editFormData, onStatusChange }) {
   const getStatusStyle = (val) => {
@@ -90,7 +88,6 @@ function StatusBadge({ isEditing, status, editFormData, onStatusChange }) {
     </span>
   );
 }
-
 // 2. Row Action Buttons Component
 function InvoiceActions({ isEditing, onEdit, onSave, onCancel, onDelete }) {
   if (isEditing) {
@@ -117,7 +114,6 @@ function InvoiceActions({ isEditing, onEdit, onSave, onCancel, onDelete }) {
     </div>
   );
 }
-
 // Line Item Input Row Component (Form Creation / Edit)
 function LineItemInputRow({ item, index, onChange, onRemove, canRemove }) {
   // Line 150: Calculate numeric total without .toFixed(2)
@@ -309,6 +305,7 @@ export default function Invoices({ token, baseUrl }) {
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({ po_number: '', status: 'PENDING'});
   
+  const [remarks, setRemarks] = useState('');
 
   // Helper to format numbers like 1965000 -> $1,965,000.00
   const formatCurrency = (value) => {
@@ -364,17 +361,14 @@ export default function Invoices({ token, baseUrl }) {
     updated[index][field] = value;
     setLineItems(updated);
   };
-
   const addLineItem = () => {
     setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0 }]);
   };
-
   const removeLineItem = (index) => {
     if (lineItems.length > 1) {
       setLineItems(lineItems.filter((_, i) => i !== index));
     }
   };
-
   const calculateTotal = () => {
     return lineItems.reduce((sum, item) => {
       const qty = parseFloat(item.quantity) || 0;
@@ -382,7 +376,6 @@ export default function Invoices({ token, baseUrl }) {
       return sum + qty * price;
     }, 0).toFixed(2);
   };
-
   // 3. Create Invoice Handler
   const handleCreateInvoice = async (e) => {
     e.preventDefault();
@@ -421,7 +414,6 @@ export default function Invoices({ token, baseUrl }) {
       console.error('Error saving invoice:', err);
     }
   };
-
   // 4. Inline Edit Handlers
   const handleStartEdit = (inv) => {
     setEditingId(inv.id);
@@ -430,7 +422,6 @@ export default function Invoices({ token, baseUrl }) {
       status: inv.status || 'PENDING',
     });
   };
-
   const handleSaveEdit = async (id) => {
     try {
       const response = await fetch(`${baseUrl}/invoices/${id}/`, {
@@ -456,7 +447,6 @@ export default function Invoices({ token, baseUrl }) {
       console.error('Error updating invoice:', err);
     }
   };
-
   // 5. Delete Invoice Handler
   const handleDeleteInvoice = async (id, invoiceNum) => {
     const confirmed = window.confirm(`Are you sure you want to delete Invoice "${invoiceNum}"?`);
@@ -479,26 +469,25 @@ export default function Invoices({ token, baseUrl }) {
       console.error('Error deleting invoice:', err);
     }
   };
-
   // 6. Change in Invoice Status
   const handleStatusChange = async (invoiceId, newStatus) => {
-  try {
-    // 1. Send update to Django API
-    const response = await fetch(`/api/invoices/${invoiceId}/`, {
-      method: 'PATCH', // or PUT
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: newStatus }),
-    });
+    try {
+      // 1. Send update to Django API
+      const response = await fetch(`/api/invoices/${invoiceId}/`, {
+        method: 'PATCH', // or PUT
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
 
-    if (!response.ok) throw new Error('Failed to update status');
+      if (!response.ok) throw new Error('Failed to update status');
 
-    // 2. Update local state on success
-    setInvoices(prev =>
-      prev.map(inv => (inv.id === invoiceId ? { ...inv, status: newStatus } : inv))
-    );
-  } catch (error) {
-    console.error('Error updating status:', error);
-  }
+      // 2. Update local state on success
+      setInvoices(prev =>
+        prev.map(inv => (inv.id === invoiceId ? { ...inv, status: newStatus } : inv))
+      );
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
   };
 
   return (
@@ -571,40 +560,57 @@ export default function Invoices({ token, baseUrl }) {
             </div>
           </div>
           <hr style={{ border: 'none', borderTop: '3px solid #b0b0b0', margin: '20px 0 15px 0', borderRadius: '2px' }} />         
-        <div 
-          style={{ 
-            display: 'flex', 
-            gap: '10px', 
-            alignItems: 'left', 
+        <div style={{ display: 'flex', 
+            gap: '10px', alignItems: 'left', 
             marginBottom: '8px', 
             fontWeight: 'bold', 
-            fontSize: '0.85rem', 
-            color: '#555' 
+            fontSize: '0.85rem', color: '#555' 
           }}
           >
-          
-          <span style={{ flex: 1, textAlign: 'center' }}>Description</span>
-          <span style={{ width: '60px', textAlign: 'left' }}>Qty</span>
-          <span style={{ width: '80px', textAlign: 'left' }}>Unit Price</span>
-          <span style={{ width: '80px', textAlign: 'right' }}>Total Amt </span>
+          <span style={{ flex: 1, textAlign: 'center', fontsize: '9px'}}>Description</span>
+          <span style={{ width: '60px', textAlign: 'left', fontsize: '9px'}}>Qty</span>
+          <span style={{ width: '80px', textAlign: 'left', fontsize: '9px'}}>Unit Price</span>
+          <span style={{ width: '80px', textAlign: 'right', fontsize: '8px'}}>Total Amt </span>
           </div>
           <hr style={{ border: 'none', borderTop: '3px solid #b0b0b0', margin: '20px 0 15px 0', borderRadius: '2px' }} />         
         
           {lineItems.map((item, idx) => (
-          <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center' }}>
-          <LineItemInputRow
-          key={idx}
-          item={item}
-          index={idx}
-          onChange={handleLineItemChange}
-          onRemove={removeLineItem}
-          canRemove={lineItems.length > 1}/>
-            </div>
+              <div key={idx} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center' }}>
+              <LineItemInputRow
+              key={idx}
+              item={item}
+              index={idx}
+              onChange={handleLineItemChange}
+              onRemove={removeLineItem}
+              canRemove={lineItems.length > 1}/>
+                </div>
           ))}
 
           <button type="button" onClick={addLineItem} style={{ marginBottom: '15px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer', borderRadius: '4px', border: '1px solid #ccc' }}>
             + Add Line Item
           </button>
+
+          {/* Remarks Section */}
+          <div style={{ margin: '15px 0' }}>
+            <label style={{ fontWeight: 'bold', fontSize: '12px', color: '#333', display: 'block', marginBottom: '5px', textAlign: 'left'}}>
+              Remarks
+            </label>
+            <textarea
+              rows={2}
+              value={remarks || ''}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder="Add any internal remarks or notes..."
+              style={{
+                width: '100%',
+                padding: '8px',
+                borderRadius: '4px',
+                border: '1px solid #ccc',
+                boxSizing: 'border-box',
+                fontSize: '14px',
+                fontFamily: 'inherit'
+              }}
+            />
+          </div>
 
           {/* ==================== 1. GRAND TOTAL DISPLAY ==================== */}
           <div style={{ textAlign: 'right', fontWeight: 'bold', fontSize: '16px', marginBottom: '15px' }}>
