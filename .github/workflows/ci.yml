@@ -1,6 +1,5 @@
 name: CI Checks
 
-# When should this workflow run?
 on:
   push:
     branches: [ main ]
@@ -18,7 +17,7 @@ jobs:
 
       # 2. Setup Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@1a4442cacd436585991a76fe714fa58850bd193c # v4.1.0
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
         with:
           node-version: '20'
           cache: 'npm'
