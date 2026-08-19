@@ -21,5 +21,4 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        uses: actions/cache@v4 # Optional caching helper if needed
         run: npm ci
