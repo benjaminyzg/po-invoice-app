@@ -87,14 +87,19 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             calculated_total = 0
 
             for item_data in items_data:
-                qty = item_data.pop('quantity', item_data.pop('qty', 1))
-                price = item_data.get('unit_price', 0)
+                qty = float(item_data.pop('quantity', item_data.pop('qty', 1)))
+                price = float(item_data.get('unit_price', item_data.get('unitPrice', 0)))
+                description = item_data.get('description', '')
+                currency = item_data.get('currency', 'SGD')
+
                 calculated_total += (qty * price)
 
                 PurchaseOrderItem.objects.create(
                     purchase_order=instance,
+                    description=description,
                     quantity=qty,
-                    **item_data
+                    unit_price=price,
+                    currency=currency
                 )
             
                 # Automatically update the parent total amount
@@ -108,11 +113,20 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         purchase_order = PurchaseOrder.objects.create(**validated_data)
         
         for item_data in items_data:
-            qty = item_data.pop('quantity', item_data.pop('qty', 1))
+            # Make sure these lines are indented under the 'for' loop
+            qty = item_data.get('quantity', item_data.get('qty', 1))
+            price = item_data.get('unit_price', item_data.get('unit_price', 0))
+            description = item_data.get('description', '')
+            currency = item_data.get('currency', 'SGD')
+            
+            calculated_total += (float(qty) * float(price))
+
             PurchaseOrderItem.objects.create(
-                purchase_order=purchase_order,
+                purchase_order=instance,
+                description=description,
                 quantity=qty,
-                **item_data
+                unit_price=price,
+                currency=currency
             )
 
         return purchase_order
