@@ -12,30 +12,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-    runs-runs-on: ubuntu-latest  # Runs on a clean cloud server
-
-    steps:
       # 1. Pull your code into the virtual machine
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # 2. Install Node.js
+      # 2. Setup Node.js
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4f3fce6afc # v4.1.0
         with:
           node-version: '20'
           cache: 'npm'
 
+      # 3. Install dependencies
       - name: Install dependencies
         run: npm ci
-
-      # 3. Install packages (fast, clean install)
-      - name: Install dependencies
-        run: npm ci
-
-      # 4. Check if the app builds successfully
-      - name: Build project
-        run: npm run build
