@@ -28,6 +28,7 @@ export default function PoTable({ purchaseOrders, handleEdit, handleCancel }) {
         <tbody>
           {purchaseOrders && purchaseOrders.map((po) => {
             const isExpanded = expandedPoIds.includes(po.id);
+            const items = po.items_detail || po.items || [];
             return (
               <React.Fragment key={po.id || po.po_number}>
                 <tr style={{ borderBottom: '1px solid #f1f3f5', transition: 'background-color 0.15s' }}>
@@ -90,7 +91,7 @@ export default function PoTable({ purchaseOrders, handleEdit, handleCancel }) {
                     <td colSpan="6" style={{ backgroundColor: '#fdfdfd', padding: '12px 24px', borderBottom: '1px solid #e9ecef' }}>
                       <div style={{ fontSize: '13px' }}>
                         <span style={{ fontWeight: '600', color: '#495057' }}>Line Items Detail</span>
-                        {po.items && po.items.length > 0 ? (
+                        {items.length > 0 ? (
                           <table style={{ width: '100%', marginTop: '8px', borderCollapse: 'collapse', fontSize: '12px' }}>
                             <thead>
                               <tr style={{ borderBottom: '1px solid #dee2e6', color: '#6c757d' }}>
@@ -101,7 +102,7 @@ export default function PoTable({ purchaseOrders, handleEdit, handleCancel }) {
                               </tr>
                             </thead>
                             <tbody>
-                              {po.items.map((item, idx) => {
+                              {items.map((item, idx) => {
                                 const qty = Number(item.qty || item.quantity || 1);
                                 const price = Number(item.unit_price || item.unitPrice || 0);
                                 const rowTotal = qty * price;
