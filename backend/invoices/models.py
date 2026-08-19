@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django.db import models
+from datetime import datetime
 from django.utils import timezone
 
 # 1. Catalog Item Model
@@ -50,17 +51,30 @@ class PurchaseOrder(models.Model):
     po_number = models.CharField(max_length=50, unique=True)
     vendor_name = models.CharField(max_length=255)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.PENDING,
-    )
+    cost_centre = models.CharField(max_length=100, blank=True, null=True)
+    remarks = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING,)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     supporting_document = models.FileField(upload_to='po_docs/', null=True, blank=True)
 
     def __str__(self):
         return f"{self.po_number} - {self.vendor_name} ({self.status})"
+
+    def save(self, *args, **kwargs):
+        if not self.po_number:
+            year = datetime.now().year
+            prefix = f"PO-{year}-"
+            last_po = PurchaseOrder.objects.filter(po_number__startswith=prefix).order_by('id').last()
+            
+            if last_po and last_po.po_number.rsplit('-', 1)[-1].isdigit():
+                last_seq = int(last_po.po_number.rsplit('-', 1)[-1])
+                seq = last_seq + 1
+            else:
+                seq = 1
+                
+            self.po_number = f"{prefix}{seq:04d}"
+        super().save(*args, **kwargs)
 
 # 4. Purchase Order Item Model
 class PurchaseOrderItem(models.Model):

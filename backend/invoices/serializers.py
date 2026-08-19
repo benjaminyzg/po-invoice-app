@@ -56,20 +56,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrder
         fields = [
-            'id', 
-            'po_number', 
-            'vendor_name', 
-            'total_amount', 
-            'status', 
-            'created_at', 
-            'updated_at', 
-            'items',
-            'items_detail',  # 1. Add 'items_detail' to the serializer fields
-            'supporting_document',  # 2. Add 'supporting_document' to the serializer fields
+            'id', 'po_number', 'vendor_name', 'cost_centre', 
+            'remarks', 'total_amount', 'status', 'created_at', 
+            'updated_at', 'items', 'items_detail', 'supporting_document'
         ]
-        extra_kwargs = {
-            'po_number': {'validators': []} # Disable default unique validator here and handle manually if needed, or let DRF scope it
-        }
+        read_only_fields = ['po_number']
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)

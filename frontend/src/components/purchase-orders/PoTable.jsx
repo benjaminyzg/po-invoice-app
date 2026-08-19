@@ -89,6 +89,8 @@ export default function PoTable({ purchaseOrders, handleEdit, handleCancel }) {
                 {isExpanded && (
                   <tr>
                     <td colSpan="6" style={{ backgroundColor: '#fdfdfd', padding: '12px 24px', borderBottom: '1px solid #e9ecef' }}>
+                      <p><strong>Cost Centre:</strong> {po.cost_centre || 'N/A'}</p>
+                      <p><strong>Remarks:</strong> {po.remarks || 'None'}</p>
                       <div style={{ fontSize: '13px' }}>
                         <span style={{ fontWeight: '600', color: '#495057' }}>Line Items Detail</span>
                         {items.length > 0 ? (

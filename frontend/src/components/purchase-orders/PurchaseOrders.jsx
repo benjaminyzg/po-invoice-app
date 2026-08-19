@@ -11,6 +11,8 @@ export default function PurchaseOrders({ token, baseUrl }) {
   
   const [poNumber, setPoNumber] = useState('');
   const [vendor, setVendor] = useState('');
+  const [costCentre, setCostCentre] = useState(''); // <-- Add this
+  const [remarks, setRemarks] = useState('');
   const [status, setStatus] = useState('PENDING');
   const [file, setFile] = useState(null);
   const [editingPoId, setEditingPoId] = useState(null);
@@ -19,6 +21,36 @@ export default function PurchaseOrders({ token, baseUrl }) {
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
   });
+
+  // Initial State Definition
+  const initialFormState = {
+    po_number: '',
+    vendor_name: '',
+    cost_centre: '',
+    remarks: '',
+    status: 'PENDING',
+    items: []
+  };
+
+  // When clicking "Edit" on an existing PO
+  const handleEdit = (po) => {
+    setEditingPoId(po.id);
+    setPoNumber(po.po_number);
+    setVendor(po.vendor_name);
+    setCostCentre(po.cost_centre || '');
+    setRemarks(po.remarks || '');
+    setStatus(po.status);
+    setFormData({
+      id: po.id,
+      po_number: po.po_number,
+      vendor_name: po.vendor_name,
+      cost_centre: po.cost_centre || '',
+      remarks: po.remarks || '',
+      status: po.status,
+      items: po.items_detail || po.items || []
+    });
+    setIsEditing(true);
+  };
 
   const fetchPOs = async () => {
     try {
@@ -46,6 +78,16 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
   const handleAddItem = () => {
     setItems([...items, { description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
+  };
+
+  const handleCancel = () => {
+    setEditingPoId(null);
+    setPoNumber('');
+    setVendor('');
+    setCostCentre(''); // <-- Add here
+    setRemarks('');    // <-- Add here
+    setStatus('PENDING');
+    setItems([]);
   };
 
   const handleRemoveItem = (index) => {
@@ -136,24 +178,51 @@ export default function PurchaseOrders({ token, baseUrl }) {
           {editingPoId ? 'Edit PO' : 'Create New PO'}
         </h4>
 
-        <PoHeaderDetails 
-          poNumber={poNumber} 
-          setPoNumber={setPoNumber} 
-          vendor={vendor} 
-          setVendor={setVendor} 
-          status={status} 
-          setStatus={setStatus} 
+        <PoHeaderDetails
+          poNumber={poNumber}
+          setPoNumber={setPoNumber}
+          vendor={vendor}
+          setVendor={setVendor}
+          costCentre={costCentre}
+          setCostCentre={setCostCentre}
+          remarks={remarks}
+          setRemarks={setRemarks}
+          status={status}
+          setStatus={setStatus}
         />
 
-        <hr style={{ border: '0', borderTop: '1px solid #eee', margin: '5px 0' }} />
-
-        <PoLineItems 
-          items={items} 
-          handleItemChange={handleItemChange} 
-          handleAddItem={handleAddItem} 
-          handleRemoveItem={handleRemoveItem} 
+        <hr style={{ border: '0', borderTop: '1px solid #eee', margin: '15px 0' }} />
+        {/* Line Items */}
+        <PoLineItems
+          items={items}
+          handleItemChange={handleItemChange}
+          handleAddItem={handleAddItem}
+          handleRemoveItem={handleRemoveItem}
         />
 
+        {/* Remarks Section */}
+        <div style={{ margin: '15px 0' }}>
+          <label style={{ fontWeight: 'bold', fontSize: '14px', color: '#333', display: 'block', marginBottom: '5px' }}>
+            Remarks
+          </label>
+          <textarea
+            rows={2}
+            value={remarks || ''}
+            onChange={(e) => setRemarks(e.target.value)}
+            placeholder="Add any internal remarks or notes..."
+            style={{
+              width: '100%',
+              padding: '8px',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+              boxSizing: 'border-box',
+              fontSize: '14px',
+              fontFamily: 'inherit'
+            }}
+          />
+        </div>
+
+        {/* Total Summary */}
         <PoSummary totalsByCurrency={totalsByCurrency} />
 
         <div style={{ marginTop: '12px', marginBottom: '12px', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
@@ -218,7 +287,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
           } else {
             setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
           }
-
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         handleCancel={(po) => {

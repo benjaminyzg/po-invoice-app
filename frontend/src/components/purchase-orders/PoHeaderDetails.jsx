@@ -1,46 +1,93 @@
-import React from 'react';
+export default function PoHeaderDetails({
+  poNumber,
+  vendor,
+  setVendor,
+  costCentre,
+  setCostCentre,
+  status,
+  setStatus
+}) {
+  const fieldStyle = {
+    width: '100%',
+    height: '38px',
+    padding: '6px 12px',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    boxSizing: 'border-box',
+    fontSize: '14px'
+  };
 
-export default function PoHeaderDetails({ poNumber, setPoNumber, vendor, setVendor, status, setStatus }) {
+  const labelStyle = {
+    display: 'block',
+    textAlign: 'center',
+    marginBottom: '5px',
+    fontWeight: 'bold',
+    fontSize: '14px',
+    color: '#333'
+  };
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-      <div>
-        <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
-          PO Number
-        </label>
-        <input
-          type="text"
-          placeholder="e.g. PO-2026-001"
-          value={poNumber}
-          onChange={(e) => setPoNumber(e.target.value)}
-        />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      {/* Row 1: PO Number, Vendor Name, Status */}
+      <div style={{ display: 'flex', gap: '15px' }}>
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>PO Number</label>
+          <input
+            type="text"
+            value={poNumber || ''}
+            placeholder="Auto-generated on save"
+            disabled
+            style={{
+              ...fieldStyle,
+              backgroundColor: '#f0f0f0',
+              cursor: 'not-allowed'
+            }}
+          />
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>Vendor Name</label>
+          <input
+            type="text"
+            value={vendor || ''}
+            onChange={(e) => setVendor(e.target.value)}
+            placeholder="Vendor Name"
+            style={fieldStyle}
+          />
+        </div>
+
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>Status</label>
+          <select
+            value={status || 'PENDING'}
+            onChange={(e) => setStatus(e.target.value)}
+            style={{
+              ...fieldStyle,
+              backgroundColor: '#fff'
+            }}
+          >
+            <option value="PENDING">Pending</option>
+            <option value="APPROVED">Approved</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="RECEIVED">Received</option>
+          </select>
+        </div>
       </div>
 
-      <div>
-        <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
-          Vendor Name
-        </label>
-        <input
-          type="text"
-          placeholder="Vendor Name"
-          value={vendor}
-          onChange={(e) => setVendor(e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px', textAlign: 'center' }}>
-          Status
-        </label>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ccc', width: '100%', backgroundColor: '#fff', boxSizing: 'border-box' }}
-        >
-          <option value="PENDING">Pending</option>
-          <option value="APPROVED">Fulfilled</option>
-          <option value="RECEIVED">Received</option>
-          <option value="CANCELLED">Cancelled</option>
-        </select>
+      {/* Row 2: Cost Centre */}
+      <div style={{ display: 'flex', gap: '15px' }}>
+        <div style={{ flex: 1 }}>
+          <label style={labelStyle}>Cost Centre</label>
+          <input
+            type="text"
+            value={costCentre || ''}
+            onChange={(e) => setCostCentre(e.target.value)}
+            placeholder="e.g. CC-1002"
+            style={fieldStyle}
+          />
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ flex: 1 }} />
       </div>
     </div>
   );
