@@ -10,7 +10,9 @@ export default function InvoiceHeaderDetails({
   poNumber,
   setPoNumber,
   status,
-  setStatus
+  setStatus,
+  creditTerm,     // <-- Add this
+  setCreditTerm   // <-- Add this
 }) {
   const fieldStyle = {
     width: '100%',
@@ -79,6 +81,21 @@ export default function InvoiceHeaderDetails({
           style={fieldStyle}
         />
       </div>
+
+      <div style={{ flex: 1 }}>
+        <label style={labelStyle}>Credit Terms</label>
+        <select
+          value={creditTerm || '30'}
+          onChange={(e) => setCreditTerm(e.target.value)}
+          style={fieldStyle}
+        >
+          <option value="CoD">Cash on Delivery (CoD)</option>
+          <option value="30">30 Days</option>
+          <option value="60">60 Days</option>
+          <option value="90">90 Days</option>
+        </select>
+      </div>
+
     </div>
   );
 }

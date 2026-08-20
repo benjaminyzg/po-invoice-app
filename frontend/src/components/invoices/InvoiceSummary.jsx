@@ -1,121 +1,50 @@
-import React from 'react';
-
 export default function InvoiceSummary({
-  items = [],
-  handleItemChange,
-  handleAddItem,
-  handleRemoveItem
+  remarks,
+  setRemarks,
+  grandTotal,
+  isEditing
 }) {
-  const inputStyle = {
-    width: '100%',
-    height: '38px',
-    padding: '6px 12px',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    boxSizing: 'border-box',
-    fontSize: '14px',
-    fontFamily: 'inherit'
-  };
-
-  const labelStyle = {
-    fontSize: '14px',
-    fontWeight: 'bold',
-    color: '#333',
-    fontFamily: 'inherit',
-    textAlign: 'center',
-    display: 'block'
-  };
-
   return (
-    <div style={{ marginBottom: '15px' }}>
-      <hr style={{ border: '0', borderTop: '1px solid #e2e8f0', margin: '0 0 12px 0' }} />
+    <div style={{ marginTop: '30px' }}>
+      {/* 1. Top Horizontal Line */}
+      <hr style={{ border: '0', borderTop: '1px solid #ccc', margin: '20px 0' }} />
 
-      {/* Grid Headers */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '3.5fr 0.8fr 1.2fr 1.3fr 32px',
-          gap: '8px',
-          marginBottom: '8px'
-        }}
-      >
+      {/* Grand Total Display */}
+      <div style={{ textAlign: 'right', fontSize: '15px', fontWeight: 'bold', marginBottom: '20px' }}>
+        Grand Total: ${grandTotal.toFixed(2)}
+      </div>
+      
+      {/* Remarks Field */}
+      <div style={{ marginBottom: '15px' }}>
+        <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px', fontSize: '15px', textAlign: 'left'}}>
+          Remarks / Notes:
+        </label>
+        <textarea
+          value={remarks}
+          onChange={(e) => setRemarks(e.target.value)}
+          placeholder="Enter any remarks or notes..."
+          rows="3"
+          style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '15px', fontFamily: 'inherit', boxSizing: 'border-box' }}
+        />
       </div>
 
-      {/* Line Item Rows */}
-      {items.map((item, index) => {
-        const lineTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
-
-        return (
-          <div
-            key={index}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '3.5fr 0.8fr 1.2fr 1.3fr 32px',
-              gap: '8px',
-              marginBottom: '8px',
-              alignItems: 'center'
-            }}
-          >
-            <input
-              type="text"
-              placeholder="Item Description"
-              value={item.description || ''}
-              onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-              required
-              style={inputStyle}
-            />
-
-            <input
-              type="number"
-              min="1"
-              value={item.qty || ''}
-              onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
-              required
-              style={{ ...inputStyle, textAlign: 'center' }}
-            />
-
-            <input
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={item.unitPrice || ''}
-              onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-              required
-              style={inputStyle}
-            />
-
-            <div
-              style={{
-                ...inputStyle,
-                backgroundColor: '#f8f9fa',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 'bold'
-              }}
-            >
-              ${lineTotal.toFixed(2)}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleRemoveItem(index)}
-              style={{
-                height: '38px',
-                width: '32px',
-                backgroundColor: '#e2e8f0',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                color: '#666'
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        );
-      })}
+      {/* Submit / Update Button */}
+      <div style={{ textAlign: 'center' }}>
+        <button
+          type="submit"
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#007bff',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '16px',
+            cursor: 'pointer'
+          }}
+        >
+          {isEditing ? 'Update Invoice' : 'Create Invoice'}
+        </button>
+      </div>
     </div>
   );
 }

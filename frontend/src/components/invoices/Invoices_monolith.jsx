@@ -13,8 +13,7 @@ export default function Invoices() {
   const [status, setStatus] = useState('PENDING');
   const [remarks, setRemarks] = useState('');
   const [items, setItems] = useState([{ description: '', qty: 1, unitPrice: 0 }]);
-  const [creditTerm, setCreditTerm] = useState('30'); // default value
-  
+
   // Records & Catalog State
   const [invoices, setInvoices] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);
@@ -51,25 +50,6 @@ export default function Invoices() {
       console.error('Error fetching catalog items:', error);
     }
   };
-  // Calculate Grand Total
-  const grandTotal = items.reduce(
-    (sum, item) => sum + (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0),
-    0
-  );
-  // Form Reset Helper
-  const resetForm = () => {
-    setInvoiceNumber('');
-    setVendor('');
-    setIssuedDate('');
-    setPoNumber('');
-    setStatus('PENDING');
-    setRemarks('');
-    setItems([{ description: '', qty: 1, unitPrice: 0 }]);
-    setSelectedCatalogId('');
-    setIsEditing(false);
-    setEditingId(null);
-  };
-
   // Line Item Handlers
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
@@ -78,6 +58,10 @@ export default function Invoices() {
   };
   const handleAddItem = () => {
     setItems([...items, { description: '', qty: 1, unitPrice: 0 }]);
+  };
+  const handleRemoveItem = (index) => {
+    if (items.length === 1) return; // Keep at least one row
+    setItems(items.filter((_, i) => i !== index));
   };
   // Quick Select Catalog Item Handler
   const handleCatalogSelect = (e) => {
@@ -97,44 +81,23 @@ export default function Invoices() {
       ]);
     }
   };
-  // Delete Handler
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this invoice?')) return;
-
-    try {
-      const response = await fetch(`http://localhost:8000/api/invoices/${id}/`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        fetchInvoices();
-      } else {
-        alert('Failed to delete invoice.');
-      }
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
-    }
-  };
-  // Edit Trigger Handler
-  const handleEdit = (inv) => {
-    setIsEditing(true);
-    setEditingId(inv.id);
-    setInvoiceNumber(inv.invoice_number || '');
-    setVendor(inv.vendor_name || '');
-    setIssuedDate(inv.issued_date || '');
-    setPoNumber(inv.po_number || '');
-    setStatus(inv.status || 'PENDING');
-    setRemarks(inv.remarks || '');
-    setItems(
-      inv.items && inv.items.length > 0
-        ? inv.items.map((i) => ({
-            description: i.description,
-            qty: i.qty,
-            unitPrice: i.unitPrice
-          }))
-        : [{ description: '', qty: 1, unitPrice: 0 }]
-    );
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Calculate Grand Total
+  const grandTotal = items.reduce(
+    (sum, item) => sum + (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0),
+    0
+  );
+  // Form Reset Helper
+  const resetForm = () => {
+    setInvoiceNumber('');
+    setVendor('');
+    setIssuedDate('');
+    setPoNumber('');
+    setStatus('PENDING');
+    setRemarks('');
+    setItems([{ description: '', qty: 1, unitPrice: 0 }]);
+    setSelectedCatalogId('');
+    setIsEditing(false);
+    setEditingId(null);
   };
   // Submit Handler (Create or Update)
   const handleSubmit = async (e) => {
@@ -144,15 +107,14 @@ export default function Invoices() {
       invoice_number: invoiceNumber,
       vendor_name: vendor,
       issued_date: issuedDate,
-      po_number: poNumber,
-      credit_terms: creditTerm,
-      status: status.toLowerCase(),
+      po_number: poNumber || null,
+      status: status,
       remarks: remarks,
       total_amount: grandTotal,
-      items: items.map(item => ({
+      items: items.map((item) => ({
         description: item.description,
-        qty: Number(item.qty) || 0,
-        unit_price: Number(item.unitPrice) || 0  // <-- Ensure this says unit_price: item.unitPrice
+        qty: parseInt(item.qty, 10) || 0,
+        unitPrice: parseFloat(item.unitPrice) || 0
       }))
     };
 
@@ -181,9 +143,44 @@ export default function Invoices() {
       alert('Network error while saving invoice.');
     }
   };
-  const handleRemoveItem = (index) => {
-    if (items.length === 1) return; // Keep at least one row
-    setItems(items.filter((_, i) => i !== index));
+  // Edit Trigger Handler
+  const handleEdit = (inv) => {
+    setIsEditing(true);
+    setEditingId(inv.id);
+    setInvoiceNumber(inv.invoice_number || '');
+    setVendor(inv.vendor_name || '');
+    setIssuedDate(inv.issued_date || '');
+    setPoNumber(inv.po_number || '');
+    setStatus(inv.status || 'PENDING');
+    setRemarks(inv.remarks || '');
+    setItems(
+      inv.items && inv.items.length > 0
+        ? inv.items.map((i) => ({
+            description: i.description,
+            qty: i.qty,
+            unitPrice: i.unitPrice
+          }))
+        : [{ description: '', qty: 1, unitPrice: 0 }]
+    );
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  // Delete Handler
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this invoice?')) return;
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/invoices/${id}/`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        fetchInvoices();
+      } else {
+        alert('Failed to delete invoice.');
+      }
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+    }
   };
   return (
     <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
@@ -216,7 +213,6 @@ export default function Invoices() {
           invoiceNumber={invoiceNumber}
           setInvoiceNumber={setInvoiceNumber}
           vendor={vendor}
-          setCreditTerm={setCreditTerm}
           setVendor={setVendor}
           issuedDate={issuedDate}
           setIssuedDate={setIssuedDate}
@@ -224,8 +220,6 @@ export default function Invoices() {
           setPoNumber={setPoNumber}
           status={status}
           setStatus={setStatus}
-          creditTerm={creditTerm}       // <-- Add this
-          setCreditTerm={setCreditTerm} // <-- Add this
         />
 
         {/* Line Items Sub-component */}
@@ -238,6 +232,7 @@ export default function Invoices() {
 
         {/* Summary & Remarks Sub-component */}
         <InvoiceSummary
+          handleAddItem={handleAddItem}
           remarks={remarks}
           setRemarks={setRemarks}
           grandTotal={grandTotal}
