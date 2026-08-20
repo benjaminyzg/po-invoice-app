@@ -18,7 +18,6 @@ export default function App() {
     localStorage.removeItem('token');
     setToken(''); // Reset React state to render Login component
   };
-
   // If no token exists, render the Login screen
   if (!token) {
     return <Login setToken={setToken} />;
@@ -55,10 +54,10 @@ export default function App() {
       <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #ddd' }} /> 
     </div>
   )}
-  {activeTab === 'catalog' && (
-    <CatalogItems token={token} baseUrl={BASE_URL} />
-  )}
-</main>
+    {activeTab === 'catalog' && (
+      <CatalogItems token={token} baseUrl={BASE_URL} />
+    )}
+  </main>
     </div>
   );
 }

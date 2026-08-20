@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import InvoiceHeaderDetails from './InvoiceHeaderDetails';
 import InvoiceLineItems from './InvoiceLineItems';
 import InvoiceSummary from './InvoiceSummary';
-import InvoiceTable from './InvoiceTable';
+import InvoiceRecordTable from './InvoiceRecordTable';
 
 export default function Invoices() {
   // Form State
@@ -182,7 +182,6 @@ export default function Invoices() {
       console.error('Error deleting invoice:', error);
     }
   };
-
   return (
     <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
     <h2 style={{ textAlign: 'center', color: '#333', marginBottom: '20px' }}>
@@ -242,12 +241,11 @@ export default function Invoices() {
       </form>
 
       {/* History Table Sub-component */}
-      <InvoiceTable
+      <InvoiceRecordTable
         invoices={invoices}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
       />
-
     </div>
   );
 }

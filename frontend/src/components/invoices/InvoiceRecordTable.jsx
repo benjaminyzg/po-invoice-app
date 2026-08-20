@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 
-export default function InvoiceTable({
-  invoices = [],
-  handleEdit,
-  handleDelete
-}) {
+export default function InvoiceRecordTable({
+    invoices = [],
+    handleEdit,
+    handleDelete
+  }){
   const [expandedRowId, setExpandedRowId] = useState(null);
 
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
-
   const getStatusStyle = (status) => {
     switch (status?.toUpperCase()) {
       case 'PAID':
@@ -25,7 +24,7 @@ export default function InvoiceTable({
 
   return (
     <div style={{ marginTop: '30px' }}>
-      <h3 style={{ textAlign: 'center', color: '#333', marginBottom: '15px' }}>
+      <h3 style={{ textAlign: 'center', color: '#333', marginBottom: '15px', fontSize: '15px', fontWeight: 'bold' }}>
         Invoice Records
       </h3>
 
