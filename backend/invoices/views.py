@@ -1,13 +1,9 @@
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 from .models import Invoice, CatalogItem, PurchaseOrder
-from .serializers import (
-    InvoiceSerializer,
-    CatalogItemSerializer,
-    PurchaseOrderSerializer,
-    PurchaseOrderStatusSerializer
-)
+from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrderSerializer, PurchaseOrderStatusSerializer)
 
 class CatalogItemViewSet(viewsets.ModelViewSet):
     queryset = CatalogItem.objects.all()
@@ -51,6 +47,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class InvoiceViewSet(viewsets.ModelViewSet):
-    queryset = Invoice.objects.all().order_by('-created_at')
+    queryset = Invoice.objects.all().order_by('-created_at').prefetch_related('items')
     serializer_class = InvoiceSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]

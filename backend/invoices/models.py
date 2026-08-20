@@ -26,6 +26,7 @@ class Invoice(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     created_at = models.DateTimeField(auto_now_add=True)
     issued_date = models.DateField(default=timezone.now)
+    remarks = models.TextField(blank=True, null=True)
 
     @property
     def total_amount(self):

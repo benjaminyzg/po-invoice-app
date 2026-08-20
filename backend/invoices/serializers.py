@@ -164,7 +164,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = ['id', 'invoice_number', 'vendor_name', 'po_number', 'status', 'total_amount', 'items', 'created_at']
+        fields = ['id', 'invoice_number', 'vendor_name', 'po_number', 'status', 'remarks', 'total_amount', 'items', 'created_at']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
