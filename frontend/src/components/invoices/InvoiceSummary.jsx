@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function InvoiceLineItems({
+export default function InvoiceSummary({
   items = [],
   handleItemChange,
   handleAddItem,
@@ -39,11 +39,6 @@ export default function InvoiceLineItems({
           marginBottom: '8px'
         }}
       >
-        <span style={labelStyle}>Description</span>
-        <span style={labelStyle}>Qty</span>
-        <span style={labelStyle}>Unit Price</span>
-        <span style={labelStyle}>Total Amt</span>
-        <span></span>
       </div>
 
       {/* Line Item Rows */}
@@ -121,23 +116,6 @@ export default function InvoiceLineItems({
           </div>
         );
       })}
-
-      <button
-        type="button"
-        onClick={handleAddItem}
-        style={{
-          marginTop: '8px',
-          padding: '6px 12px',
-          backgroundColor: '#6c757d',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontSize: '13px'
-        }}
-      >
-        + Add Line Item
-      </button>
     </div>
   );
 }
