@@ -163,18 +163,8 @@ function LineItemInputRow({ item, index, onChange, onRemove, canRemove }) {
     </>
   );
 }
-
 // Table Row Component
-function InvoiceRow({
-  inv,
-  isEditing,
-  editFormData,
-  setEditFormData,
-  handleStartEdit,
-  handleSaveEdit,
-  setEditingId,
-  handleDeleteInvoice,
-  }) {
+function InvoiceRow({inv,isEditing, editFormData, setEditFormData,handleStartEdit,handleSaveEdit, setEditingId,handleDeleteInvoice }){
   // Local hover & popover state inside each row
   const [isHovered, setIsHovered] = useState(false);
   const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
@@ -198,12 +188,10 @@ function InvoiceRow({
           <InvoicePopover invoice={inv} position={popoverPos} />
         )}
       </td>
-
       {/* 2. Vendor Name Cell */}
       <td style={{ padding: '10px' }}>
         {inv.vendor_name || inv.vendor}
       </td>
-
       {/* 3. PO Number Cell (Inline Editable) */}
       <td style={{ padding: '10px' }}>
         {isEditing ? (
@@ -217,13 +205,11 @@ function InvoiceRow({
           inv.po_number || 'N/A'
         )}
       </td>
-
       {/* 4. Amount ($) */}
       {/* ✅ Updated with formatCurrency */}
       <td style={{ fontWeight: 'bold', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
       {formatCurrency(inv.total_amount)}
       </td>
-
       {/* 5. Status Column */}
       <td style={{ padding: '10px', textAlign: 'center' }}>
         <StatusBadge
@@ -233,7 +219,6 @@ function InvoiceRow({
           onStatusChange={(newStatus) => setEditFormData({ ...editFormData, status: newStatus })}
         />
       </td>
-
       {/* 6. Action Buttons Column */}
       <td style={{ padding: '10px', textAlign: 'center' }}>
         <InvoiceActions
@@ -247,7 +232,6 @@ function InvoiceRow({
     </tr>
   );
 }
-
 // Place at the bottom of Invoices.jsx
 function DataTable({ title, headers, children }) {
   return (
@@ -279,7 +263,6 @@ function DataTable({ title, headers, children }) {
 }
 
 export default function Invoices({ token, baseUrl }) {
-
   const invoiceHeaders = [
     { label: 'Invoice #', align: 'left' },
     { label: 'Vendor', align: 'center' },  // Centralized
@@ -304,7 +287,6 @@ export default function Invoices({ token, baseUrl }) {
   // --- Inline Edit State ---
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({ po_number: '', status: 'PENDING'});
-  
   const [remarks, setRemarks] = useState('');
 
   // Helper to format numbers like 1965000 -> $1,965,000.00
@@ -317,7 +299,6 @@ export default function Invoices({ token, baseUrl }) {
       maximumFractionDigits: 2,
     }).format(amount);
   };
-
   // 1. Fetch Invoices and Predefined Catalog Items
   const fetchData = async () => {
     try {
@@ -333,11 +314,9 @@ export default function Invoices({ token, baseUrl }) {
       console.error('Error loading data:', err);
     }
   };
-
   useEffect(() => {
     fetchData();
   }, []);
-
   // 2. Pre-fill Line Item when selecting a Catalog Item
   const handleSelectCatalogItem = (e) => {
     const catId = e.target.value;
@@ -355,7 +334,6 @@ export default function Invoices({ token, baseUrl }) {
       ]);
     }
   };
-
   const handleLineItemChange = (index, field, value) => {
     const updated = [...lineItems];
     updated[index][field] = value;
@@ -491,7 +469,7 @@ export default function Invoices({ token, baseUrl }) {
   };
 
   return (
-    <div style={{ maxWidth: '850px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '900px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       
       {/* ==================== CREATE INVOICE FORM ==================== */}
       <div style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: '#fafafa', marginBottom: '30px' }}>

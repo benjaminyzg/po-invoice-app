@@ -47,7 +47,8 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class InvoiceViewSet(viewsets.ModelViewSet):
-    queryset = Invoice.objects.all().order_by('-created_at').prefetch_related('items')
+    # queryset = Invoice.objects.all().order_by('-created_at').prefetch_related('items')
+    queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
     # permission_classes = [permissions.IsAuthenticated]
     permission_classes = [AllowAny]

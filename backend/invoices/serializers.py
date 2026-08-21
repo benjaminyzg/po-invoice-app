@@ -1,39 +1,51 @@
 from rest_framework import serializers
 from .models import Invoice, InvoiceItem, CatalogItem, PurchaseOrder, PurchaseOrderItem
 
+# 1. Define InvoiceItemSerializer FIRST
 class InvoiceItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Invoice
-        fields = [
-            'id',
-            'invoice_number',
-            'vendor_name',
-            'status',
-            'total_amount',
-        ]
+    total_amount = serializers.ReadOnlyField()
 
+    class Meta:
+        model = InvoiceItem
+        fields = ['id', 'description', 'quantity', 'unit_price', 'total_amount']
+
+# 2. Define InvoiceSerializer SECOND (it can now reference InvoiceItemSerializer cleanly)
 class InvoiceSerializer(serializers.ModelSerializer):
-    items = InvoiceItemSerializer(many=True, required=False)
-    total_amount = serializers.ReadOnlyField()  # 👈 Reads @property from model
-
-    # Overrides total_amount to output as a formatted string
-    total_amount = serializers.SerializerMethodField()
+    items = InvoiceItemSerializer(many=True)
 
     class Meta:
         model = Invoice
-        fields = [
-            'id', 
-            'invoice_number', 
-            'vendor_name', 
-            'po_number', 
-            'issued_date',  # <-- Add this field
-            'status', 
-            'items', 
-        ]
+        fields = '__all__'
 
-    def get_total_amount(self, obj):
-        # Returns "2,200,000.00"
-        return f'{obj.total_amount:,.2f}'
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        invoice = Invoice.objects.create(**validated_data)
+        for item_data in items_data:
+            InvoiceItem.objects.create(invoice=invoice, **item_data)
+        return invoice
+
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', None)
+
+        # 1. Update invoice header fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # 2. Recreate line items first
+        if items_data is not None:
+            instance.items.all().delete()
+            for item_data in items_data:
+                InvoiceItem.objects.create(invoice=instance, **item_data)
+
+        # 3. Recalculate total_amount from items and save instance
+        # total = sum(
+        #     (item.quantity or 0) * (item.unit_price or 0) 
+        #    for item in instance.items.all()
+        # )
+        # instance.total_amount = total
+        
+        return instance
 
 # 1. Catalog Item Serializer
 class CatalogItemSerializer(serializers.ModelSerializer):
@@ -156,19 +168,3 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceItem
         fields = ['id', 'description', 'quantity', 'unit_price', 'total_price']
-
-# 6. Main Invoice Serializer (Nested Line Items)
-class InvoiceSerializer(serializers.ModelSerializer):
-    items = InvoiceItemSerializer(many=True)
-    total_amount = serializers.ReadOnlyField()
-
-    class Meta:
-        model = Invoice
-        fields = ['id', 'invoice_number', 'vendor_name', 'po_number', 'status', 'remarks', 'total_amount', 'items', 'created_at']
-
-    def create(self, validated_data):
-        items_data = validated_data.pop('items')
-        invoice = Invoice.objects.create(**validated_data)
-        for item_data in items_data:
-            InvoiceItem.objects.create(invoice=invoice, **item_data)
-        return invoice

@@ -11,9 +11,9 @@ export default function InvoiceLineItems({ items = [], handleItemChange, handleA
       {/* SINGLE Grid Headers Row */}
       <div style={{ display: 'grid', gridTemplateColumns: '3.5fr 0.8fr 1.2fr 1.3fr 32px', gap: '8px', marginBottom: '8px' }}>
         <span style={labelStyle}>Description</span>
-        <span style={labelStyle}>Qty</span>
-        <span style={labelStyle}>Unit Price</span>
-        <span style={labelStyle}>Total Amt</span>
+        <span style={labelStyle}>Quantity</span>
+        <span style={labelStyle}>Unit Price ($) </span>
+        <span style={labelStyle}>Total Amount ($) </span>
         <span></span>
       </div>
 
@@ -30,7 +30,6 @@ export default function InvoiceLineItems({ items = [], handleItemChange, handleA
           </div>
         );
       })}
-
       {/* SINGLE Add Item Button */}
       <button type="button" onClick={handleAddItem} style={{ marginTop: '8px', padding: '6px 12px', backgroundColor: '#6c757d', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
         + Add Line Item

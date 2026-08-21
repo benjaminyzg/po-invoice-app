@@ -1,16 +1,10 @@
 import React, { useState } from 'react';
 
-export default function InvoiceTable({
-  invoices = [],
-  handleEdit,
-  handleDelete
-}) {
+export default function InvoiceRecordTable({invoices = [],handleEdit, handleDelete }){
   const [expandedRowId, setExpandedRowId] = useState(null);
-
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
-
   const getStatusStyle = (status) => {
     switch (status?.toUpperCase()) {
       case 'PAID':
@@ -25,7 +19,7 @@ export default function InvoiceTable({
 
   return (
     <div style={{ marginTop: '30px' }}>
-      <h3 style={{ textAlign: 'center', color: '#333', marginBottom: '15px' }}>
+      <h3 style={{ textAlign: 'center', color: '#333', marginBottom: '15px', fontSize: '15px', fontWeight: 'bold' }}>
         Invoice Records
       </h3>
 
@@ -50,9 +44,19 @@ export default function InvoiceTable({
           ) : (
             invoices.map((inv) => {
               const isExpanded = expandedRowId === inv.id;
-              const formattedAmount = typeof inv.total_amount === 'number'
-                ? inv.total_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })
-                : parseFloat(inv.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+              // Lines 47-49 in InvoiceRecordTable.jsx
+              const rawTotal = (inv.total_amount && Number(inv.total_amount) > 0)
+                  ? Number(inv.total_amount)
+                  : (inv.items || []).reduce((sum, item) => {
+                      const qty = item.quantity ?? item.qty ?? 0;
+                      const price = item.unit_price ?? item.unitPrice ?? 0;
+                      return sum + (qty * price);
+                  }, 0);
+
+              const formattedAmount = rawTotal.toLocaleString('en-US', { 
+                  minimumFractionDigits: 2, 
+                  maximumFractionDigits: 2 
+              });
 
               return (
                 <React.Fragment key={inv.id}>
@@ -136,18 +140,25 @@ export default function InvoiceTable({
                             </tr>
                           </thead>
                           <tbody>
-                            {(inv.items || []).map((item, idx) => (
-                              <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                                <td style={{ padding: '6px' }}>{item.description}</td>
-                                <td style={{ padding: '6px', textAlign: 'center' }}>{item.qty}</td>
-                                <td style={{ padding: '6px', textAlign: 'right' }}>
-                                  ${parseFloat(item.unitPrice || 0).toFixed(2)}
-                                </td>
-                                <td style={{ padding: '6px', textAlign: 'right', fontWeight: 'bold' }}>
-                                  ${((parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0)).toFixed(2)}
-                                </td>
-                              </tr>
-                            ))}
+                            {(inv.items || []).map((item, idx) => {
+                                // Resolve values with fallback support
+                                const qty = item.quantity ?? item.qty ?? 0;
+                                const unitPrice = item.unit_price ?? item.unitPrice ?? 0;
+                                const total = item.total_amount ?? (qty * unitPrice);
+
+                                return (
+                                    <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                                        <td style={{ padding: '6px' }}>{item.description}</td>
+                                        <td style={{ padding: '6px', textAlign: 'center' }}>{qty}</td>
+                                        <td style={{ padding: '6px', textAlign: 'right' }}>
+                                            ${parseFloat(unitPrice).toFixed(2)}
+                                        </td>
+                                        <td style={{ padding: '6px', textAlign: 'right', fontWeight: 'bold' }}>
+                                            ${parseFloat(total).toFixed(2)}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                           </tbody>
                         </table>
                       </td>

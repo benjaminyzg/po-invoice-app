@@ -12,7 +12,7 @@ class CatalogItem(models.Model):
     def __str__(self):
         return f"{self.name} (${self.unit_price})"
 
-# 3. Invoice Header Model
+# 2. Invoice Header Model
 class Invoice(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -40,7 +40,7 @@ class Invoice(models.Model):
     def __str__(self):
         return f"Invoice {self.invoice_number} - {self.vendor_name}"
 
-# 2. Purchase Order Model
+# 3. Purchase Order Model
 class PurchaseOrder(models.Model):
     class Status(models.TextChoices):
         PENDING = 'PENDING', 'Pending'
@@ -92,7 +92,7 @@ class PurchaseOrderItem(models.Model):
     def __str__(self):
         return f"{self.description} ({self.quantity})"
 
-# 4. Invoice Line Items Model
+# 5. Invoice Line Items Model
 class InvoiceItem(models.Model):
     invoice = models.ForeignKey(
         Invoice, related_name='items', on_delete=models.CASCADE
