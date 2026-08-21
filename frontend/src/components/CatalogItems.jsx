@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CardContainer from './common/CardContainer';
+import Button from './common/Button';
 
 export default function CatalogItems({ token, baseUrl }) {
   const [items, setItems] = useState([]);
@@ -79,9 +80,9 @@ export default function CatalogItems({ token, baseUrl }) {
           required
           style={{ padding: '8px' }}
         />
-        <button type="submit" disabled={loading} style={{ padding: '10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+        <Button type="submit" variant="primary" disabled={loading}>
           {loading ? 'Saving...' : 'Add Catalog Item'}
-        </button>
+        </Button>
       </form>
 
       {/* Catalog Table */}
