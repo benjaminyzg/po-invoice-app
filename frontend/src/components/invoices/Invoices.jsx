@@ -139,7 +139,6 @@ export default function Invoices() {
   // Submit Handler (Create or Update)
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const payload = {
       invoice_number: invoiceNumber,
       vendor_name: vendor,
@@ -155,7 +154,6 @@ export default function Invoices() {
         unit_price: parseFloat(item.unitPrice || item.unit_price || 0) 
       }))
     };
-
     try {
       const url = isEditing
         ? `http://localhost:8000/api/invoices/${editingId}/`

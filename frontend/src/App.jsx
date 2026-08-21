@@ -39,7 +39,6 @@ export default function App() {
       </nav>
 
       {/* Tab Views */}
-      {/* Tab Views */}
       <main>
         {activeTab === 'invoices' && (
           <Invoices token={token} baseUrl={BASE_URL} />
@@ -50,9 +49,6 @@ export default function App() {
             {/* 1. Form component for creating new POs */}
             <PurchaseOrders token={token} baseUrl={BASE_URL} />
             <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #ddd' }} />
-
-            {/* 2. Expandable table component for viewing existing POs */}
-            <PurchaseOrderList token={token} baseUrl={BASE_URL} />
           </div>
         )}
 
