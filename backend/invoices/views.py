@@ -8,8 +8,8 @@ from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrd
 class CatalogItemViewSet(viewsets.ModelViewSet):
     queryset = CatalogItem.objects.all()
     serializer_class = CatalogItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
+    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
     # queryset = PurchaseOrder.objects.all().order_by('-created_at')
     # Prefetch related items to avoid N+1 queries

@@ -3,6 +3,7 @@ import CardContainer from './common/CardContainer';
 import Button from './common/Button';
 
 export default function CatalogItems({ token, baseUrl }) {
+  console.log('CatalogItems token:', token); // Should log your JWT string, not undefined
   const [items, setItems] = useState([]);
   const [formData, setFormData] = useState({ name: '', description: '', unit_price: '' });
   const [error, setError] = useState('');
@@ -14,7 +15,12 @@ export default function CatalogItems({ token, baseUrl }) {
   });
   const fetchCatalog = async () => {
     try {
-      const res = await fetch(`${baseUrl}/catalog-items/`, { headers: getHeaders() });
+      const res = await fetch(`${baseUrl}/catalog-items/`, { 
+        method: 'GET', // or 'POST'
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` // Ensure this header is included!
+      }});
       if (!res.ok) throw new Error('Failed to load catalog items.');
       const data = await res.json();
       setItems(data);
@@ -23,8 +29,25 @@ export default function CatalogItems({ token, baseUrl }) {
     }
   };
   useEffect(() => {
-    fetchCatalog();
-  }, []);
+    const fetchCatalogItems = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/catalog-items/`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // <-- Add this header
+          }
+        });
+        if (!res.ok) throw new Error('Failed to fetch catalog items.');
+        const data = await res.json();
+        setItems(data);
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    if (token) {
+      fetchCatalogItems();
+    }
+  },[baseUrl, token]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -87,7 +110,7 @@ export default function CatalogItems({ token, baseUrl }) {
 
       {/* Catalog Table */}
       <h4>Item List</h4>
-      <table border="1" cellPadding="8" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table border="1" cellPadding="8" style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #e5e7eb'}}>
         <thead>
           <tr style={{ background: '#f8f9fa' }}>
             <th>ID</th>

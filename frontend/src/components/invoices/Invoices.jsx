@@ -4,8 +4,9 @@ import InvoiceLineItems from './InvoiceLineItems';
 import InvoiceSummary from './InvoiceSummary';
 import InvoiceRecordTable from './InvoiceRecordTable';
 import CardContainer from '../common/CardContainer';
+import Button from '../common/Button';
 
-export default function Invoices() {
+export default function Invoices({ token, baseUrl }) {
   // Form State
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [vendor, setVendor] = useState('');
@@ -27,9 +28,11 @@ export default function Invoices() {
 
   // Fetch Invoices and Catalog Items on Mount
   useEffect(() => {
+  if (token) {
     fetchInvoices();
     fetchCatalogItems();
-  }, []);
+  }
+  }, [token, baseUrl]);
   const fetchInvoices = async () => {
     try {
       const response = await fetch('http://localhost:8000/api/invoices/');
@@ -42,14 +45,20 @@ export default function Invoices() {
     }
   };
   const fetchCatalogItems = async () => {
+    console.log("Token value being sent:", token);
     try {
-      const response = await fetch('http://localhost:8000/api/catalog-items/');
+      const response = await fetch(`${baseUrl}/catalog-items/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
       if (response.ok) {
         const data = await response.json();
         setCatalogItems(data);
       }
     } catch (error) {
-      console.error('Error fetching catalog items:', error);
+      console.error('Failed to fetch catalog items:', error);
     }
   };
   // Calculate Grand Total
