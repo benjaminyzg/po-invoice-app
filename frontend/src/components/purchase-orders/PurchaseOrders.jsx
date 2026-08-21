@@ -4,6 +4,17 @@ import PoLineItems from './PoLineItems';
 import PoSummary from './PoSummary';
 import PoTable from './PoTable';
 
+const commonInputStyle = {
+  width: '100%',
+  padding: '8px 12px',
+  fontSize: '14px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  outline: 'none',
+  boxSizing: 'border-box',
+  backgroundColor: '#ffffff',
+};
+
 export default function PurchaseOrders({ token, baseUrl }) {
   const [items, setItems] = useState([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   const [pos, setPos] = useState([]);
@@ -21,7 +32,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
   });
-
   // Initial State Definition
   const initialFormState = {
     po_number: '',
@@ -31,7 +41,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
     status: 'PENDING',
     items: []
   };
-
   // When clicking "Edit" on an existing PO
   const handleEdit = (po) => {
     setEditingPoId(po.id);
@@ -51,7 +60,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
     });
     setIsEditing(true);
   };
-
   const fetchPOs = async () => {
     try {
       //const cleanBaseUrl = baseUrl.replace(/\/+$/, '');
@@ -63,11 +71,9 @@ export default function PurchaseOrders({ token, baseUrl }) {
       setError(err.message);
     }
   };
-
   useEffect(() => {
     fetchPOs();
   }, []);
-
   const handleItemChange = (index, field, value) => {
     setItems((prevItems) => {
       const updated = [...prevItems];
@@ -75,11 +81,9 @@ export default function PurchaseOrders({ token, baseUrl }) {
       return updated;
     });
   };
-
   const handleAddItem = () => {
     setItems([...items, { description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
-
   const handleCancel = () => {
     setEditingPoId(null);
     setPoNumber('');
@@ -89,13 +93,11 @@ export default function PurchaseOrders({ token, baseUrl }) {
     setStatus('PENDING');
     setItems([]);
   };
-
   const handleRemoveItem = (index) => {
     if (items.length > 1) {
       setItems(items.filter((_, i) => i !== index));
     }
   };
-
   const handleResetForm = () => {
     setEditingPoId(null);
     setPoNumber('');
@@ -104,7 +106,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
     setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
     setFile(null);
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const url = editingPoId 
@@ -132,7 +133,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
       if (!response.ok) {
         throw new Error(editingPoId ? 'Failed to update purchase order' : 'Failed to create purchase order');
       }
-
       handleResetForm();
       fetchPOs();
       alert(editingPoId ? 'Purchase Order updated successfully!' : 'Purchase Order created successfully!');
@@ -141,7 +141,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
       alert(err.message);
     }
   };
-
   const handleStatusChange = async (poId, newStatus) => {
     try {
       const response = await fetch(`${baseUrl}/purchase-orders/${poId}/`, {
@@ -157,7 +156,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
       console.error('Error updating status:', err);
     }
   };
-
   const totalsByCurrency = items.reduce((acc, item) => {
     const lineTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.unitPrice) || 0);
     const curr = item.currency || 'SGD';

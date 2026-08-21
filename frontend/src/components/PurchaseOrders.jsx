@@ -422,10 +422,10 @@ export default function PurchaseOrders({ token, baseUrl }) {
           }}
         >
           <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Description</span>
-          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Qty</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Quantity</span>
           <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Unit Price ($)</span>
-          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Cur ($)</span>
-          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Total Amt ($)</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Currency</span>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#444', textAlign: 'center' }}>Total Amount ($)</span>
           <span></span>
         </div>
 
