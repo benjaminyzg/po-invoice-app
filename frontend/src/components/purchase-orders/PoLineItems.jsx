@@ -1,5 +1,15 @@
 import React from 'react';
 
+const commonInputStyle = {
+  width: '100%',
+  padding: '8px 12px',
+  fontSize: '14px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  outline: 'none',
+  boxSizing: 'border-box',
+  backgroundColor: '#ffffff',
+};
 export default function PoLineItems({
   items = [],
   handleItemChange,
@@ -28,10 +38,10 @@ export default function PoLineItems({
       {/* Grid Headers */}
       <div style={{ display: 'grid', gridTemplateColumns: '3.5fr 0.8fr 1.2fr 0.9fr 1.3fr 32px', gap: '8px', marginBottom: '6px' }}>
         <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#444', textAlign: 'center' }}>Description</span>
-        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#444', textAlign: 'center' }}>Qty</span>
+        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#444', textAlign: 'center' }}>Quantity</span>
         <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#444', textAlign: 'center' }}>Unit Price ($)</span>
-        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#444', textAlign: 'center' }}>Cur ($)</span>
-        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#444', textAlign: 'center' }}>Total Amt ($)</span>
+        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#444', textAlign: 'center' }}>Currency</span>
+        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#444', textAlign: 'center' }}>Total Amount ($)</span>
         <span></span>
       </div>
 
@@ -47,7 +57,7 @@ export default function PoLineItems({
               value={item.description || ''}
               onChange={(e) => handleItemChange(index, 'description', e.target.value)}
               required
-              style={inputStyle}
+              style={commonInputStyle}
             />
 
             <input
@@ -56,7 +66,7 @@ export default function PoLineItems({
               value={item.qty || ''}
               onChange={(e) => handleItemChange(index, 'qty', e.target.value)}
               required
-              style={{ ...inputStyle, textAlign: 'center' }}
+              style={commonInputStyle}
             />
 
             <input
@@ -76,7 +86,8 @@ export default function PoLineItems({
             >
               <option value="SGD">SGD</option>
               <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
+              <option value="MYR">MYR</option>
+              <option value="JPY">EUR</option>
             </select>
 
             <div style={{ ...inputStyle, backgroundColor: '#f8f9fa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>

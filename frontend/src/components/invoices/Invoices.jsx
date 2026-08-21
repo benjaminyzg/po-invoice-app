@@ -6,6 +6,17 @@ import InvoiceRecordTable from './InvoiceRecordTable';
 import CardContainer from '../common/CardContainer';
 import Button from '../common/Button';
 
+const commonInputStyle = {
+  width: '100%',
+  padding: '8px 12px',
+  fontSize: '14px',
+  borderRadius: '6px',
+  border: '1px solid #d1d5db',
+  outline: 'none',
+  boxSizing: 'border-box',
+  backgroundColor: '#ffffff',
+};
+
 export default function Invoices({ token, baseUrl }) {
   // Form State
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -28,10 +39,10 @@ export default function Invoices({ token, baseUrl }) {
 
   // Fetch Invoices and Catalog Items on Mount
   useEffect(() => {
-  if (token) {
-    fetchInvoices();
-    fetchCatalogItems();
-  }
+    if (token) {
+      fetchInvoices();
+      fetchCatalogItems();
+    }
   }, [token, baseUrl]);
   const fetchInvoices = async () => {
     try {
