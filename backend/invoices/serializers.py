@@ -1,17 +1,15 @@
 from rest_framework import serializers
 from .models import Invoice, InvoiceItem, CatalogItem, PurchaseOrder, PurchaseOrderItem
 
+# 1. Define InvoiceItemSerializer FIRST
 class InvoiceItemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Invoice
-        fields = [
-            'id',
-            'invoice_number',
-            'vendor_name',
-            'status',
-            'total_amount',
-        ]
+    total_amount = serializers.ReadOnlyField()
 
+    class Meta:
+        model = InvoiceItem
+        fields = ['id', 'description', 'quantity', 'unit_price', 'total_amount']
+
+# 2. Define InvoiceSerializer SECOND (it can now reference InvoiceItemSerializer cleanly)
 class InvoiceSerializer(serializers.ModelSerializer):
     items = InvoiceItemSerializer(many=True)
 
@@ -19,16 +17,20 @@ class InvoiceSerializer(serializers.ModelSerializer):
         model = Invoice
         fields = '__all__'
 
+    def create(self, validated_data):
+        items_data = validated_data.pop('items', [])
+        invoice = Invoice.objects.create(**validated_data)
+        for item_data in items_data:
+            InvoiceItem.objects.create(invoice=invoice, **item_data)
+        return invoice
+
     def update(self, instance, validated_data):
-        # 1. Extract the nested items data
         items_data = validated_data.pop('items', None)
 
-        # 2. Update the main invoice fields dynamically
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        # 3. Handle the nested items (clear old line items and create the updated ones)
         if items_data is not None:
             instance.items.all().delete()
             for item_data in items_data:
@@ -157,19 +159,3 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceItem
         fields = ['id', 'description', 'quantity', 'unit_price', 'total_price']
-
-# 6. Main Invoice Serializer (Nested Line Items)
-class InvoiceSerializer(serializers.ModelSerializer):
-    items = InvoiceItemSerializer(many=True)
-    total_amount = serializers.ReadOnlyField()
-
-    class Meta:
-        model = Invoice
-        fields = ['id', 'invoice_number', 'vendor_name', 'po_number', 'status', 'remarks', 'total_amount', 'items', 'created_at']
-
-    def create(self, validated_data):
-        items_data = validated_data.pop('items')
-        invoice = Invoice.objects.create(**validated_data)
-        for item_data in items_data:
-            InvoiceItem.objects.create(invoice=invoice, **item_data)
-        return invoice
