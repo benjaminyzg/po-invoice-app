@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-  
+import CardContainer from './common/CardContainer';
+
 export default function PurchaseOrders({ token, baseUrl }) {
-  // Multi-line items state
+    // Multi-line items state
   const [items, setItems] = useState([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   const [pos, setPos] = useState([]);
   const [formData, setFormData] = useState({po_number: '', vendor_name: '', total_amount: '', status: 'PENDING'});
@@ -199,9 +200,10 @@ export default function PurchaseOrders({ token, baseUrl }) {
     setStatus('PENDING');
     setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
-  // console.log("Current pos state:", pos)
+  
   return (
-    <div style={{ padding: '10px 0' }}>
+    <CardContainer title="Purchase Orders (PO)" subtitle="Create New PO">
+      <div style={{ padding: '10px 0' }}>
       <h3 style={{ textAlign: 'center' }}>📦 Purchase Orders (PO)</h3>
       {error && <div style={{ color: 'red', marginBottom: '10px', textAlign: 'center' }}>{error}</div>}
 
@@ -331,9 +333,9 @@ export default function PurchaseOrders({ token, baseUrl }) {
         }}
       />
     </div>
-  )
-}
-
+    </CardContainer>
+  );
+}  
   /* 1. Header Details */
   function PoHeaderDetails({ poNumber, setPoNumber, vendor, setVendor, status, setStatus }) {
     return (

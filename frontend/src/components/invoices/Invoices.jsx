@@ -3,6 +3,7 @@ import InvoiceHeaderDetails from './InvoiceHeaderDetails';
 import InvoiceLineItems from './InvoiceLineItems';
 import InvoiceSummary from './InvoiceSummary';
 import InvoiceRecordTable from './InvoiceRecordTable';
+import CardContainer from '../common/CardContainer';
 
 export default function Invoices() {
   // Form State
@@ -69,7 +70,6 @@ export default function Invoices() {
     setIsEditing(false);
     setEditingId(null);
   };
-
   // Line Item Handlers
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
@@ -185,56 +185,58 @@ export default function Invoices() {
     if (items.length === 1) return; // Keep at least one row
     setItems(items.filter((_, i) => i !== index));
   };
+  
   return (
-    <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-    <h2 style={{ textAlign: 'center', color: '#333', marginBottom: '20px' }}>
-      {isEditing ? 'Edit Invoice' : 'Create New Invoice'}
-    </h2>
+    <div>
+      <CardContainer title="Invoices" subtitle="Create New Invoice">
+        <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+        <h2 style={{ textAlign: 'center', color: '#333', marginBottom: '20px' }}>
+          {isEditing ? 'Edit Invoice' : 'Create New Invoice'}
+        </h2>
+        </div>
+        {/* Quick Select Catalog Item */}
+        <div style={{ marginBottom: '20px' }}>
+          <label style={{ display: 'block', fontWeight: 'bold', fontSize: '14px', marginBottom: '6px', color: '#444' }}>
+            Quick Select Catalog Item:
+          </label>
+          <select
+            value={selectedCatalogId}
+            onChange={handleCatalogSelect}
+            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px' }}
+          >
+            <option value="">-- Select Predefined Catalog Item --</option>
+            {catalogItems.map((ci) => (
+              <option key={ci.id} value={ci.id}>
+                {ci.description} (${ci.unit_price})
+              </option>
+            ))}
+          </select>
+        </div>
+        <form onSubmit={handleSubmit}>
+          {/* Header Details Sub-component */}
+          <InvoiceHeaderDetails
+            invoiceNumber={invoiceNumber}
+            setInvoiceNumber={setInvoiceNumber}
+            vendor={vendor}
+            setCreditTerm={setCreditTerm}
+            setVendor={setVendor}
+            issuedDate={issuedDate}
+            setIssuedDate={setIssuedDate}
+            poNumber={poNumber}
+            setPoNumber={setPoNumber}
+            status={status}
+            setStatus={setStatus}
+            creditTerm={creditTerm}       // <-- Add this
+            setCreditTerm={setCreditTerm} // <-- Add this
+          />
 
-      {/* Quick Select Catalog Item */}
-      <div style={{ marginBottom: '20px' }}>
-        <label style={{ display: 'block', fontWeight: 'bold', fontSize: '14px', marginBottom: '6px', color: '#444' }}>
-          Quick Select Catalog Item:
-        </label>
-        <select
-          value={selectedCatalogId}
-          onChange={handleCatalogSelect}
-          style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc', fontSize: '14px' }}
-        >
-          <option value="">-- Select Predefined Catalog Item --</option>
-          {catalogItems.map((ci) => (
-            <option key={ci.id} value={ci.id}>
-              {ci.description} (${ci.unit_price})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        {/* Header Details Sub-component */}
-        <InvoiceHeaderDetails
-          invoiceNumber={invoiceNumber}
-          setInvoiceNumber={setInvoiceNumber}
-          vendor={vendor}
-          setCreditTerm={setCreditTerm}
-          setVendor={setVendor}
-          issuedDate={issuedDate}
-          setIssuedDate={setIssuedDate}
-          poNumber={poNumber}
-          setPoNumber={setPoNumber}
-          status={status}
-          setStatus={setStatus}
-          creditTerm={creditTerm}       // <-- Add this
-          setCreditTerm={setCreditTerm} // <-- Add this
-        />
-
-        {/* Line Items Sub-component */}
-        <InvoiceLineItems
-          items={items}
-          handleItemChange={handleItemChange}
-          handleAddItem={handleAddItem}
-          handleRemoveItem={handleRemoveItem}
-        />
+          {/* Line Items Sub-component */}
+          <InvoiceLineItems
+            items={items}
+            handleItemChange={handleItemChange}
+            handleAddItem={handleAddItem}
+            handleRemoveItem={handleRemoveItem}
+          />
 
         {/* Summary & Remarks Sub-component */}
         <InvoiceSummary
@@ -243,14 +245,15 @@ export default function Invoices() {
           grandTotal={grandTotal}
           isEditing={isEditing}
         />
-      </form>
+        </form>
+      </CardContainer>
 
-      {/* History Table Sub-component */}
+      {/* Keep InvoiceRecordTable below the container */}
       <InvoiceRecordTable
         invoices={invoices}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
       />
     </div>
-  );
+  )
 }

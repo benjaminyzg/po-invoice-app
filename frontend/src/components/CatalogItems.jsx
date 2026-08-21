@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import CardContainer from './common/CardContainer';
 
 export default function CatalogItems({ token, baseUrl }) {
   const [items, setItems] = useState([]);
@@ -10,7 +11,6 @@ export default function CatalogItems({ token, baseUrl }) {
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
   });
-
   const fetchCatalog = async () => {
     try {
       const res = await fetch(`${baseUrl}/catalog-items/`, { headers: getHeaders() });
@@ -21,11 +21,9 @@ export default function CatalogItems({ token, baseUrl }) {
       setError(err.message);
     }
   };
-
   useEffect(() => {
     fetchCatalog();
   }, []);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -48,14 +46,14 @@ export default function CatalogItems({ token, baseUrl }) {
       setLoading(false);
     }
   };
-
   return (
-    <div style={{ padding: '10px 0' }}>
-      <h3>🏷️ Catalog Management</h3>
+    <CardContainer title="Catalog Management" subtitle="Add Predefined Item">
+      <div style={{ padding: '10px 0' }}>
+      {/* <h3>🏷️ Catalog Management</h3> */}
       {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
 
       {/* Add Catalog Item Form */}
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '10px', maxWidth: '400px', marginBottom: '25px' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '10px', Width: '100%', marginBottom: '25px' }}>
         <h4>Add Predefined Item</h4>
         <input
           type="text"
@@ -113,5 +111,6 @@ export default function CatalogItems({ token, baseUrl }) {
         </tbody>
       </table>
     </div>
+    </CardContainer>
   );
 }
