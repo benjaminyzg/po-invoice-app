@@ -232,7 +232,6 @@ function InvoiceRow({inv,isEditing, editFormData, setEditFormData,handleStartEdi
     </tr>
   );
 }
-
 // Place at the bottom of Invoices.jsx
 function DataTable({ title, headers, children }) {
   return (
@@ -264,7 +263,6 @@ function DataTable({ title, headers, children }) {
 }
 
 export default function Invoices({ token, baseUrl }) {
-
   const invoiceHeaders = [
     { label: 'Invoice #', align: 'left' },
     { label: 'Vendor', align: 'center' },  // Centralized
@@ -471,7 +469,7 @@ export default function Invoices({ token, baseUrl }) {
   };
 
   return (
-    <div style={{ maxWidth: '850px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '900px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       
       {/* ==================== CREATE INVOICE FORM ==================== */}
       <div style={{ padding: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', backgroundColor: '#fafafa', marginBottom: '30px' }}>

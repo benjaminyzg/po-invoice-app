@@ -200,9 +200,8 @@ export default function PurchaseOrders({ token, baseUrl }) {
     setStatus('PENDING');
     setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
-  
   return (
-    <CardContainer title="Purchase Orders (PO)" subtitle="Create New PO">
+    <CardContainer title="Purchase Orders (PO)" subtitle="Create New PO" maxWidth="100%">
       <div style={{ padding: '10px 0' }}>
       <h3 style={{ textAlign: 'center' }}>📦 Purchase Orders (PO)</h3>
       {error && <div style={{ color: 'red', marginBottom: '10px', textAlign: 'center' }}>{error}</div>}

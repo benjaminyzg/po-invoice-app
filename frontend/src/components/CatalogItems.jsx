@@ -47,7 +47,7 @@ export default function CatalogItems({ token, baseUrl }) {
     }
   };
   return (
-    <CardContainer title="Catalog Management" subtitle="Add Predefined Item">
+    <CardContainer title="Catalog Management" subtitle="Add Predefined Item" maxWidth="100%">
       <div style={{ padding: '10px 0' }}>
       {/* <h3>🏷️ Catalog Management</h3> */}
       {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}

@@ -185,10 +185,9 @@ export default function Invoices() {
     if (items.length === 1) return; // Keep at least one row
     setItems(items.filter((_, i) => i !== index));
   };
-  
   return (
     <div>
-      <CardContainer title="Invoices" subtitle="Create New Invoice">
+      <CardContainer title="Invoices" subtitle="Create New Invoice" maxWidth="100%">
         <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
         <h2 style={{ textAlign: 'center', color: '#333', marginBottom: '20px' }}>
           {isEditing ? 'Edit Invoice' : 'Create New Invoice'}
@@ -249,6 +248,7 @@ export default function Invoices() {
       </CardContainer>
 
       {/* Keep InvoiceRecordTable below the container */}
+      <div style={{ maxWidth: '900px', margin: '24px auto' }}></div>
       <InvoiceRecordTable
         invoices={invoices}
         handleEdit={handleEdit}

@@ -24,7 +24,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
+    <div style={{ width: '100%', maxWidth: '1000px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
       {/* Navigation Tabs */}
       <nav style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
         <button onClick={() => setActiveTab('invoices')} style={{ padding: '8px 16px', fontWeight: activeTab === 'invoices' ? 'bold' : 'normal' }}>
@@ -39,25 +39,27 @@ export default function App() {
       </nav>
 
       {/* Tab Views */}
+      {/* Tab Views */}
       <main>
-      {/* {activeTab === 'invoices' && <Invoices />} */}
-      {activeTab === 'invoices' && <Invoices token={token} baseUrl={BASE_URL} />}
-      {/* {activeTab === 'invoices' && (<Invoices token={token} baseUrl={BASE_URL} />)} */}
-      {activeTab === 'purchaseOrders' && (<div className="purchase-orders-tab-container">
-      
-      {/* 1. Form component for creating new POs */}
-      <PurchaseOrders token={token} baseUrl="http://localhost:8000/api" />      
-      <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #ddd' }} />
+        {activeTab === 'invoices' && (
+          <Invoices token={token} baseUrl={BASE_URL} />
+        )}
 
-      {/* 2. Expandable table component for viewing existing POs */}
-      <PurchaseOrderList token={token} baseUrl={BASE_URL} /> 
-      <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #ddd' }} /> 
-    </div>
-  )}
-    {activeTab === 'catalog' && (
-      <CatalogItems token={token} baseUrl={BASE_URL} />
-    )}
-  </main>
+        {activeTab === 'purchaseOrders' && (
+          <div>
+            {/* 1. Form component for creating new POs */}
+            <PurchaseOrders token={token} baseUrl={BASE_URL} />
+            <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #ddd' }} />
+
+            {/* 2. Expandable table component for viewing existing POs */}
+            <PurchaseOrderList token={token} baseUrl={BASE_URL} />
+          </div>
+        )}
+
+        {activeTab === 'catalog' && (
+          <CatalogItems token={token} baseUrl={BASE_URL} />
+        )}
+      </main>
     </div>
   );
 }
