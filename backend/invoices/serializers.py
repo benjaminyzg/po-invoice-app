@@ -27,15 +27,24 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)
 
+        # 1. Update invoice header fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
+        # 2. Recreate line items first
         if items_data is not None:
             instance.items.all().delete()
             for item_data in items_data:
                 InvoiceItem.objects.create(invoice=instance, **item_data)
 
+        # 3. Recalculate total_amount from items and save instance
+        # total = sum(
+        #     (item.quantity or 0) * (item.unit_price or 0) 
+        #    for item in instance.items.all()
+        # )
+        # instance.total_amount = total
+        
         return instance
 
 # 1. Catalog Item Serializer

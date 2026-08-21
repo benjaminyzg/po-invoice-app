@@ -144,15 +144,15 @@ export default function Invoices() {
       invoice_number: invoiceNumber,
       vendor_name: vendor,
       issued_date: issuedDate,
-      po_number: poNumber,
+      po_number: poNumber  || null,
       credit_terms: creditTerm,
       status: status.toLowerCase(),
       remarks: remarks,
       total_amount: grandTotal,
       items: items.map(item => ({
         description: item.description,
-        qty: Number(item.qty) || 0,
-        unit_price: Number(item.unitPrice) || 0  // <-- Ensure this says unit_price: item.unitPrice
+        quantity: parseInt(item.qty || item.quantity || 0, 10),
+        unit_price: parseFloat(item.unitPrice || item.unit_price || 0) 
       }))
     };
 
