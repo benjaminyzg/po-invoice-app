@@ -1,16 +1,18 @@
 import React from 'react';
 
-export default function CardContainer({ title, subtitle, children, maxWidth = '850px' }) {
+export default function CardContainer({ title, subtitle, children, maxWidth = '100%' }) {
   return (
     <div style={{
-      maxWidth: maxWidth,
-      margin: '24px auto',
-      backgroundColor: '#ffffff',
-      borderRadius: '8px',
-      border: '1px solid #e5e7eb',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-      overflow: 'hidden'
-    }}>
+        width: '100%',
+        maxWidth: maxWidth,
+        margin: '0 auto 24px auto',
+        backgroundColor: '#ffffff',
+        borderRadius: '8px',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        overflow: 'hidden',
+      }}
+    >
       {title && (
         <div style={{
           borderBottom: '1px solid #f3f4f6',
