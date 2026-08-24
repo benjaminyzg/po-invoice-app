@@ -6,7 +6,7 @@ import InvoiceRecordTable from './InvoiceRecordTable';
 import CardContainer from '../common/CardContainer';
 import Button from '../common/Button';
 import ExportPdfButton from '../common/ExportPdfButton';
-
+import InvoicePdfTemplate from './InvoicePdfTemplate';
 
 const commonInputStyle = {
   width: '100%',
@@ -38,14 +38,29 @@ export default function Invoices({ token, baseUrl }) {
   // Edit Mode State
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [companySettings, setCompanySettings] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState(null); // Or active selected invoice item
 
   // Fetch Invoices and Catalog Items on Mount
   useEffect(() => {
-    if (token) {
-      fetchInvoices();
-      fetchCatalogItems();
-    }
-  }, [token, baseUrl]);
+    if (!token) return;
+
+    // Fetch Invoices from Backend
+    fetch(`${baseUrl}/invoices/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch invoices');
+        return res.json();
+      })
+      .then((data) => {
+        // Handles both unpaginated lists [...] and paginated objects { results: [...] }
+        const invoiceList = Array.isArray(data) ? data : (data.results || []);
+        setInvoices(invoiceList);
+      })
+      .catch((err) => console.error('Error fetching invoices:', err));
+  },[token, baseUrl]);
+
   const fetchInvoices = async () => {
     try {
       const response = await fetch('http://localhost:8000/api/invoices/');
@@ -57,6 +72,7 @@ export default function Invoices({ token, baseUrl }) {
       console.error('Error fetching invoices:', error);
     }
   };
+  
   const fetchCatalogItems = async () => {
     console.log("Token value being sent:", token);
     try {
@@ -201,10 +217,47 @@ export default function Invoices({ token, baseUrl }) {
       alert('Network error while saving invoice.');
     }
   };
+  // Fallback to form draft if no saved invoice is selected
+  const activeInvoiceData = selectedInvoice || {
+    invoice_number: invoiceNumber,
+    vendor: vendor,
+    issued_date: issuedDate,
+    po_number: poNumber,
+    items: items,
+    remarks: remarks
+  };
   const handleRemoveItem = (index) => {
     if (items.length === 1) return; // Keep at least one row
     setItems(items.filter((_, i) => i !== index));
   };
+
+  const handleSelectInvoice = async (inv) => {
+    // If line items are already present, set directly
+    if (inv.items && inv.items.length > 0) {
+      setSelectedInvoice(inv);
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll up to the PDF preview
+      return;
+    }
+
+    // Otherwise, fetch full invoice details (including line items) from Django API
+    try {
+      const res = await fetch(`${baseUrl}/invoices/${inv.id}/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const fullInvoice = await res.json();
+        setSelectedInvoice(fullInvoice);
+      } else {
+        setSelectedInvoice(inv);
+      }
+    } catch (err) {
+      console.error('Error fetching invoice details:', err);
+      setSelectedInvoice(inv);
+    }
+    // Smooth scroll up to view the preview
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div>
       <CardContainer title="Invoices" subtitle="Create New Invoice" maxWidth="100%">
@@ -213,6 +266,36 @@ export default function Invoices({ token, baseUrl }) {
           {isEditing ? 'Edit Invoice' : 'Create New Invoice'}
         </h2>
         </div>
+        
+        {/* Top Action Bar & Dynamic Title */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '16px', color: '#111827' }}>
+              📄 {selectedInvoice ? `Viewing Saved Record: ${selectedInvoice.invoice_number}` : 'Live Invoice Draft Preview'}
+            </h3>
+            {selectedInvoice && (
+              <button 
+                onClick={() => setSelectedInvoice(null)}
+                style={{ fontSize: '12px', color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: '4px' }}
+              >
+                ← Switch back to Live Form Draft
+              </button>
+            )}
+          </div>
+
+          <ExportPdfButton 
+            elementId="printable-invoice" 
+            fileName={`Invoice_${activeInvoiceData.invoice_number || 'Draft'}.pdf`} 
+          />
+        </div>
+
+        {/* Printable Invoice Container */}
+        <InvoicePdfTemplate 
+          invoice={activeInvoiceData} 
+          companySettings={companySettings} 
+          elementId="printable-invoice" 
+        />
+      
         {/* Quick Select Catalog Item */}
         <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontWeight: 'bold', fontSize: '14px', marginBottom: '6px', color: '#444' }}>
@@ -273,6 +356,7 @@ export default function Invoices({ token, baseUrl }) {
         invoices={invoices}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
+        onSelectInvoice={handleSelectInvoice}
       />
     </div>
   )

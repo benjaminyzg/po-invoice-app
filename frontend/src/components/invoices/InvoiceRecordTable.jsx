@@ -114,6 +114,12 @@ export default function InvoiceRecordTable({invoices = [],handleEdit, handleDele
                       >
                         Delete
                       </button>
+                      <button 
+                        onClick={() => setSelectedInvoice(inv)} 
+                        style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer' }}
+                      >
+                        📄 View / Export
+                      </button>
                     </td>
                   </tr>
 
