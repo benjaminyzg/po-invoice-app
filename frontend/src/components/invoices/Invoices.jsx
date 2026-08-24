@@ -237,23 +237,23 @@ export default function Invoices({ token, baseUrl }) {
       setSelectedInvoice(inv);
       window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll up to the PDF preview
       return;
-    }
+        }
 
-    // Otherwise, fetch full invoice details (including line items) from Django API
-    try {
-      const res = await fetch(`${baseUrl}/invoices/${inv.id}/`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const fullInvoice = await res.json();
-        setSelectedInvoice(fullInvoice);
-      } else {
-        setSelectedInvoice(inv);
-      }
-    } catch (err) {
-      console.error('Error fetching invoice details:', err);
-      setSelectedInvoice(inv);
-    }
+        // Otherwise, fetch full invoice details (including line items) from Django API
+        try {
+          const res = await fetch(`${baseUrl}/invoices/${inv.id}/`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const fullInvoice = await res.json();
+            setSelectedInvoice(fullInvoice);
+          } else {
+            setSelectedInvoice(inv);
+          }
+        } catch (err) {
+          console.error('Error fetching invoice details:', err);
+          setSelectedInvoice(inv);
+        }
     // Smooth scroll up to view the preview
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 
-export default function InvoiceRecordTable({invoices = [],handleEdit, handleDelete }){
-  const [expandedRowId, setExpandedRowId] = useState(null);
+export default function InvoiceRecordTable({invoices = [], handleEdit, handleDelete, onSelectInvoice }) {  const [expandedRowId, setExpandedRowId] = useState(null);
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
@@ -16,13 +15,11 @@ export default function InvoiceRecordTable({invoices = [],handleEdit, handleDele
         return { backgroundColor: '#fff3cd', color: '#856404' }; // PENDING
     }
   };
-
   return (
     <div style={{ marginTop: '30px' }}>
       <h3 style={{ textAlign: 'center', color: '#333', marginBottom: '15px', fontSize: '15px', fontWeight: 'bold' }}>
         Invoice Records
       </h3>
-
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
         <thead>
           <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
@@ -114,12 +111,26 @@ export default function InvoiceRecordTable({invoices = [],handleEdit, handleDele
                       >
                         Delete
                       </button>
-                      <button 
-                        onClick={() => setSelectedInvoice(inv)} 
-                        style={{ padding: '4px 8px', fontSize: '12px', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer' }}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevents expanding/collapsing the row when exporting
+                          if (onSelectInvoice) onSelectInvoice(inv);
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '12px',
+                          borderRadius: '4px',
+                          border: '1px solid #2563eb',
+                          backgroundColor: '#eff6ff',
+                          color: '#2563eb',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          marginRight: '6px'
+                        }}
                       >
-                        📄 View / Export
-                      </button>
+                      📄 View / Export
+                    </button>
                     </td>
                   </tr>
 

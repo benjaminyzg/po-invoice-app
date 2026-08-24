@@ -160,7 +160,7 @@ export default function Settings({ token, baseUrl }) {
             </div>
             <div>
               <label style={labelStyle}>Website</label>
-              <input type="url" name="website" value={formData.website || ''} onChange={handleChange} style={commonInputStyle} placeholder="https://company.com" />
+              <input type="url" name="website" value={formData.website || ''} onChange={handleChange} style={commonInputStyle} placeholder="https://www.company.com" />
             </div>
           </div>
         </div>
