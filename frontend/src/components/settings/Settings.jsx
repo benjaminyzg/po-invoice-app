@@ -51,16 +51,16 @@ export default function Settings({ token, baseUrl }) {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    const token = localStorage.getItem('token'); // or retrieve from AuthContext / props
+
     fetch(`${baseUrl}/company-settings/1/`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
     })
       .then((res) => {
-        if (res.status === 404) {
-          return null; // Return null so the form stays empty without throwing
-        }
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         return res.json();
       })
       .then((data) => {
@@ -70,7 +70,7 @@ export default function Settings({ token, baseUrl }) {
         }
       })
       .catch((err) => console.error('Error fetching settings:', err));
-  }, [token, baseUrl]);
+  }, [baseUrl]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -84,34 +84,41 @@ export default function Settings({ token, baseUrl }) {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const data = new FormData();
-    Object.keys(formData).forEach((key) => {
-      if (formData[key] !== null && formData[key] !== undefined) {
-        data.append(key, formData[key]);
-      }
-    });
-    if (logoFile) {
-      data.append('logo', logoFile);
-    }
+  e.preventDefault();
+  const data = new FormData();
 
-    try {
-      const response = await fetch(`${baseUrl}/company-settings/1/`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
-        body: data
-      });
-      if (response.ok) {
-        setMessage('Company settings saved successfully!');
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage('Failed to save settings.');
-      }
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      setMessage('An error occurred.');
+  Object.keys(formData).forEach((key) => {
+    if (key !== 'logo' && formData[key] !== null && formData[key] !== undefined) {
+      data.append(key, formData[key]);
     }
-  };
+  });
+
+  if (logoFile) {
+    data.append('logo', logoFile);
+  }
+
+  try {
+    // ⚠️ Target ID '1' and use PATCH instead of POST
+    const response = await fetch(`${baseUrl}/company-settings/1/`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: data
+    });
+
+    if (response.ok) {
+      const updatedData = await response.json();
+      setFormData(updatedData);
+      setMessage('Company settings saved successfully!');
+    } else {
+      setMessage('Failed to save settings.');
+    }
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    setMessage('An error occurred.');
+  }
+};
 
   return (
     <CardContainer title="Company Settings & Branding">

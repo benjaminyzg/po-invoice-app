@@ -1,3 +1,4 @@
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -8,12 +9,21 @@ from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrd
 class CompanySettingsViewSet(viewsets.ModelViewSet):
     queryset = CompanySettings.objects.all()
     serializer_class = CompanySettingsSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_object(self):
-        # Always return or create the single instance (pk=1)
         obj, _ = CompanySettings.objects.get_or_create(pk=1)
         return obj
+
+    def create(self, request, *args, **kwargs):
+        # Redirect POST requests to update the existing pk=1 instance
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class CatalogItemViewSet(viewsets.ModelViewSet):
     queryset = CatalogItem.objects.all()
