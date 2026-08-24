@@ -54,7 +54,15 @@ export default function Settings({ token, baseUrl }) {
     fetch(`${baseUrl}/company-settings/1/`, {
       headers: { Authorization: `Bearer ${token}` }
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 404) {
+          return null; // Return null so the form stays empty without throwing
+        }
+        if (!res.ok) {
+          throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         if (data) {
           setFormData(data);
