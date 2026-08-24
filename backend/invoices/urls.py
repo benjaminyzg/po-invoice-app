@@ -9,6 +9,7 @@ from django.conf.urls.static import static
 router = DefaultRouter()
 router.register(r'invoices', InvoiceViewSet, basename='invoice')
 router.register(r'catalog-items', CatalogItemViewSet, basename='catalogitem')
+router.register(r'company-settings', CompanySettingsViewSet, basename='company-settings')
 
 urlpatterns = router.urls
 

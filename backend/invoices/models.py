@@ -3,6 +3,33 @@ from django.db import models
 from datetime import datetime
 from django.utils import timezone
 
+class CompanySettings(models.Model):
+    # Company Profile
+    company_name = models.CharField(max_length=255, default="My Company Pte Ltd")
+    tax_registration_no = models.CharField(max_length=50, blank=True, null=True, help_text="UEN / GST Registration Number")
+    logo = models.ImageField(upload_to="company_logos/", blank=True, null=True)
+
+    # Contact Details
+    registered_address = models.TextField(blank=True, null=True)
+    phone = models.CharField(max_length=50, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    website = models.URLField(blank=True, null=True)
+
+    # Banking & Payment Details
+    bank_name = models.CharField(max_length=100, blank=True, null=True)
+    account_name = models.CharField(max_length=100, blank=True, null=True)
+    account_number = models.CharField(max_length=50, blank=True, null=True)
+    swift_code = models.CharField(max_length=20, blank=True, null=True)
+    paynow_uen = models.CharField(max_length=50, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        # Enforce single instance rule (Singleton pattern)
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.company_name
+
 # 1. Catalog Item Model
 class CatalogItem(models.Model):
     name = models.CharField(max_length=255)

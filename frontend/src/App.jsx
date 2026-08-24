@@ -5,6 +5,7 @@ import Invoices from './components/invoices/Invoices';
 import PurchaseOrders from './components/purchase-orders/PurchaseOrders';
 import PurchaseOrderList from './components/PurchaseOrderList';
 import CatalogItems from './components/CatalogItems';
+import Settings from './components/settings/Settings';
 import './App.css'; 
 
 const BASE_URL = 'http://127.0.0.1:8000/api';
@@ -36,6 +37,9 @@ export default function App() {
         <button onClick={() => setActiveTab('catalog')} style={{ padding: '8px 16px', fontWeight: activeTab === 'catalog' ? 'bold' : 'normal' }}>
           🏷️ Catalog Items
         </button>
+        <button onClick={() => setActiveTab('settings')} style={{ padding: '8px 16px', fontWeight: activeTab === 'settings' ? 'bold' : 'normal' }}>
+          ⚙️ Company Settings
+        </button>
       </nav>
 
       {/* Tab Views */}
@@ -54,6 +58,10 @@ export default function App() {
 
         {activeTab === 'catalog' && (
           <CatalogItems token={token} baseUrl={BASE_URL} />
+        )}
+
+        {activeTab === 'settings' && (
+          <Settings token={token} baseUrl={BASE_URL} />
         )}
       </main>
     </div>

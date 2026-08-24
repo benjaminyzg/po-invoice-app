@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from .models import Invoice, InvoiceItem, CatalogItem, PurchaseOrder, PurchaseOrderItem
+from .models import Invoice, InvoiceItem, CatalogItem, PurchaseOrder, PurchaseOrderItem, CompanySettings
+
+class CompanySettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanySettings
+        fields = '__all__'
 
 # 1. Define InvoiceItemSerializer FIRST
 class InvoiceItemSerializer(serializers.ModelSerializer):
