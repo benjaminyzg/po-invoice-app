@@ -85,6 +85,7 @@ export default function Settings({ token, baseUrl }) {
 
   const handleSubmit = async (e) => {
   e.preventDefault();
+  const token = localStorage.getItem('token');
   const data = new FormData();
 
   Object.keys(formData).forEach((key) => {
@@ -118,7 +119,7 @@ export default function Settings({ token, baseUrl }) {
     console.error('Error saving settings:', error);
     setMessage('An error occurred.');
   }
-};
+  };
 
   return (
     <CardContainer title="Company Settings & Branding">
@@ -127,7 +128,6 @@ export default function Settings({ token, baseUrl }) {
           {message}
         </div>
       )}
-
       <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
         {/* Section 1: Profile & Logo */}
         <div style={{ marginBottom: '28px' }}>

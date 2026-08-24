@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FormField from './common/FormField';
 import { formatCurrency, calculateGrandTotal, formatDate } from '../utils/formatters';
+import InvoicePdfTemplate from './PdfTemplate';
 
 // Isolated Popover Preview Component
 // Safe, Isolated Popover Preview Component

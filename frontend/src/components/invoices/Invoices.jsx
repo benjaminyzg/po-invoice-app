@@ -6,7 +6,7 @@ import InvoiceRecordTable from './InvoiceRecordTable';
 import CardContainer from '../common/CardContainer';
 import Button from '../common/Button';
 import ExportPdfButton from '../common/ExportPdfButton';
-import InvoicePdfTemplate from './InvoicePdfTemplate';
+import { InvoicePdfTemplate } from '../PdfTemplate.jsx';
 
 const commonInputStyle = {
   width: '100%',
@@ -41,37 +41,51 @@ export default function Invoices({ token, baseUrl }) {
   const [companySettings, setCompanySettings] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null); // Or active selected invoice item
 
-  // Fetch Invoices and Catalog Items on Mount
-  useEffect(() => {
-    if (!token) return;
-
-    // Fetch Invoices from Backend
-    fetch(`${baseUrl}/invoices/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch invoices');
-        return res.json();
-      })
-      .then((data) => {
-        // Handles both unpaginated lists [...] and paginated objects { results: [...] }
-        const invoiceList = Array.isArray(data) ? data : (data.results || []);
-        setInvoices(invoiceList);
-      })
-      .catch((err) => console.error('Error fetching invoices:', err));
-  },[token, baseUrl]);
-
-  const fetchInvoices = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/api/invoices/');
-      if (response.ok) {
-        const data = await response.json();
-        setInvoices(data);
-      }
-    } catch (error) {
-      console.error('Error fetching invoices:', error);
+  // 1. Define fetchCompanySettings
+const fetchCompanySettings = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${baseUrl}/company-settings/1/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setCompanySettings(data);
     }
-  };
+  } catch (err) {
+    console.error('Failed to load company settings:', err);
+  }
+};
+
+// 2. Define fetchInvoices
+const fetchInvoices = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${baseUrl}/invoices/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const records = Array.isArray(data) ? data : data.results || [];
+      setInvoices(records);
+    }
+  } catch (err) {
+    console.error('Error loading invoices:', err);
+  }
+};
+
+// 3. Call both functions inside useEffect on mount
+useEffect(() => {
+  fetchCompanySettings();
+  fetchInvoices();
+}, []);
   
   const fetchCatalogItems = async () => {
     console.log("Token value being sent:", token);
@@ -261,6 +275,14 @@ export default function Invoices({ token, baseUrl }) {
   return (
     <div>
       <CardContainer title="Invoices" subtitle="Create New Invoice" maxWidth="100%">
+        {/* Hidden print template wrapper */}
+      <div className="hidden print:block">
+        <InvoicePdfTemplate 
+          invoice={selectedInvoice} 
+          companySettings={companySettings} 
+        />
+      </div>
+        
         <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
         <h2 style={{ textAlign: 'center', color: '#333', marginBottom: '20px' }}>
           {isEditing ? 'Edit Invoice' : 'Create New Invoice'}
@@ -291,7 +313,8 @@ export default function Invoices({ token, baseUrl }) {
 
         {/* Printable Invoice Container */}
         <InvoicePdfTemplate 
-          invoice={activeInvoiceData} 
+          invoice={activeInvoiceData}
+          invoice={selectedInvoice} 
           companySettings={companySettings} 
           elementId="printable-invoice" 
         />
