@@ -72,6 +72,12 @@ export default function Settings({ token, baseUrl }) {
       .catch((err) => console.error('Error fetching settings:', err));
   }, [baseUrl]);
 
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setLogoFile(e.target.files[0]);
+    }
+  };
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -84,41 +90,30 @@ export default function Settings({ token, baseUrl }) {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  const token = localStorage.getItem('token');
-  const data = new FormData();
+    e.preventDefault();
+    
+    const formData = new FormData();
+    formData.append('company_name', companyData.company_name);
+    // Add other text fields...
 
-  Object.keys(formData).forEach((key) => {
-    if (key !== 'logo' && formData[key] !== null && formData[key] !== undefined) {
-      data.append(key, formData[key]);
+    // Only append logo if a new file was selected
+    if (logoFile) {
+      formData.append('logo', logoFile);
     }
-  });
 
-  if (logoFile) {
-    data.append('logo', logoFile);
-  }
-
-  try {
-    // ⚠️ Target ID '1' and use PATCH instead of POST
-    const response = await fetch(`${baseUrl}/company-settings/1/`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: data
-    });
-
-    if (response.ok) {
-      const updatedData = await response.json();
-      setFormData(updatedData);
-      setMessage('Company settings saved successfully!');
-    } else {
-      setMessage('Failed to save settings.');
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/company-settings/1/', {
+        method: 'PATCH', // or POST if creating
+        headers: {
+          'Authorization': `Bearer ${token}`, // Do NOT set Content-Type header manually; fetch/axios will set the multipart boundary automatically
+        },
+        body: formData,
+      });
+      const updatedSettings = await response.json();
+      setCompanyData(updatedSettings);
+    } catch (error) {
+      console.error('Error saving settings:', error);
     }
-  } catch (error) {
-    console.error('Error saving settings:', error);
-    setMessage('An error occurred.');
-  }
   };
 
   return (
