@@ -8,6 +8,7 @@ import Button from '../common/Button';
 import ExportPdfButton from '../common/ExportPdfButton';
 import { InvoicePdfTemplate } from '../PdfTemplate.jsx';
 import { InvoicePreview } from './InvoicePreview';
+import axios from 'axios';
 
 const commonInputStyle = {
   width: '100%',
@@ -42,51 +43,68 @@ export default function Invoices({ token, baseUrl }) {
   const [companySettings, setCompanySettings] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null); // Or active selected invoice item
   const [lastDeleted, setLastDeleted] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
 
   // 1. Define fetchCompanySettings
-const fetchCompanySettings = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${baseUrl}/company-settings/1/`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setCompanySettings(data);
+  const fetchCompanySettings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${baseUrl}/company-settings/1/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCompanySettings(data);
+      }
+    } catch (err) {
+      console.error('Failed to load company settings:', err);
     }
-  } catch (err) {
-    console.error('Failed to load company settings:', err);
-  }
-};
-// 2. Define fetchInvoices
-const fetchInvoices = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    const res = await fetch(`${baseUrl}/invoices/`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-      },
-    });
+  };
+  // 2. Define fetchInvoices
+  const fetchInvoices = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${baseUrl}/invoices/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      const records = Array.isArray(data) ? data : data.results || [];
-      setInvoices(records);
+      if (res.ok) {
+        const data = await res.json();
+        const records = Array.isArray(data) ? data : data.results || [];
+        setInvoices(records);
+      }
+    } catch (err) {
+      console.error('Error loading invoices:', err);
     }
-  } catch (err) {
-    console.error('Error loading invoices:', err);
-  }
-};
-// 3. Call both functions inside useEffect on mount
-useEffect(() => {
-  fetchCompanySettings();
-  fetchInvoices();
-}, []);
-  
+  };
+  // 3. Call both functions inside useEffect on mount
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      try {
+        const res = await axios.get(`${baseUrl}/invoices/`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        setInvoices(res.data);
+      } catch (err) {
+        console.error('Fetch error:', err);
+      }
+    };
+
+    fetchInvoices();
+  }, [token, baseUrl]);
+    
+  // Filter invoices before passing them to InvoiceRecordTable
+  const filteredInvoices = invoices.filter((inv) => {
+    if (statusFilter === 'all') return true;
+    return inv.status === statusFilter;
+  });
+
   const fetchCatalogItems = async () => {
     console.log("Token value being sent:", token);
     try {
@@ -453,7 +471,7 @@ useEffect(() => {
       {/* Keep InvoiceRecordTable below the container */}
       <div style={{ maxWidth: '900px', margin: '24px auto' }}></div>
       <InvoiceRecordTable
-        invoices={invoices}
+        invoices={filteredInvoices}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
         handleMarkAsPaid={handleMarkAsPaid}  

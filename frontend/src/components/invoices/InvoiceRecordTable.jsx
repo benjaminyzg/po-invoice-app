@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 
 export default function InvoiceRecordTable({invoices = [], handleEdit, handleDelete, handleMarkAsPaid, handleCancelInvoice, onSelectInvoice }) {  const [expandedRowId, setExpandedRowId] = useState(null);
+  console.log('INVOICES RECEIVED BY TABLE:', invoices); // <-- Add this line
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const displayedInvoices = invoices.filter((inv) => {
+  if (statusFilter === 'all') return true;
+  return inv.status?.toLowerCase() === statusFilter.toLowerCase();
+});
+
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
@@ -20,6 +28,31 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
       <h3 style={{ textAlign: 'center', color: '#333', marginBottom: '15px', fontSize: '15px', fontWeight: 'bold' }}>
         Invoice Records
       </h3>
+      
+      
+      {/* Status Filter Tabs */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '15px' }}>
+        {['all', 'pending', 'paid', 'cancelled'].map((status) => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            style={{
+              padding: '4px 12px',
+              fontSize: '12px',
+              fontWeight: '600',
+              borderRadius: '4px',
+              border: 'none',
+              cursor: 'pointer',
+              textTransform: 'capitalize',
+              backgroundColor: statusFilter === status ? '#2563eb' : '#e5e7eb',
+              color: statusFilter === status ? '#ffffff' : '#374151'
+            }}
+          >
+            {status}
+          </button>
+        ))}
+      </div>
+
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
         <thead>
           <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
@@ -32,14 +65,14 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
           </tr>
         </thead>
         <tbody>
-          {invoices.length === 0 ? (
+          {displayedInvoices.length === 0 ? (
             <tr>
               <td colSpan="6" style={{ padding: '15px', textAlign: 'center', color: '#777' }}>
                 No invoice records found.
               </td>
             </tr>
           ) : (
-            invoices.map((inv) => {
+            displayedInvoices.map((inv) => {
               const isExpanded = expandedRowId === inv.id;
               // Lines 47-49 in InvoiceRecordTable.jsx
               const rawTotal = (inv.total_amount && Number(inv.total_amount) > 0)
@@ -133,7 +166,6 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                     </button>
                     </td>
                   </tr>
-
                           {/* Mark Paid Button */}
                           {inv.status !== 'paid' && inv.status !== 'cancelled' && (
                             <button
