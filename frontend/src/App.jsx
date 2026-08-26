@@ -14,6 +14,7 @@ export default function App() {
   // Read initial token state directly from localStorage
   const [token, setToken] = useState(() => localStorage.getItem('token') || '');
   const [activeTab, setActiveTab] = useState('invoices');
+  
 
   const handleLogout = () => {
     localStorage.removeItem('token');

@@ -3,7 +3,6 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
-from rest_framework import status
 from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings
 from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrderSerializer, PurchaseOrderStatusSerializer, CompanySettingsSerializer)
 
@@ -57,6 +56,7 @@ class CatalogItemViewSet(viewsets.ModelViewSet):
     serializer_class = CatalogItemSerializer
     # permission_classes = [permissions.IsAuthenticated]
     permission_classes = [permissions.AllowAny]
+
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
     # queryset = PurchaseOrder.objects.all().order_by('-created_at')
     # Prefetch related items to avoid N+1 queries
@@ -99,3 +99,38 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     serializer_class = InvoiceSerializer
     # permission_classes = [permissions.IsAuthenticated]
     permission_classes = [AllowAny]
+
+    # PATCH /api/invoices/{id}/mark_paid/
+    @action(detail=True, methods=['patch'], url_path='mark-paid')
+    def mark_paid(self, request, pk=None):
+        invoice = self.get_object()
+        invoice.status = 'paid'
+        invoice.save()
+        serializer = self.get_serializer(invoice)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # PATCH /api/invoices/{id}/cancel/
+    @action(detail=True, methods=['patch'], url_path='cancel')
+    def cancel_invoice(self, request, pk=None):
+        invoice = self.get_object()
+        invoice.status = 'cancelled'
+        invoice.save()
+        serializer = self.get_serializer(invoice)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def get_queryset(self):
+        return Invoice.objects.filter(is_deleted=False).order_by('-created_at')
+
+    # Soft delete instead of removing from DB
+    def perform_destroy(self, instance):
+        instance.is_deleted = True
+        instance.save()
+
+    # Endpoint to recall/restore a soft-deleted invoice
+    @action(detail=True, methods=['patch'], url_path='restore')
+    def restore(self, request, pk=None):
+        invoice = Invoice.objects.get(pk=pk, is_deleted=True)
+        invoice.is_deleted = False
+        invoice.save()
+        serializer = self.get_serializer(invoice)
+        return Response(serializer.data)

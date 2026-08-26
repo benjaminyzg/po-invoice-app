@@ -7,6 +7,7 @@ import CardContainer from '../common/CardContainer';
 import Button from '../common/Button';
 import ExportPdfButton from '../common/ExportPdfButton';
 import { InvoicePdfTemplate } from '../PdfTemplate.jsx';
+import { InvoicePreview } from './InvoicePreview';
 
 const commonInputStyle = {
   width: '100%',
@@ -59,7 +60,6 @@ const fetchCompanySettings = async () => {
     console.error('Failed to load company settings:', err);
   }
 };
-
 // 2. Define fetchInvoices
 const fetchInvoices = async () => {
   try {
@@ -80,7 +80,6 @@ const fetchInvoices = async () => {
     console.error('Error loading invoices:', err);
   }
 };
-
 // 3. Call both functions inside useEffect on mount
 useEffect(() => {
   fetchCompanySettings();
@@ -272,6 +271,68 @@ useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleMarkAsPaid = async (invoiceId) => {
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/invoices/${invoiceId}/mark-paid/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`, // Include if using auth tokens
+      },
+    });
+
+    if (response.ok) {
+      const updatedInvoice = await response.json();
+      // Update state locally so the table re-renders instantly
+      setInvoices((prev) =>
+        prev.map((inv) => (inv.id === invoiceId ? updatedInvoice : inv))
+      );
+    }
+  } catch (error) {
+    console.error('Error marking invoice as paid:', error);
+  }
+  };
+
+  const handleCancelInvoice = async (invoiceId) => {
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/invoices/${invoiceId}/cancel/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      const updatedInvoice = await response.json();
+      setInvoices((prev) =>
+        prev.map((inv) => (inv.id === invoiceId ? updatedInvoice : inv))
+      );
+    }
+  } catch (error) {
+    console.error('Error cancelling invoice:', error);
+  }
+  };
+
+  const handleDeleteInvoice = async (invoiceId) => {
+  if (!window.confirm('Are you sure you want to delete this invoice?')) return;
+
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/invoices/${invoiceId}/`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      // Remove deleted item from state
+      setInvoices((prev) => prev.filter((inv) => inv.id !== invoiceId));
+    }
+  } catch (error) {
+    console.error('Error deleting invoice:', error);
+  }
+  };
   return (
     <div>
       <CardContainer title="Invoices" subtitle="Create New Invoice" maxWidth="100%">
@@ -338,30 +399,31 @@ useEffect(() => {
           </select>
         </div>
         <form onSubmit={handleSubmit}>
-          {/* Header Details Sub-component */}
-          <InvoiceHeaderDetails
-            invoiceNumber={invoiceNumber}
-            setInvoiceNumber={setInvoiceNumber}
-            vendor={vendor}
-            setCreditTerm={setCreditTerm}
-            setVendor={setVendor}
-            issuedDate={issuedDate}
-            setIssuedDate={setIssuedDate}
-            poNumber={poNumber}
-            setPoNumber={setPoNumber}
-            status={status}
-            setStatus={setStatus}
-            creditTerm={creditTerm}       // <-- Add this
-            setCreditTerm={setCreditTerm} // <-- Add this
-          />
+        
+        {/* Header Details Sub-component */}
+        <InvoiceHeaderDetails
+          invoiceNumber={invoiceNumber}
+          setInvoiceNumber={setInvoiceNumber}
+          vendor={vendor}
+          setCreditTerm={setCreditTerm}
+          setVendor={setVendor}
+          issuedDate={issuedDate}
+          setIssuedDate={setIssuedDate}
+          poNumber={poNumber}
+          setPoNumber={setPoNumber}
+          status={status}
+          setStatus={setStatus}
+          creditTerm={creditTerm}       // <-- Add this
+          setCreditTerm={setCreditTerm} // <-- Add this
+        />
 
-          {/* Line Items Sub-component */}
-          <InvoiceLineItems
-            items={items}
-            handleItemChange={handleItemChange}
-            handleAddItem={handleAddItem}
-            handleRemoveItem={handleRemoveItem}
-          />
+        {/* Line Items Sub-component */}
+        <InvoiceLineItems
+          items={items}
+          handleItemChange={handleItemChange}
+          handleAddItem={handleAddItem}
+          handleRemoveItem={handleRemoveItem}
+        />
 
         {/* Summary & Remarks Sub-component */}
         <InvoiceSummary
@@ -379,6 +441,8 @@ useEffect(() => {
         invoices={invoices}
         handleEdit={handleEdit}
         handleDelete={handleDelete}
+        handleMarkAsPaid={handleMarkAsPaid}  
+        handleCancelInvoice={handleCancelInvoice} 
         onSelectInvoice={handleSelectInvoice}
       />
     </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function InvoiceRecordTable({invoices = [], handleEdit, handleDelete, onSelectInvoice }) {  const [expandedRowId, setExpandedRowId] = useState(null);
+export default function InvoiceRecordTable({invoices = [], handleEdit, handleDelete, handleMarkAsPaid, handleCancelInvoice, onSelectInvoice }) {  const [expandedRowId, setExpandedRowId] = useState(null);
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
@@ -134,6 +134,34 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                     </td>
                   </tr>
 
+                          {/* Mark Paid Button */}
+                          {inv.status !== 'paid' && inv.status !== 'cancelled' && (
+                            <button
+                              onClick={() => handleMarkAsPaid(inv.id)}
+                              className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-semibold py-1 px-2 rounded"
+                            >
+                              Mark Paid
+                            </button>
+                          )}
+
+                          {/* Cancel Button */}
+                          {inv.status !== 'cancelled' && (
+                            <button
+                              onClick={() => handleCancelInvoice(inv.id)}
+                              className="text-xs bg-amber-100 text-amber-700 hover:bg-amber-200 font-semibold py-1 px-2 rounded"
+                            >
+                              Cancel
+                            </button>
+                          )}
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => handleDelete(inv.id)}
+                            className="text-xs bg-red-100 text-red-700 hover:bg-red-200 font-semibold py-1 px-2 rounded"
+                          >
+                            Delete
+                          </button>
+                        
                   {/* Expanded Detail Drawer */}
                   {isExpanded && (
                     <tr style={{ backgroundColor: '#fcfcfc', borderBottom: '1px solid #dee2e6' }}>
