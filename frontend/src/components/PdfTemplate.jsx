@@ -23,7 +23,7 @@ return (
           <img
             src={companySettings.logo}
             alt="Company Logo"
-            className="h-16 w-auto mb-3 object-contain"
+            className="h-24 w-auto mb-3 object-contain"
           />
         )}
         <h1 className="text-2xl font-bold">{companySettings?.company_name || 'My Company'}</h1>
@@ -51,7 +51,6 @@ return (
     {/* 3. UNIFIED FOOTER: PAYMENT INSTRUCTIONS & PAYNOW QR */}
     <div className="mt-8 pt-4 border-t border-slate-200 text-left">
       <h3 className="text-md font-semibold text-slate-700 mb-3">Payment Instructions</h3>
-      
       <div className="grid grid-cols-3 gap-4 text-sm bg-slate-50 p-4 rounded-lg items-center">
         {/* SWIFT / Bank Details (2 Columns wide) */}
         <div className="col-span-2 grid grid-cols-2 gap-2">
