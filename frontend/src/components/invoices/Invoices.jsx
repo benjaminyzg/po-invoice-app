@@ -41,6 +41,7 @@ export default function Invoices({ token, baseUrl }) {
   const [editingId, setEditingId] = useState(null);
   const [companySettings, setCompanySettings] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null); // Or active selected invoice item
+  const [lastDeleted, setLastDeleted] = useState(null);
 
   // 1. Define fetchCompanySettings
 const fetchCompanySettings = async () => {
@@ -315,39 +316,53 @@ useEffect(() => {
   };
 
   const handleDeleteInvoice = async (invoiceId) => {
-  if (!window.confirm('Are you sure you want to delete this invoice?')) return;
+    if (!window.confirm('Are you sure you want to delete this invoice?')) return;
 
-  try {
-    const response = await fetch(`http://127.0.0.1:8000/api/invoices/${invoiceId}/`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/invoices/${invoiceId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-    if (response.ok) {
-      // Remove deleted item from state
-      setInvoices((prev) => prev.filter((inv) => inv.id !== invoiceId));
+      if (response.ok) {
+        // Remove deleted item from state
+        setInvoices((prev) => prev.filter((inv) => inv.id !== invoiceId));
+      }
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
     }
-  } catch (error) {
-    console.error('Error deleting invoice:', error);
-  }
   };
+
+  const handleRestore = async () => {
+    if (!lastDeleted) return;
+
+    const res = await axios.patch(
+      `${baseUrl}/api/invoices/${lastDeleted.id}/restore/`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setInvoices([res.data, ...invoices]); // Re-insert into table view
+    setLastDeleted(null); // Hide toast
+  };
+
   return (
     <div>
       <CardContainer title="Invoices" subtitle="Create New Invoice" maxWidth="100%">
         {/* Hidden print template wrapper */}
-      <div className="hidden print:block">
-        <InvoicePdfTemplate 
+        <div className="hidden print:block">
+          <InvoicePdfTemplate 
           invoice={selectedInvoice} 
           companySettings={companySettings} 
         />
-      </div>
+        </div>
         
         <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '20px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-        <h2 style={{ textAlign: 'center', color: '#333', marginBottom: '20px' }}>
-          {isEditing ? 'Edit Invoice' : 'Create New Invoice'}
-        </h2>
+          <h2 style={{ textAlign: 'center', color: '#333', marginBottom: '20px' }}>
+            {isEditing ? 'Edit Invoice' : 'Create New Invoice'}
+          </h2>
         </div>
         
         {/* Top Action Bar & Dynamic Title */}
@@ -445,6 +460,27 @@ useEffect(() => {
         handleCancelInvoice={handleCancelInvoice} 
         onSelectInvoice={handleSelectInvoice}
       />
+
+      {/* Floating Undo Toast Notification */}
+      {lastDeleted && (
+        <div className="fixed bottom-6 right-6 flex items-center gap-4 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg z-50">
+          <span className="text-sm">
+            Invoice <strong>{lastDeleted.invoice_number}</strong> deleted.
+          </span>
+          <button
+            onClick={handleRestore}
+            className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-1 px-3 rounded transition"
+          >
+            Undo
+          </button>
+          <button
+            onClick={() => setLastDeleted(null)}
+            className="text-gray-400 hover:text-white text-xs ml-2"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   )
 }
