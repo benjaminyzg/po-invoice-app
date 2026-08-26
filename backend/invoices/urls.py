@@ -5,6 +5,8 @@ from rest_framework.routers import DefaultRouter
 from . import views
 
 router = DefaultRouter()
+# Register your viewsets here if applicable (e.g., router.register(r'invoices', views.InvoiceViewSet))
+
 router.register(r'invoices', views.InvoiceViewSet, basename='invoice')
 router.register(r'catalog-items', views.CatalogItemViewSet, basename='catalogitem')
 router.register(r'purchase-orders', views.PurchaseOrderViewSet, basename='purchaseorders')
@@ -12,10 +14,10 @@ router.register(r'company-settings', views.CompanySettingsViewSet, basename='com
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('manage/', views.manage_invoices, name='manage_invoices'),
-    path('<int:pk>/delete/', views.delete_invoice, name='delete_invoice'),
-    path('<int:pk>/update/', views.update_invoice, name='update_invoice'),
-    path('<int:pk>/mark-paid/', views.mark_as_paid, name='mark-paid'),
+    # path('manage/', views.manage_invoices, name='manage_invoices'),
+    # path('<int:pk>/delete/', views.delete_invoice, name='delete_invoice'),
+    #path('<int:pk>/update/', views.update_invoice, name='update_invoice'),
+    # path('<int:pk>/mark-paid/', views.mark_as_paid, name='mark-paid'),
 ]
 
 if settings.DEBUG:

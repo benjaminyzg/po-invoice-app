@@ -1,10 +1,37 @@
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework import status
 from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings
 from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrderSerializer, PurchaseOrderStatusSerializer, CompanySettingsSerializer)
+
+@api_view(['PUT', 'PATCH'])
+def update_invoice(request, pk):
+    try:
+        invoice = Invoice.objects.get(pk=pk)
+    except Invoice.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+    serializer = InvoiceSerializer(invoice, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+def delete_invoice(request, pk):
+    try:
+        invoice = Invoice.objects.get(pk=pk)
+        invoice.delete()
+        return Response(status=status.HTTP_24_NO_CONTENT)
+    except Invoice.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+def manage_invoices(request):
+    return Response({"message": "Manage invoices endpoint"})
 
 class CompanySettingsViewSet(viewsets.ModelViewSet):
     queryset = CompanySettings.objects.all()
