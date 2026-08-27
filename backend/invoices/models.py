@@ -91,19 +91,8 @@ class PurchaseOrder(models.Model):
     def __str__(self):
         return f"{self.po_number} - {self.vendor_name} ({self.status})"
 
+    # Strip away lines 94-106. Your save method should just look like this:
     def save(self, *args, **kwargs):
-        if not self.po_number:
-            year = datetime.now().year
-            prefix = f"PO-{year}-"
-            last_po = PurchaseOrder.objects.filter(po_number__startswith=prefix).order_by('id').last()
-            
-            if last_po and last_po.po_number.rsplit('-', 1)[-1].isdigit():
-                last_seq = int(last_po.po_number.rsplit('-', 1)[-1])
-                seq = last_seq + 1
-            else:
-                seq = 1
-                
-            self.po_number = f"{prefix}{seq:04d}"
         super().save(*args, **kwargs)
 
 # 4. Purchase Order Item Model
@@ -138,3 +127,16 @@ class InvoiceItem(models.Model):
 
     def __str__(self):
         return f'{self.description} ({self.quantity} x ${self.unit_price})'
+
+# 6. Document Sequence Items Model
+class DocumentSequence(models.Model):
+    DOCUMENT_TYPES = [
+        ('INV', 'Invoice'),
+        ('PO', 'Purchase Order'),
+    ]
+    doc_type = models.CharField(max_length=3, choices=DOCUMENT_TYPES)
+    year = models.PositiveIntegerField()
+    last_sequence = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('doc_type', 'year')

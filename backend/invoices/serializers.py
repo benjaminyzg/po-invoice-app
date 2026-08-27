@@ -1,5 +1,18 @@
 from rest_framework import serializers
+from django.db import transaction
+from django.utils import timezone
 from .models import Invoice, InvoiceItem, CatalogItem, PurchaseOrder, PurchaseOrderItem, CompanySettings
+from .utils import generate_serial_number  # Adjust import based on where you put it
+
+def generate_serial_number(doc_type):
+    current_year = timezone.now().year
+    
+    with transaction.atomic():
+        # Using CompanySettings if it holds sequences, or substitute with a Sequence model
+        # select_for_update() locks the row to prevent concurrent duplicate generation
+        # Adjust field names based on your actual models.py fields
+        # ...
+        pass
 
 class CompanySettingsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,8 +38,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         items_data = validated_data.pop('items', [])
         invoice = Invoice.objects.create(**validated_data)
-        for item_data in items_data:
-            InvoiceItem.objects.create(invoice=invoice, **item_data)
+
+        with transaction.atomic():
+            validated_data['invoice_number'] = generate_serial_number('INV', 'INV')
+            invoice = Invoice.objects.create(**validated_data)
+            for item_data in items_data:
+                InvoiceItem.objects.create(invoice=invoice, **item_data)
+                
         return invoice
 
     def update(self, instance, validated_data):
@@ -120,6 +138,15 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items', [])
         purchase_order = PurchaseOrder.objects.create(**validated_data)
         
+        with transaction.atomic():
+            # 1. Generate atomic PO sequence
+            validated_data['po_number'] = generate_serial_number('PO', 'PO')
+            
+            # 2. Create parent PO
+            purchase_order = PurchaseOrder.objects.create(**validated_data)
+            for item_data in items_data:
+                PurchaseOrderItem.objects.create(purchase_order=purchase_order, **item_data)
+
         for item_data in items_data:
             # Make sure these lines are indented under the 'for' loop
             qty = item_data.get('quantity', item_data.get('qty', 1))
