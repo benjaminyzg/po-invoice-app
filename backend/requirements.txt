@@ -9,3 +9,4 @@ pillow==12.3.0
 requests==2.34.2
 sqlparse==0.5.5
 urllib3==2.7.0
+gunicorn>=21.2.0
