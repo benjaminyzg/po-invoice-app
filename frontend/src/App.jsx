@@ -6,6 +6,7 @@ import PurchaseOrders from './components/purchase-orders/PurchaseOrders';
 import PurchaseOrderList from './components/PurchaseOrderList';
 import CatalogItems from './components/CatalogItems';
 import Settings from './components/settings/Settings';
+import UsersAdmin from './components/UsersAdmin';
 import './App.css'; 
 
 const BASE_URL = 'http://127.0.0.1:8000/api';
@@ -41,6 +42,9 @@ export default function App() {
         <button onClick={() => setActiveTab('settings')} style={{ padding: '8px 16px', fontWeight: activeTab === 'settings' ? 'bold' : 'normal' }}>
           ⚙️ Company Settings
         </button>
+        <button onClick={() => setActiveTab('usersAdmin')} style={{ padding: '8px 16px', fontWeight: activeTab === 'usersAdmin' ? 'bold' : 'normal' }}>
+          👥 Users Admin
+        </button>
       </nav>
 
       {/* Tab Views */}
@@ -63,6 +67,10 @@ export default function App() {
 
         {activeTab === 'settings' && (
           <Settings token={token} baseUrl={BASE_URL} />
+        )}
+
+        {activeTab === 'usersAdmin' && (
+          <UsersAdmin token={token} baseUrl={BASE_URL} />
         )}
       </main>
     </div>
