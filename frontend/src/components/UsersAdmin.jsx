@@ -23,17 +23,18 @@ export default function UsersAdmin() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Example placeholder data matching Django User Serializer
-      const mockUsers = [
-        { id: 1, username: 'admin', first_name: 'Benjamin', last_name: 'Yg', email: 'benjamin@company.com', role: 'ADMIN', is_active: true, last_login: '2026-08-27' },
-        { id: 2, username: 'sarah_fin', first_name: 'Sarah', last_name: 'Chen', email: 'sarah.c@company.com', role: 'ACCOUNTANT', is_active: true, last_login: '2026-08-26' },
-        { id: 3, username: 'john_mgr', first_name: 'John', last_name: 'Doe', email: 'john.d@company.com', role: 'MANAGER', is_active: false, last_login: '2026-08-10' },
-      ];
-      setUsers(mockUsers);
+        const response = await fetch(`${baseUrl}/users/`, {
+        headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+        },
+        });
+        const data = await response.json();
+        setUsers(data);
     } catch (error) {
-      console.error('Failed to load users:', error);
+        console.error('Failed to load users:', error);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 

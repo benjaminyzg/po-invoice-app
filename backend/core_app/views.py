@@ -4,6 +4,14 @@ from rest_framework.response import Response
 from django.views.decorators.csrf import csrf_exempt
 from invoices.models import Invoice
 from invoices.serializers import InvoiceSerializer
+from rest_framework import viewsets, permissions
+from django.contrib.auth.models import User
+from .serializers import UserSerializer
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all().select_related('profile').order_by('-date_joined')
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 @api_view(['GET'])
 def health_check(request):
