@@ -13,6 +13,8 @@ export default function UsersAdmin() {
     email: '',
     role: 'VIEWER',
     is_active: true,
+    department: '',
+    phone: '',
   });
 
   // Simulated API fetch — replace with: fetch('/api/users/')
@@ -34,6 +36,39 @@ export default function UsersAdmin() {
       console.error('Failed to load users:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Submit handler
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    const payload = {
+      username: formData.username,
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      email: formData.email,
+      role: formData.role,
+      department: formData.department,
+      phone: formData.phone,
+    };
+
+    try {
+      const response = await fetch(`${baseUrl}/users/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        setShowModal(false);
+        setFormData({ username: '', firstName: '', lastName: '', email: '', role: 'VIEWER', department: '', phone: '' });
+        fetchUsers();
+      }
+    } catch (error) {
+      console.error('Failed to create user:', error);
     }
   };
 
@@ -105,55 +140,43 @@ export default function UsersAdmin() {
         ) : (
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <th className="px-6 py-3">User</th>
-                <th className="px-6 py-3">Role</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Last Login</th>
-                <th className="px-6 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
+  <tr style={{ textAlign: 'left', borderBottom: '2px solid #eee', color: '#666', fontSize: '12px' }}>
+    <th style={{ padding: '12px' }}>USER</th>
+    <th style={{ padding: '12px' }}>ROLE</th>
+    <th style={{ padding: '12px' }}>DEPARTMENT</th>
+    <th style={{ padding: '12px' }}>PHONE</th>
+    <th style={{ padding: '12px' }}>STATUS</th>
+    <th style={{ padding: '12px' }}>LAST LOGIN</th>
+    <th style={{ padding: '12px' }}>ACTIONS</th>
+  </tr>
+</thead>
             <tbody className="divide-y divide-gray-200 text-sm">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50/50 transition">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-semibold flex items-center justify-center text-sm">
-                        {user.first_name[0] || user.username[0]}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-gray-900">{user.first_name} {user.last_name}</div>
-                        <div className="text-xs text-gray-500">{user.email} (@{user.username})</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' :
-                      user.role === 'ACCOUNTANT' ? 'bg-emerald-100 text-emerald-800' :
-                      user.role === 'MANAGER' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ${
-                      user.is_active ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
-                    }`}>
-                      {user.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-500 text-xs">{user.last_login}</td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <button
-                      onClick={() => toggleUserStatus(user.id)}
-                      className="text-xs font-medium text-gray-600 hover:text-gray-900 underline"
-                    >
-                      {user.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredUsers.map((u) => (
+    <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
+      <td style={{ padding: '12px' }}>
+        <div style={{ fontWeight: 'bold' }}>{u.first_name || u.username} {u.last_name}</div>
+        <div style={{ fontSize: '12px', color: '#888' }}>{u.email} (@{u.username})</div>
+      </td>
+      <td style={{ padding: '12px' }}>
+        <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#e2e8f0' }}>
+          {u.role}
+        </span>
+      </td>
+      <td style={{ padding: '12px', fontSize: '13px' }}>{u.department || '—'}</td>
+      <td style={{ padding: '12px', fontSize: '13px' }}>{u.phone || '—'}</td>
+      <td style={{ padding: '12px' }}>
+        <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', backgroundColor: u.is_active ? '#d1fae5' : '#fee2e2', color: u.is_active ? '#065f46' : '#991b1b' }}>
+          {u.is_active ? 'Active' : 'Inactive'}
+        </span>
+      </td>
+      <td style={{ padding: '12px', fontSize: '13px' }}>{u.last_login || 'Never'}</td>
+      <td style={{ padding: '12px' }}>
+        <button onClick={() => toggleUserStatus(u.id, u.is_active)} style={{ border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}>
+          {u.is_active ? 'Deactivate' : 'Activate'}
+        </button>
+      </td>
+    </tr>
+  ))}
             </tbody>
           </table>
         )}
@@ -207,6 +230,31 @@ export default function UsersAdmin() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Department</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Finance, IT"
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Phone Number</label>
+                  <input
+                    type="text"
+                    placeholder="+1 (555) 000-0000"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">System Role</label>
                 <select
@@ -220,6 +268,8 @@ export default function UsersAdmin() {
                   <option value="VIEWER">Viewer (Read-Only)</option>
                 </select>
               </div>
+
+              
               <div className="flex justify-end gap-2 pt-4">
                 <button
                   type="button"
@@ -239,6 +289,9 @@ export default function UsersAdmin() {
           </div>
         </div>
       )}
+
+      
+
     </div>
   );
 }
