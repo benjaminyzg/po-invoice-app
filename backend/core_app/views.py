@@ -1,20 +1,25 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework import viewsets, permissions
 from django.views.decorators.csrf import csrf_exempt
 from invoices.models import Invoice
 from invoices.serializers import InvoiceSerializer
 from rest_framework import viewsets, permissions
 from django.contrib.auth.models import User
 from .serializers import UserSerializer
-<<<<<<< HEAD
+from .models import CatalogItem
+from .serializers import CatalogItemSerializer
+
+class CatalogItemViewSet(viewsets.ModelViewSet):
+    queryset = CatalogItem.objects.all().order_by('name')
+    serializer_class = CatalogItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().select_related('profile').order_by('-date_joined')
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
-=======
->>>>>>> feat/users-admin
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().select_related('profile').order_by('-date_joined')

@@ -4,7 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken.views import obtain_auth_token
-from core_app.views import UserViewSet
+from core_app.views import UserViewSet, CatalogItemViewSet
 
 # 1. Import CompanySettingsViewSet alongside the other viewsets
 from invoices.views import (

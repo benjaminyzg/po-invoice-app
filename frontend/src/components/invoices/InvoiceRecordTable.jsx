@@ -7,8 +7,7 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
   const displayedInvoices = invoices.filter((inv) => {
   if (statusFilter === 'all') return true;
   return inv.status?.toLowerCase() === statusFilter.toLowerCase();
-});
-
+  });
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };

@@ -61,8 +61,10 @@ export default function App() {
           </div>
         )}
 
+        {/* Tab Views */}
+        {/* Inside your main App return statement */}
         {activeTab === 'catalog' && (
-          <CatalogItems token={token} baseUrl={BASE_URL} />
+          <CatalogItems token={token} baseUrl="http://localhost:8000/api" />
         )}
 
         {activeTab === 'settings' && (
