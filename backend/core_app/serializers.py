@@ -34,7 +34,7 @@ class UserSerializer(serializers.ModelSerializer):
 class CatalogItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CatalogItem
-        fields = ['id', 'sku', 'name', 'category', 'unit_price', 'description', 'created_at']
+        fields = ['id', 'sku', 'name', 'category', 'unit_price', 'description', 'is_active']
 
 class CatalogPriceHistorySerializer(serializers.ModelSerializer):
     class Meta:

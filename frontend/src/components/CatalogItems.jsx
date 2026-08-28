@@ -13,7 +13,31 @@ export default function CatalogItems({ token, baseUrl }) {
   const fileInputRef = React.useRef(null);
   const [historyModalItem, setHistoryModalItem] = useState(null);
   const [priceHistory, setPriceHistory] = useState([]);
+  const [editItem, setEditItem] = useState(null);
+  const [catalogItems, setCatalogItems] = useState([]);
 
+  // 2. Handle Soft Delete / Toggle Active
+  const handleToggleActive = async (item) => {
+    const res = await fetch(`${baseUrl}/catalog-items/${item.id}/`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Token ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: !item.is_active })
+    });
+    if (res.ok) fetchCatalog();
+  };
+  // 3. Handle Edit Form Submit
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    const res = await fetch(`${baseUrl}/catalog-items/${editItem.id}/`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Token ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(editItem)
+    });
+    if (res.ok) {
+      setEditItem(null);
+      fetchCatalog();
+    }
+  };
   const handleViewHistory = async (item) => {
     setHistoryModalItem(item);
     const res = await fetch(`${baseUrl}/catalog-items/${item.id}/price-history/`, {
@@ -24,7 +48,6 @@ export default function CatalogItems({ token, baseUrl }) {
       setPriceHistory(data);
     }
   };
-
   const handleExport = async () => {
   const res = await fetch(`${baseUrl}/catalog-items/export-csv/`, {
     headers: { 'Authorization': `Token ${token}` }
@@ -56,6 +79,21 @@ export default function CatalogItems({ token, baseUrl }) {
     alert('Failed to import CSV.');
   }
   };
+  
+  const handleCatalogSelect = (e) => {
+      const selectedId = e.target.value;
+      const item = catalogItems.find(i => i.id === parseInt(selectedId));
+      if (!item) return;
+
+      // Auto-fill active line item state
+      setLineItem({
+        description: item.name + (item.description ? ` - ${item.description}` : ''),
+        unitPrice: item.unit_price,
+        quantity: 1,
+        totalAmount: (1 * item.unit_price).toFixed(2)
+      });
+  };
+  
   const getHeaders = () => ({
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
@@ -73,7 +111,18 @@ export default function CatalogItems({ token, baseUrl }) {
       console.error('Error fetching catalog items:', err);
     }
   };
-  useEffect(() => { fetchCatalog(); }, []);
+  useEffect(() => {
+  fetchCatalog();
+}, []);
+  
+  useEffect(() => {
+    fetch(`${baseUrl}/catalog-items/?active_only=true`, {
+      headers: { 'Authorization': `Token ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => setCatalogItems(data));
+  }, [token, baseUrl]);
+
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
@@ -132,39 +181,58 @@ export default function CatalogItems({ token, baseUrl }) {
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             onClick={handleExport}
-            style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #ccc', background: '#fff', cursor: 'pointer', fontWeight: '500' }}
+            style={{
+              padding: '6px 12px',
+              fontSize: '13px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              background: '#fff',
+              cursor: 'pointer',
+              fontWeight: '500',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
           >
             📥 Export CSV
           </button>
           <button
             onClick={() => fileInputRef.current.click()}
-            style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #ccc', background: '#fff', cursor: 'pointer', fontWeight: '500' }}
+            style={{
+              padding: '6px 12px',
+              fontSize: '13px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              background: '#fff',
+              cursor: 'pointer',
+              fontWeight: '500',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
           >
             📤 Import CSV
           </button>
           <input type="file" ref={fileInputRef} accept=".csv" onChange={handleImport} style={{ display: 'none' }} />
-          <button
-          onClick={() => setShowModal(true)}
-          style={{ backgroundColor: '#2563eb', color: '#fff', padding: '10px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-          + Add Catalog Item
-          </button>
 
           <button
-            onClick={() => handleViewHistory(item)}
+            onClick={() => setShowModal(true)}
             style={{
-              padding: '4px 8px',
-              fontSize: '12px',
-              borderRadius: '4px',
-              border: '1px solid #cbd5e1',
-              backgroundColor: '#fff',
+              padding: '6px 12px',
+              fontSize: '13px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: '#2563eb',
+              color: '#fff',
               cursor: 'pointer',
-              marginRight: '6px'
+              fontWeight: '500',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
             }}
           >
-            📈 History
+            + Add Catalog Item
           </button>
-
         </div>
       </div>
       <input
@@ -193,6 +261,13 @@ export default function CatalogItems({ token, baseUrl }) {
               <td style={{ padding: '12px' }}>{item.category || '—'}</td>
               <td style={{ padding: '12px' }}>${parseFloat(item.unit_price).toFixed(2)}</td>
               <td style={{ padding: '12px', fontSize: '13px', color: '#666' }}>{item.description || '—'}</td>
+              <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+  <button onClick={() => handleViewHistory(item)} style={{ marginRight: '4px', padding: '4px 8px', fontSize: '12px' }}>📈 History</button>
+  <button onClick={() => setEditItem(item)} style={{ marginRight: '4px', padding: '4px 8px', fontSize: '12px' }}>✏️ Edit</button>
+  <button onClick={() => handleToggleActive(item)} style={{ padding: '4px 8px', fontSize: '12px' }}>
+    {item.is_active ? '🚫 Deactivate' : '✅ Activate'}
+  </button>
+</td>
             </tr>
           ))}
         </tbody>
@@ -218,54 +293,71 @@ export default function CatalogItems({ token, baseUrl }) {
       )}
 
       {historyModalItem && (
-  <div style={{
-    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', zIndex: 1000
-  }}>
-    <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', width: '500px', maxWidth: '90%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>
-          Price History — {historyModalItem.name} ({historyModalItem.sku})
-        </h3>
-        <button
-          onClick={() => setHistoryModalItem(null)}
-          style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}
-        >
-          ✕
-        </button>
-      </div>
+      <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+    
+      <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', width: '500px', maxWidth: '90%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>
+            Price History — {historyModalItem.name} ({historyModalItem.sku})
+          </h3>
+          <button
+            onClick={() => setHistoryModalItem(null)}
+            style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}
+          >
+            ✕
+          </button>
+        </div>
 
-      {priceHistory.length === 0 ? (
-          <p style={{ color: '#666', textAlign: 'center', margin: '20px 0' }}>
-            No price revisions recorded yet for this item.
-          </p>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                <th style={{ padding: '8px' }}>Date</th>
-                <th style={{ padding: '8px', textAlign: 'right' }}>Old Price</th>
-                <th style={{ padding: '8px', textAlign: 'right' }}>New Price</th>
-              </tr>
-            </thead>
-            <tbody>
-              {priceHistory.map((h) => (
-                <tr key={h.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '8px' }}>
-                    {new Date(h.changed_at).toLocaleString()}
-                  </td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#dc2626' }}>
-                    ${Number(h.old_price).toFixed(2)}
-                  </td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>
-                    ${Number(h.new_price).toFixed(2)}
-                  </td>
+        {priceHistory.length === 0 ? (
+            <p style={{ color: '#666', textAlign: 'center', margin: '20px 0' }}>
+              No price revisions recorded yet for this item.
+            </p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                  <th style={{ padding: '8px' }}>Date</th>
+                  <th style={{ padding: '8px', textAlign: 'right' }}>Old Price</th>
+                  <th style={{ padding: '8px', textAlign: 'right' }}>New Price</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              </thead>
+              <tbody>
+                {priceHistory.map((h) => (
+                  <tr key={h.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '8px' }}>
+                      {new Date(h.changed_at).toLocaleString()}
+                    </td>
+                    <td style={{ padding: '8px', textAlign: 'right', color: '#dc2626' }}>
+                      ${Number(h.old_price).toFixed(2)}
+                    </td>
+                    <td style={{ padding: '8px', textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>
+                      ${Number(h.new_price).toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+        {editItem && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <form onSubmit={handleEditSubmit} style={{ background: '#fff', padding: '24px', borderRadius: '8px', width: '400px' }}>
+            <h3>Edit Catalog Item</h3>
+            <input type="text" value={editItem.name} onChange={e => setEditItem({...editItem, name: e.target.value})} placeholder="Name" required style={{ width: '100%', marginBottom: '8px', padding: '8px' }} />
+            <input type="text" value={editItem.category} onChange={e => setEditItem({...editItem, category: e.target.value})} placeholder="Category" style={{ width: '100%', marginBottom: '8px', padding: '8px' }} />
+            <input type="number" step="0.01" value={editItem.unit_price} onChange={e => setEditItem({...editItem, unit_price: e.target.value})} placeholder="Unit Price" required style={{ width: '100%', marginBottom: '8px', padding: '8px' }} />
+            <textarea value={editItem.description} onChange={e => setEditItem({...editItem, description: e.target.value})} placeholder="Description" style={{ width: '100%', marginBottom: '12px', padding: '8px' }} />
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setEditItem(null)}>Cancel</button>
+              <button type="submit" style={{ background: '#2563eb', color: '#fff', padding: '6px 12px', border: 'none', borderRadius: '4px' }}>Save Changes</button>
+            </div>
+          </form>
+        </div>
+      )}
       </div>
     </div>
 )}

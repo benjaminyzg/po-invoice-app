@@ -39,6 +39,13 @@ class CatalogItemViewSet(viewsets.ModelViewSet):
         serializer = CatalogPriceHistorySerializer(history, many=True)
         return Response(serializer.data)
 
+    def get_queryset(self):
+        queryset = CatalogItem.objects.all().order_by('name')
+        active_only = self.request.query_params.get('active_only')
+        if active_only == 'true':
+            queryset = queryset.filter(is_active=True)
+        return queryset
+
     @action(detail=False, methods=['post'], url_path='import-csv')
     def import_csv(self, request):
         csv_file = request.FILES.get('file')

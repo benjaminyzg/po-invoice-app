@@ -39,6 +39,7 @@ class CatalogItem(models.Model):
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)  # Soft delete flag
 
     def save(self, *args, **kwargs):
         if self.pk:
