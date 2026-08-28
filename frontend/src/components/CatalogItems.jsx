@@ -11,6 +11,19 @@ export default function CatalogItems({ token, baseUrl }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ sku: '', name: '', category: '', unit_price: '', description: '' });
   const fileInputRef = React.useRef(null);
+  const [historyModalItem, setHistoryModalItem] = useState(null);
+  const [priceHistory, setPriceHistory] = useState([]);
+
+  const handleViewHistory = async (item) => {
+    setHistoryModalItem(item);
+    const res = await fetch(`${baseUrl}/catalog-items/${item.id}/price-history/`, {
+      headers: { 'Authorization': `Token ${token}` }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setPriceHistory(data);
+    }
+  };
 
   const handleExport = async () => {
   const res = await fetch(`${baseUrl}/catalog-items/export-csv/`, {
@@ -136,6 +149,22 @@ export default function CatalogItems({ token, baseUrl }) {
         >
           + Add Catalog Item
           </button>
+
+          <button
+            onClick={() => handleViewHistory(item)}
+            style={{
+              padding: '4px 8px',
+              fontSize: '12px',
+              borderRadius: '4px',
+              border: '1px solid #cbd5e1',
+              backgroundColor: '#fff',
+              cursor: 'pointer',
+              marginRight: '6px'
+            }}
+          >
+            📈 History
+          </button>
+
         </div>
       </div>
       <input
@@ -187,6 +216,60 @@ export default function CatalogItems({ token, baseUrl }) {
           </div>
         </div>
       )}
+
+      {historyModalItem && (
+  <div style={{
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex',
+    alignItems: 'center', justifyContent: 'center', zIndex: 1000
+  }}>
+    <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', width: '500px', maxWidth: '90%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>
+          Price History — {historyModalItem.name} ({historyModalItem.sku})
+        </h3>
+        <button
+          onClick={() => setHistoryModalItem(null)}
+          style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer' }}
+        >
+          ✕
+        </button>
+      </div>
+
+      {priceHistory.length === 0 ? (
+          <p style={{ color: '#666', textAlign: 'center', margin: '20px 0' }}>
+            No price revisions recorded yet for this item.
+          </p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <th style={{ padding: '8px' }}>Date</th>
+                <th style={{ padding: '8px', textAlign: 'right' }}>Old Price</th>
+                <th style={{ padding: '8px', textAlign: 'right' }}>New Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {priceHistory.map((h) => (
+                <tr key={h.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '8px' }}>
+                    {new Date(h.changed_at).toLocaleString()}
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: '#dc2626' }}>
+                    ${Number(h.old_price).toFixed(2)}
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: '#16a34a', fontWeight: 'bold' }}>
+                    ${Number(h.new_price).toFixed(2)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+)}
+
     </div>
   );
 }

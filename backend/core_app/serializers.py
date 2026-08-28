@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, CatalogItem
+from .models import CatalogItem, CatalogPriceHistory
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.CharField(source='profile.role', default='VIEWER')
@@ -35,3 +35,8 @@ class CatalogItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CatalogItem
         fields = ['id', 'sku', 'name', 'category', 'unit_price', 'description', 'created_at']
+
+class CatalogPriceHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CatalogPriceHistory
+        fields = ['id', 'old_price', 'new_price', 'changed_at']

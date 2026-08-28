@@ -11,12 +11,12 @@ from rest_framework import viewsets, permissions
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 from .serializers import UserSerializer
-from .models import CatalogItem
-from .serializers import CatalogItemSerializer
+from .models import CatalogItem, CatalogPriceHistory
+from .serializers import CatalogItemSerializer, CatalogPriceHistorySerializer
 from tablib import Dataset
 
-from .models import CatalogItem
-from .serializers import CatalogItemSerializer
+from .models import CatalogItem, CatalogPriceHistory
+from .serializers import CatalogItemSerializer, CatalogPriceHistorySerializer
 from .resources import CatalogItemResource
 
 class CatalogItemViewSet(viewsets.ModelViewSet):
@@ -31,6 +31,13 @@ class CatalogItemViewSet(viewsets.ModelViewSet):
         response = HttpResponse(dataset.csv, content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="catalog_items.csv"'
         return response
+
+    @action(detail=True, methods=['get'], url_path='price-history')
+    def price_history(self, request, pk=None):
+        item = self.get_object()
+        history = item.price_history.all()
+        serializer = CatalogPriceHistorySerializer(history, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['post'], url_path='import-csv')
     def import_csv(self, request):
