@@ -3,14 +3,46 @@ import CardContainer from './common/CardContainer';
 import Button from './common/Button';
 
 export default function CatalogItems({ token, baseUrl }) {
-  console.log('CatalogItems token:', token); // Should log your JWT string, not undefined
+  console.log('CatalogItems token:', token); 
   const [items, setItems] = useState([]);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState(''); // <-- Make sure this line exists!
-  const [showModal, setShowModal] = useState(false); // <-- Add this state!
+  const [search, setSearch] = useState(''); 
+  const [showModal, setShowModal] = useState(false); 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ sku: '', name: '', category: '', unit_price: '', description: '' });
-  
+  const fileInputRef = React.useRef(null);
+
+  const handleExport = async () => {
+  const res = await fetch(`${baseUrl}/catalog-items/export-csv/`, {
+    headers: { 'Authorization': `Token ${token}` }
+  });
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'catalog_items.csv';
+  a.click();
+  };
+  const handleImport = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${baseUrl}/catalog-items/import-csv/`, {
+    method: 'POST',
+    headers: { 'Authorization': `Token ${token}` },
+    body: formData
+  });
+
+  if (res.ok) {
+    alert('Catalog imported successfully!');
+    fetchCatalog();
+  } else {
+    alert('Failed to import CSV.');
+  }
+  };
   const getHeaders = () => ({
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
@@ -49,13 +81,11 @@ export default function CatalogItems({ token, baseUrl }) {
       console.error('Error creating item:', err);
     }
   };
-
   const filtered = items.filter((i) =>
     i.name.toLowerCase().includes(search.toLowerCase()) ||
     i.sku.toLowerCase().includes(search.toLowerCase()) ||
     (i.category && i.category.toLowerCase().includes(search.toLowerCase()))
   );
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -85,14 +115,29 @@ export default function CatalogItems({ token, baseUrl }) {
           <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Catalog Management</h1>
           <p style={{ color: '#666', fontSize: '14px' }}>Maintain standard items, prices, and SKUs.</p>
         </div>
-        <button
+        
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            onClick={handleExport}
+            style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #ccc', background: '#fff', cursor: 'pointer', fontWeight: '500' }}
+          >
+            📥 Export CSV
+          </button>
+          <button
+            onClick={() => fileInputRef.current.click()}
+            style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #ccc', background: '#fff', cursor: 'pointer', fontWeight: '500' }}
+          >
+            📤 Import CSV
+          </button>
+          <input type="file" ref={fileInputRef} accept=".csv" onChange={handleImport} style={{ display: 'none' }} />
+          <button
           onClick={() => setShowModal(true)}
-          style={{ backgroundColor: '#2563eb', color: '#fff', padding: '10px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'light' }}
+          style={{ backgroundColor: '#2563eb', color: '#fff', padding: '10px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
         >
           + Add Catalog Item
-        </button>
+          </button>
+        </div>
       </div>
-
       <input
         type="text"
         placeholder="Search by SKU, name, or category..."
