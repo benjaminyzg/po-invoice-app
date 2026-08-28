@@ -16,12 +16,10 @@ export default function UsersAdmin() {
     department: '',
     phone: '',
   });
-
   // Simulated API fetch — replace with: fetch('/api/users/')
   useEffect(() => {
     fetchUsers();
   }, []);
-
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -39,7 +37,6 @@ export default function UsersAdmin() {
         setLoading(false);
     }
   };
-
   // Submit handler
   const handleAddUser = async (e) => {
     e.preventDefault();
@@ -72,7 +69,6 @@ export default function UsersAdmin() {
       console.error('Failed to create user:', error);
     }
   };
-
   const handleCreateUser = (e) => {
     e.preventDefault();
     const newUser = { ...formData, id: Date.now(), last_login: 'Never' };
@@ -80,11 +76,9 @@ export default function UsersAdmin() {
     setIsModalOpen(false);
     setFormData({ username: '', first_name: '', last_name: '', email: '', role: 'VIEWER', is_active: true });
   };
-
   const toggleUserStatus = (id) => {
     setUsers(users.map(u => u.id === id ? { ...u, is_active: !u.is_active } : u));
   };
-
   const filteredUsers = users.filter(user => {
     const matchesSearch = `${user.first_name} ${user.last_name} ${user.email} ${user.username}`
       .toLowerCase()
@@ -92,7 +86,6 @@ export default function UsersAdmin() {
     const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
-
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
@@ -141,16 +134,16 @@ export default function UsersAdmin() {
         ) : (
           <table className="w-full text-left border-collapse">
             <thead>
-  <tr style={{ textAlign: 'left', borderBottom: '2px solid #eee', color: '#666', fontSize: '12px' }}>
-    <th style={{ padding: '12px' }}>USER</th>
-    <th style={{ padding: '12px' }}>ROLE</th>
-    <th style={{ padding: '12px' }}>DEPARTMENT</th>
-    <th style={{ padding: '12px' }}>PHONE</th>
-    <th style={{ padding: '12px' }}>STATUS</th>
-    <th style={{ padding: '12px' }}>LAST LOGIN</th>
-    <th style={{ padding: '12px' }}>ACTIONS</th>
-  </tr>
-</thead>
+              <tr style={{ textAlign: 'left', borderBottom: '2px solid #eee', color: '#666', fontSize: '12px' }}>
+                <th style={{ padding: '12px' }}>USER</th>
+                <th style={{ padding: '12px' }}>ROLE</th>
+                <th style={{ padding: '12px' }}>DEPARTMENT</th>
+                <th style={{ padding: '12px' }}>PHONE</th>
+                <th style={{ padding: '12px' }}>STATUS</th>
+                <th style={{ padding: '12px' }}>LAST LOGIN</th>
+                <th style={{ padding: '12px' }}>ACTIONS</th>
+              </tr>
+            </thead>
             <tbody className="divide-y divide-gray-200 text-sm">
               {filteredUsers.map((u) => (
     <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
@@ -231,7 +224,6 @@ export default function UsersAdmin() {
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Department</label>
@@ -243,7 +235,6 @@ export default function UsersAdmin() {
                   style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                 />
               </div>
-
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>Phone Number</label>
                   <input
@@ -255,7 +246,6 @@ export default function UsersAdmin() {
                   />
                 </div>
               </div>
-
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">System Role</label>
                 <select
@@ -268,9 +258,7 @@ export default function UsersAdmin() {
                   <option value="ACCOUNTANT">Accountant (Create/Edit Billing)</option>
                   <option value="VIEWER">Viewer (Read-Only)</option>
                 </select>
-              </div>
-
-              
+              </div>  
               <div className="flex justify-end gap-2 pt-4">
                 <button
                   type="button"
@@ -290,9 +278,6 @@ export default function UsersAdmin() {
           </div>
         </div>
       )}
-
-      
-
     </div>
   );
 }

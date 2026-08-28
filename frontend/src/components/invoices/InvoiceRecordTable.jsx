@@ -28,7 +28,6 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
         Invoice Records
       </h3>
       
-      
       {/* Status Filter Tabs */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '15px' }}>
         {['all', 'pending', 'paid', 'cancelled'].map((status) => (
@@ -91,8 +90,7 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                 <React.Fragment key={inv.id}>
                   <tr
                     style={{ borderBottom: '1px solid #dee2e6', cursor: 'pointer' }}
-                    onClick={() => toggleRow(inv.id)}
-                  >
+                    onClick={() => toggleRow(inv.id)}>
                     <td style={{ padding: '10px', fontWeight: 'bold' }}>
                       <span style={{ marginRight: '8px', fontSize: '12px' }}>
                         {isExpanded ? '▼' : '►'}
@@ -115,7 +113,10 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                         {inv.status || 'Pending'}
                       </span>
                     </td>
+
                     <td style={{ padding: '10px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
+                      {/* Edit Button */}
                       <button
                         onClick={() => handleEdit(inv)}
                         style={{
@@ -130,6 +131,7 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                       >
                         Edit
                       </button>
+                      {/* Delete Button */}
                       <button
                         onClick={() => handleDelete(inv.id)}
                         style={{
@@ -143,56 +145,48 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                       >
                         Delete
                       </button>
+                      {/* Export Button */}
                       <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation(); // Prevents expanding/collapsing the row when exporting
-                          if (onSelectInvoice) onSelectInvoice(inv);
-                        }}
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: '12px',
-                          borderRadius: '4px',
-                          border: '1px solid #2563eb',
-                          backgroundColor: '#eff6ff',
-                          color: '#2563eb',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          marginRight: '6px'
-                        }}
-                      >
-                      📄 View / Export
-                    </button>
-                    </td>
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevents expanding/collapsing the row when exporting
+                            if (onSelectInvoice) onSelectInvoice(inv);
+                          }}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            borderRadius: '4px',
+                            border: '1px solid #2563eb',
+                            backgroundColor: '#eff6ff',
+                            color: '#2563eb',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            marginRight: '6px'
+                          }}
+                        >
+                        📄 View / Export
+                      </button>
+                      {/* Mark Paid Button */}
+                      {inv.status !== 'paid' && inv.status !== 'cancelled' && (
+                        <button
+                          onClick={() => handleMarkAsPaid(inv.id)}
+                          className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-semibold py-1 px-2 rounded"
+                        >
+                          Mark Paid
+                        </button>
+                      )}
+                      {/* Cancel Button */}
+                      {inv.status !== 'cancelled' && (
+                        <button
+                          onClick={() => handleCancelInvoice(inv.id)}
+                          className="text-xs bg-amber-100 text-amber-700 hover:bg-amber-200 font-semibold py-1 px-2 rounded"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      </div>
+                    </td>      
                   </tr>
-                          {/* Mark Paid Button */}
-                          {inv.status !== 'paid' && inv.status !== 'cancelled' && (
-                            <button
-                              onClick={() => handleMarkAsPaid(inv.id)}
-                              className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-semibold py-1 px-2 rounded"
-                            >
-                              Mark Paid
-                            </button>
-                          )}
-
-                          {/* Cancel Button */}
-                          {inv.status !== 'cancelled' && (
-                            <button
-                              onClick={() => handleCancelInvoice(inv.id)}
-                              className="text-xs bg-amber-100 text-amber-700 hover:bg-amber-200 font-semibold py-1 px-2 rounded"
-                            >
-                              Cancel
-                            </button>
-                          )}
-
-                          {/* Delete Button */}
-                          <button
-                            onClick={() => handleDelete(inv.id)}
-                            className="text-xs bg-red-100 text-red-700 hover:bg-red-200 font-semibold py-1 px-2 rounded"
-                          >
-                            Delete
-                          </button>
-                        
                   {/* Expanded Detail Drawer */}
                   {isExpanded && (
                     <tr style={{ backgroundColor: '#fcfcfc', borderBottom: '1px solid #dee2e6' }}>
@@ -206,37 +200,37 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
 
                         {/* Line Items Sub-table */}
                         <strong style={{ display: 'block', marginBottom: '8px', color: '#555' }}>Line Items:</strong>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                          <thead>
-                            <tr style={{ borderBottom: '1px solid #ccc', color: '#666' }}>
-                              <th style={{ padding: '6px', textAlign: 'left' }}>Description</th>
-                              <th style={{ padding: '6px', textAlign: 'center' }}>Qty</th>
-                              <th style={{ padding: '6px', textAlign: 'right' }}>Unit Price</th>
-                              <th style={{ padding: '6px', textAlign: 'right' }}>Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(inv.items || []).map((item, idx) => {
-                                // Resolve values with fallback support
-                                const qty = item.quantity ?? item.qty ?? 0;
-                                const unitPrice = item.unit_price ?? item.unitPrice ?? 0;
-                                const total = item.total_amount ?? (qty * unitPrice);
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                            <thead>
+                              <tr style={{ borderBottom: '1px solid #ccc', color: '#666' }}>
+                                <th style={{ padding: '6px', textAlign: 'left' }}>Description</th>
+                                <th style={{ padding: '6px', textAlign: 'center' }}>Qty</th>
+                                <th style={{ padding: '6px', textAlign: 'right' }}>Unit Price</th>
+                                <th style={{ padding: '6px', textAlign: 'right' }}>Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(inv.items || []).map((item, idx) => {
+                                  // Resolve values with fallback support
+                                  const qty = item.quantity ?? item.qty ?? 0;
+                                  const unitPrice = item.unit_price ?? item.unitPrice ?? 0;
+                                  const total = item.total_amount ?? (qty * unitPrice);
 
-                                return (
-                                    <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                                        <td style={{ padding: '6px' }}>{item.description}</td>
-                                        <td style={{ padding: '6px', textAlign: 'center' }}>{qty}</td>
-                                        <td style={{ padding: '6px', textAlign: 'right' }}>
-                                            ${parseFloat(unitPrice).toFixed(2)}
-                                        </td>
-                                        <td style={{ padding: '6px', textAlign: 'right', fontWeight: 'bold' }}>
-                                            ${parseFloat(total).toFixed(2)}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                          </tbody>
-                        </table>
+                                  return (
+                                      <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                                          <td style={{ padding: '6px' }}>{item.description}</td>
+                                          <td style={{ padding: '6px', textAlign: 'center' }}>{qty}</td>
+                                          <td style={{ padding: '6px', textAlign: 'right' }}>
+                                              ${parseFloat(unitPrice).toFixed(2)}
+                                          </td>
+                                          <td style={{ padding: '6px', textAlign: 'right', fontWeight: 'bold' }}>
+                                              ${parseFloat(total).toFixed(2)}
+                                          </td>
+                                      </tr>
+                                  );
+                              })}
+                            </tbody>
+                          </table>
                       </td>
                     </tr>
                   )}
