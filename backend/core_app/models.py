@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User  
 from django.conf import settings # Add this import
+from django.contrib.auth.models import User
 
 class UserProfile(models.Model):
     ROLE_CHOICES = [
@@ -38,3 +39,20 @@ class LineItem(models.Model):
     @property
     def total_price(self):
         return self.quantity * self.unit_price
+
+# <--- ADD THIS MODEL AT THE BOTTOM
+class UserProfile(models.Model):
+    ROLE_CHOICES = [
+        ('ADMIN', 'Admin'),
+        ('MANAGER', 'Manager'),
+        ('ACCOUNTANT', 'Accountant'),
+        ('VIEWER', 'Viewer'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='VIEWER')
+    department = models.CharField(max_length=100, blank=True, null=True)
+    phone = models.CharField(max_length=30, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user.username} ({self.role})"

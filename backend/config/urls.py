@@ -4,6 +4,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 from rest_framework.authtoken.views import obtain_auth_token
+from core_app.views import UserViewSet
+
 # 1. Import CompanySettingsViewSet alongside the other viewsets
 from invoices.views import (
     CatalogItemViewSet, 
@@ -13,6 +15,7 @@ from invoices.views import (
 )
 
 router = DefaultRouter()
+router.register(r'users', UserViewSet, basename='user')
 router.register(r'invoices', InvoiceViewSet, basename='invoice')
 router.register(r'catalog-items', CatalogItemViewSet, basename='catalogitem')
 router.register(r'purchase-orders', PurchaseOrderViewSet, basename='purchaseorder')
