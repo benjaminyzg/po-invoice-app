@@ -29,6 +29,7 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
+
   const getStatusStyle = (status) => {
     switch (status?.toUpperCase()) {
       case 'PAID':
@@ -40,6 +41,7 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
         return { backgroundColor: '#fff3cd', color: '#856404' }; // PENDING
     }
   };
+  
   return (
     <div style={{ marginTop: '30px' }}>
       <h3 style={{ textAlign: 'center', color: '#333', marginBottom: '15px', fontSize: '15px', fontWeight: 'bold' }}>

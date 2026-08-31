@@ -7,11 +7,22 @@ class UserSerializer(serializers.ModelSerializer):
     department = serializers.CharField(source='profile.department', allow_blank=True, required=False)
     phone = serializers.CharField(source='profile.phone', allow_blank=True, required=False)
     last_login = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
-    pass
+    # pass
 
     class Meta:
-        model = CatalogItem
-        fields = ['id', 'sku', 'name', 'category', 'unit_price', 'description', 'created_at']
+        model = User
+        fields = [
+            'id', 
+            'username', 
+            'email', 
+            'first_name', 
+            'last_name', 
+            'role', 
+            'department', 
+            'phone', 
+            'is_active', 
+            'last_login'
+        ]
 
     def create(self, validated_data):
         profile_data = validated_data.pop('profile', {})

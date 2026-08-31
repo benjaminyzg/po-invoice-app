@@ -2,6 +2,9 @@ import html2pdf from 'html2pdf.js';
 import Button from './Button';
 
 export default function ExportPdfButton({ elementId, fileName = 'document.pdf' }) {
+  // const targetId = elementId || (invoice ? `invoice-${invoice.id}` : null);
+  // const pdfName = fileName || (invoice ? `Invoice_${invoice.invoice_number}.pdf` : 'document.pdf');
+  
   const handleExport = () => {
     const targetElement = document.getElementById(elementId);
     if (!targetElement) {

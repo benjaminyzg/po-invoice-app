@@ -52,7 +52,6 @@ export default function App() {
         {activeTab === 'invoices' && (
           <Invoices token={token} baseUrl={BASE_URL} />
         )}
-
         {activeTab === 'purchaseOrders' && (
           <div>
             {/* 1. Form component for creating new POs */}
@@ -60,17 +59,14 @@ export default function App() {
             <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #ddd' }} />
           </div>
         )}
-
         {/* Tab Views */}
         {/* Inside your main App return statement */}
         {activeTab === 'catalog' && (
           <CatalogItems token={token} baseUrl="http://localhost:8000/api" />
         )}
-
         {activeTab === 'settings' && (
           <Settings token={token} baseUrl={BASE_URL} />
         )}
-
         {activeTab === 'usersAdmin' && (
           <UsersAdmin token={token} baseUrl={BASE_URL} />
         )}

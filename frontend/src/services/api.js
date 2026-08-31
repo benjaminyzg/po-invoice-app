@@ -6,11 +6,6 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // If using Django Basic Auth for development:
-  auth: {
-    username: 'admin',
-    password: 'admin1234',
-  },
 });
 
 // Automatically attach Django Token to every request

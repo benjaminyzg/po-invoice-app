@@ -186,6 +186,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
   });
+  
   const formatCurrency = (amount) => {
     const num = Number(amount) || 0;
     return num.toLocaleString('en-US', {
@@ -193,6 +194,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
       maximumFractionDigits: 2,
     });
   };
+  
   const handleResetForm = () => {
     setEditingPoId(null);
     setSelectedPoToEdit(null);
@@ -298,6 +300,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
           </div>
           </form>
         </CardContainer>
+        
         {/* 4. PO Table */}
         <PoTable
           purchaseOrders={pos}

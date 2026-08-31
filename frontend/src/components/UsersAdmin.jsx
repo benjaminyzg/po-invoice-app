@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import api from '../services/api'; // Adjust path if needed
 
 export default function UsersAdmin() {
   const [users, setUsers] = useState([]);
@@ -16,27 +17,22 @@ export default function UsersAdmin() {
     department: '',
     phone: '',
   });
-  // Simulated API fetch — replace with: fetch('/api/users/')
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  
+  // Define fetchUsers BEFORE useEffect uses it
   const fetchUsers = async () => {
     setLoading(true);
     try {
-        const response = await fetch(`${baseUrl}/users/`, {
-        headers: {
-            'Authorization': `Token ${token}`,
-            'Content-Type': 'application/json',
-        },
-        });
-        const data = await response.json();
-        setUsers(data);
+      const response = await api.get('/users/');
+      setUsers(response.data);
     } catch (error) {
-        console.error('Failed to load users:', error);
+      console.error('Failed to load users:', error);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
+  useEffect(() => {
+    fetchUsers();
+  }, []);
   // Submit handler
   const handleAddUser = async (e) => {
     e.preventDefault();
@@ -86,6 +82,7 @@ export default function UsersAdmin() {
     const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
+  
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
@@ -146,31 +143,31 @@ export default function UsersAdmin() {
             </thead>
             <tbody className="divide-y divide-gray-200 text-sm">
               {filteredUsers.map((u) => (
-    <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
-      <td style={{ padding: '12px' }}>
-        <div style={{ fontWeight: 'bold' }}>{u.first_name || u.username} {u.last_name}</div>
-        <div style={{ fontSize: '12px', color: '#888' }}>{u.email} (@{u.username})</div>
-      </td>
-      <td style={{ padding: '12px' }}>
-        <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#e2e8f0' }}>
-          {u.role}
-        </span>
-      </td>
-      <td style={{ padding: '12px', fontSize: '13px' }}>{u.department || '—'}</td>
-      <td style={{ padding: '12px', fontSize: '13px' }}>{u.phone || '—'}</td>
-      <td style={{ padding: '12px' }}>
-        <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', backgroundColor: u.is_active ? '#d1fae5' : '#fee2e2', color: u.is_active ? '#065f46' : '#991b1b' }}>
-          {u.is_active ? 'Active' : 'Inactive'}
-        </span>
-      </td>
-      <td style={{ padding: '12px', fontSize: '13px' }}>{u.last_login || 'Never'}</td>
-      <td style={{ padding: '12px' }}>
-        <button onClick={() => toggleUserStatus(u.id, u.is_active)} style={{ border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}>
-          {u.is_active ? 'Deactivate' : 'Activate'}
-        </button>
-      </td>
-    </tr>
-  ))}
+                <tr key={u.id} style={{ borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '12px' }}>
+                    <div style={{ fontWeight: 'bold' }}>{u.first_name || u.username} {u.last_name}</div>
+                    <div style={{ fontSize: '12px', color: '#888' }}>{u.email} (@{u.username})</div>
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', backgroundColor: '#e2e8f0' }}>
+                      {u.role}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px', fontSize: '13px' }}>{u.department || '—'}</td>
+                  <td style={{ padding: '12px', fontSize: '13px' }}>{u.phone || '—'}</td>
+                  <td style={{ padding: '12px' }}>
+                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', backgroundColor: u.is_active ? '#d1fae5' : '#fee2e2', color: u.is_active ? '#065f46' : '#991b1b' }}>
+                      {u.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px', fontSize: '13px' }}>{u.last_login || 'Never'}</td>
+                  <td style={{ padding: '12px' }}>
+                    <button onClick={() => toggleUserStatus(u.id, u.is_active)} style={{ border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer', textDecoration: 'underline' }}>
+                      {u.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
@@ -203,6 +200,7 @@ export default function UsersAdmin() {
                     onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
                   />
                 </div>
+                
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Last Name</label>
                   <input
@@ -258,7 +256,7 @@ export default function UsersAdmin() {
                   <option value="ACCOUNTANT">Accountant (Create/Edit Billing)</option>
                   <option value="VIEWER">Viewer (Read-Only)</option>
                 </select>
-              </div>  
+              </div>
               <div className="flex justify-end gap-2 pt-4">
                 <button
                   type="button"
