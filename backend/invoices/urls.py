@@ -2,8 +2,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
+from .views import PurchaseOrderViewSet, InvoiceViewSet
 from . import views
-from .views import PurchaseOrderViewSet
 
 router = DefaultRouter()
 # Register your viewsets here if applicable (e.g., router.register(r'invoices', views.InvoiceViewSet))

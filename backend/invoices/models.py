@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.db import models
 from datetime import datetime
+from django.conf import settings
 from django.utils import timezone
 
 class CompanySettings(models.Model):
@@ -46,6 +47,9 @@ class Invoice(models.Model):
         ('pending', 'Pending'),
         ('fulfilled', 'Fulfilled'),
         ('cancelled', 'Cancelled'),
+        ('rejected', 'Rejected'),
+        ('draft', 'Draft'),
+        ('pending_approval', 'Pending Approval')
     ]
 
     invoice_number = models.CharField(max_length=50, unique=True)
@@ -56,6 +60,20 @@ class Invoice(models.Model):
     issued_date = models.DateField(default=timezone.now)
     remarks = models.TextField(blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
+    invoice_number = models.CharField(max_length=50, unique=True)
+    purchase_order = models.ForeignKey(
+        'PurchaseOrder',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='invoices'
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
+    vendor_name = models.CharField(max_length=255)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     @property
     def total_amount(self):

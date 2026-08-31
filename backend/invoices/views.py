@@ -138,6 +138,43 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(invoice)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'], url_path='submit-approval')
+    def submit_for_approval(self, request, pk=None):
+        invoice = self.get_object()
+        if invoice.status != 'DRAFT':
+            return Response({'error': 'Only DRAFT invoices can be submitted.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        invoice.status = 'PENDING_APPROVAL'
+        invoice.save()
+        return Response({'status': 'Invoice submitted for approval.'})
+    
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        invoice = self.get_object()
+        if invoice.status != 'PENDING_APPROVAL':
+            return Response({'error': 'Invoice is not pending approval.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        invoice.status = 'APPROVED'
+        invoice.save()
+        return Response({'status': 'Invoice approved successfully.'})
+
+    @action(detail=True, methods=['post'], url_path='pay')
+    def mark_as_paid(self, request, pk=None):
+        invoice = self.get_object()
+        if invoice.status not in ['APPROVED', 'PENDING_APPROVAL']:
+            return Response({'error': 'Invoice cannot be marked as paid in current state.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        invoice.status = 'PAID'
+        invoice.save()
+        return Response({'status': 'Invoice marked as paid.'})
+
+    @action(detail=True, methods=['post'], url_path='reject')
+    def reject(self, request, pk=None):
+        invoice = self.get_object()
+        invoice.status = 'REJECTED'
+        invoice.save()
+        return Response({'status': 'Invoice rejected.'})
+
     def get_queryset(self):
         return Invoice.objects.filter(is_deleted=False).order_by('-created_at')
 

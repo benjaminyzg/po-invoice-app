@@ -29,22 +29,36 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
 
 # 2. Define InvoiceSerializer SECOND (it can now reference InvoiceItemSerializer cleanly)
 class InvoiceSerializer(serializers.ModelSerializer):
-    items = InvoiceItemSerializer(many=True)
+    items_detail = InvoiceItemSerializer(source='items', many=True, read_only=True)
+    items = serializers.JSONField(write_only=True, required=False, allow_null=True)
 
     class Meta:
         model = Invoice
-        fields = '__all__'
+        fields = [
+            'id', 'invoice_number', 'purchase_order', 'status', 'vendor_name',
+            'total_amount', 'remarks', 'items_detail', 'items', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
 
     def create(self, validated_data):
         items_data = validated_data.pop('items', [])
         invoice = Invoice.objects.create(**validated_data)
-
-        with transaction.atomic():
-            validated_data['invoice_number'] = generate_serial_number('INV', 'INV')
-            invoice = Invoice.objects.create(**validated_data)
-            for item_data in items_data:
-                InvoiceItem.objects.create(invoice=invoice, **item_data)
-                
+        
+        calculated_total = 0
+        for item in items_data:
+            qty = float(item.get('quantity', item.get('qty', 1)))
+            price = float(item.get('unit_price', item.get('unitPrice', 0)))
+            calculated_total += (qty * price)
+            
+            InvoiceItem.objects.create(
+                invoice=invoice,
+                description=item.get('description', ''),
+                quantity=qty,
+                unit_price=price
+            )
+            
+        invoice.total_amount = calculated_total
+        invoice.save()
         return invoice
 
     def update(self, instance, validated_data):
