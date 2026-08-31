@@ -1,9 +1,54 @@
 import threading
-from django.test import TestCase
-from django.utils import timezone
 from unittest.mock import patch
 from .models import DocumentSequence
 from .utils import generate_serial_number
+from django.contrib.auth import get_user_model
+from django.urls import reverse
+from django.test import TestCase
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.test import APITestCase
+from core_app.models import UserProfile
+from invoices.models import PurchaseOrder
+
+User = get_user_model()
+
+class PurchaseOrderTests(APITestCase):
+
+    def setUp(self):
+        # Create an admin user who has approval permissions
+        self.admin_user = User.objects.create_user(
+            username='admin_test', 
+            password='password123'
+        )
+        UserProfile.objects.create(
+            user=self.admin_user, 
+            role='ADMIN'
+        )
+
+        # Create a PO instance for testing actions
+        self.po = PurchaseOrder.objects.create(
+            po_number='PO-1001',
+            status='PENDING'
+        )
+        
+        # DRF endpoint URLs
+        self.list_url = reverse('purchaseorder-list')
+        self.approve_url = reverse('purchaseorder-approve', kwargs={'pk': self.po.pk})
+
+    def test_approve_purchase_order_success(self):
+        """Verify an admin user can successfully approve a PO."""
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.post(self.approve_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.po.refresh_from_db()
+        self.assertEqual(self.po.status, 'APPROVED')
+
+    def test_approve_purchase_order_unauthenticated(self):
+        """Verify unauthenticated requests cannot approve a PO."""
+        response = self.client.post(self.approve_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 class DocumentSerializationTestCase(TestCase):
 

@@ -2,7 +2,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings
 from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrderSerializer, PurchaseOrderStatusSerializer, CompanySettingsSerializer)
 
@@ -60,11 +60,12 @@ class CatalogItemViewSet(viewsets.ModelViewSet):
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
     # queryset = PurchaseOrder.objects.all().order_by('-created_at')
     # Prefetch related items to avoid N+1 queries
+    queryset = PurchaseOrder.objects.all().order_by('-created_at')
     queryset = PurchaseOrder.objects.all().prefetch_related('items')
     serializer_class = PurchaseOrderSerializer
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     # Temporarily allow unauthenticated requests for testing:
-    permission_classes = [permissions.AllowAny]
+    # permission_classes = [permissions.AllowAny]
 
     # inside PurchaseOrderViewSet or view method
     def partial_update(self, request, *args, **kwargs):
@@ -75,6 +76,21 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         
         print(f"[BACKEND TRACK 3] Response status code: {response.status_code}")
         return response
+
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        po = self.get_object()
+        
+        # Check user role (e.g., ADMIN or MANAGER only)
+        if hasattr(request.user, 'profile') and request.user.profile.role not in ['ADMIN', 'MANAGER']:
+            return Response(
+                {"detail": "You do not have permission to approve POs."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+            
+        po.status = 'APPROVED'
+        po.save()
+        return Response({'status': 'Purchase Order approved successfully.'})
 
     @action(detail=True, methods=['patch'], url_path='update-status')
     def update_status(self, request, pk=None):
@@ -92,6 +108,10 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_queryset(self):
+        # Optional: Filter POs by current user's department or role
+        return super().get_queryset()
 
 class InvoiceViewSet(viewsets.ModelViewSet):
     # queryset = Invoice.objects.all().order_by('-created_at').prefetch_related('items')
