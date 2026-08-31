@@ -1,17 +1,95 @@
 import threading
 from unittest.mock import patch
-from .models import DocumentSequence
+from .models import Invoice, InvoiceItem, PurchaseOrder, PurchaseOrderItem, DocumentSequence
 from .utils import generate_serial_number
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.test import TestCase
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework.authtoken.models import Token
 from core_app.models import UserProfile
 from invoices.models import PurchaseOrder
 
 User = get_user_model()
+
+class Invoice3WayMatchTests(APITestCase):
+
+    def setUp(self):
+        # Create user and authenticate API client
+        self.user = User.objects.create_user(username="testuser", password="password123")
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {self.token.key}")
+
+        # Create base Purchase Order
+        self.po = PurchaseOrder.objects.create(
+            po_number="PO-TEST-001",
+            vendor_name="Test Vendor",
+            status="APPROVED"
+        )
+        PurchaseOrderItem.objects.create(
+            purchase_order=self.po,
+            description="Laptops",
+            quantity=10,
+            unit_price=Decimal("1000.00")
+        )
+
+    def test_validate_match_no_po_returns_400(self):
+        """Invoice without PO should return 400 Bad Request."""
+        invoice = Invoice.objects.create(
+            invoice_number="INV-NO-PO",
+            vendor_name="Test Vendor"
+        )
+        url = f"/api/invoices/{invoice.id}/validate-match/"
+        response = self.client.post(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("detail", response.data)
+
+    def test_validate_match_perfect_match(self):
+        """Invoice matching PO items exactly should return MATCHED."""
+        invoice = Invoice.objects.create(
+            invoice_number="INV-MATCH-001",
+            purchase_order=self.po,
+            vendor_name="Test Vendor"
+        )
+        InvoiceItem.objects.create(
+            invoice=invoice,
+            description="Laptops",
+            quantity=10,
+            unit_price=Decimal("1000.00")
+        )
+
+        url = f"/api/invoices/{invoice.id}/validate-match/"
+        response = self.client.post(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["match_status"], "MATCHED")
+        self.assertEqual(response.data["summary"]["total_discrepancies"], 0)
+
+    def test_validate_match_detects_variances(self):
+        """Invoice with higher unit price & quantity should flag discrepancies."""
+        invoice = Invoice.objects.create(
+            invoice_number="INV-DISCREP-001",
+            purchase_order=self.po,
+            vendor_name="Test Vendor"
+        )
+        # Quantity (12 > 10) and Price (1200 > 1000)
+        InvoiceItem.objects.create(
+            invoice=invoice,
+            description="Laptops",
+            quantity=12,
+            unit_price=Decimal("1200.00")
+        )
+
+        url = f"/api/invoices/{invoice.id}/validate-match/"
+        response = self.client.post(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["match_status"], "DISCREPANCY")
+        self.assertEqual(response.data["summary"]["total_discrepancies"], 2)
 
 class PurchaseOrderTests(APITestCase):
 

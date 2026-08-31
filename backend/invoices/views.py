@@ -120,6 +120,80 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     # permission_classes = [permissions.IsAuthenticated]
     permission_classes = [AllowAny]
 
+    @action(detail=True, methods=['post'], url_path='validate-match')
+    def validate_match(self, request, pk=None):
+        invoice = self.get_object()
+        po = invoice.purchase_order
+
+        if not po:
+            return Response(
+                {"detail": "Cannot perform 3-way match: No Purchase Order linked to this invoice."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        discrepancies = []
+        invoice_items = invoice.items.all()
+        po_items = {item.description.lower().strip(): item for item in po.items.all()}
+
+        total_invoice_qty = 0
+        total_po_qty = 0
+
+        for inv_item in invoice_items:
+            total_invoice_qty += inv_item.quantity
+            item_key = inv_item.description.lower().strip()
+            po_item = po_items.get(item_key)
+
+            if not po_item:
+                discrepancies.append({
+                    "type": "UNMATCHED_ITEM",
+                    "description": inv_item.description,
+                    "detail": f"Item '{inv_item.description}' exists on invoice but not found on PO."
+                })
+                continue
+
+            total_po_qty += po_item.quantity
+
+            # Check Unit Price Variance
+            if inv_item.unit_price > po_item.unit_price:
+                discrepancies.append({
+                    "type": "PRICE_VARIANCE",
+                    "description": inv_item.description,
+                    "invoice_unit_price": float(inv_item.unit_price),
+                    "po_unit_price": float(po_item.unit_price),
+                    "difference": float(inv_item.unit_price - po_item.unit_price)
+                })
+
+            # Check Quantity Variance
+            if inv_item.quantity > po_item.quantity:
+                discrepancies.append({
+                    "type": "QUANTITY_VARIANCE",
+                    "description": inv_item.description,
+                    "invoice_qty": inv_item.quantity,
+                    "po_qty": po_item.quantity,
+                    "difference": inv_item.quantity - po_item.quantity
+                })
+
+        # Overall Status Determination
+        match_status = "DISCREPANCY" if discrepancies else "MATCHED"
+        
+        # Save match status to invoice if status field exists
+        if hasattr(invoice, 'match_status'):
+            invoice.match_status = match_status
+            invoice.save(update_fields=['match_status'])
+
+        return Response({
+            "invoice_id": invoice.id,
+            "invoice_number": invoice.invoice_number,
+            "po_number": po.po_number,
+            "match_status": match_status,
+            "summary": {
+                "total_discrepancies": len(discrepancies),
+                "total_invoice_qty": total_invoice_qty,
+                "total_po_qty": total_po_qty,
+            },
+            "discrepancies": discrepancies
+        }, status=status.HTTP_200_OK)
+
     # PATCH /api/invoices/{id}/mark_paid/
     @action(detail=True, methods=['patch'], url_path='mark-paid')
     def mark_paid(self, request, pk=None):
