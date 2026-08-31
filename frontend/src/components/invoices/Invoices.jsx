@@ -44,6 +44,7 @@ export default function Invoices({ token, baseUrl }) {
   const [selectedInvoice, setSelectedInvoice] = useState(null); // Or active selected invoice item
   const [lastDeleted, setLastDeleted] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
+  const invoicesArray = Array.isArray(invoices) ? invoices : (invoices?.results || []);
 
   // 1. Define fetchCompanySettings
   const fetchCompanySettings = async () => {
@@ -90,9 +91,12 @@ export default function Invoices({ token, baseUrl }) {
         const res = await axios.get(`${baseUrl}/invoices/`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
-        setInvoices(res.data);
+        // Handle both raw arrays and paginated responses cleanly
+        const records = Array.isArray(res.data) ? res.data : (res.data.results || []);
+        setInvoices(records);
       } catch (err) {
         console.error('Fetch error:', err);
+        setInvoices([]); // Fallback to empty array on network failure
       }
     };
 

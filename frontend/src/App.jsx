@@ -6,6 +6,7 @@ import PurchaseOrders from './components/purchase-orders/PurchaseOrders';
 import PurchaseOrderList from './components/PurchaseOrderList';
 import CatalogItems from './components/CatalogItems';
 import Settings from './components/settings/Settings';
+import Dashboard from './components/Dashboard';
 import UsersAdmin from './components/UsersAdmin';
 import './App.css'; 
 
@@ -14,9 +15,9 @@ const BASE_URL = 'http://127.0.0.1:8000/api';
 export default function App() {
   // Read initial token state directly from localStorage
   const [token, setToken] = useState(() => localStorage.getItem('token') || '');
-  const [activeTab, setActiveTab] = useState('invoices');
+  // const [activeTab, setActiveTab] = useState('invoices');
+  const [activeTab, setActiveTab] = useState('dashboard'); // Set as default landing view
   
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     setToken(''); // Reset React state to render Login component
@@ -30,8 +31,14 @@ export default function App() {
     <div style={{ width: '100%', maxWidth: '1000px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
       {/* Navigation Tabs */}
       <nav style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
+        <button 
+          onClick={() => setActiveTab('dashboard')}
+          style={{ fontWeight: activeTab === 'dashboard' ? 'bold' : 'normal' }}
+        >
+          📊 Dashboard
+        </button>
         <button onClick={() => setActiveTab('invoices')} style={{ padding: '8px 16px', fontWeight: activeTab === 'invoices' ? 'bold' : 'normal' }}>
-          📄 Invoices
+          📄 Invoices Records
         </button>
         <button onClick={() => setActiveTab('purchaseOrders')} style={{ padding: '8px 16px', fontWeight: activeTab === 'purchaseOrders' ? 'bold' : 'normal' }}>
           📦 Purchase Orders
@@ -45,6 +52,7 @@ export default function App() {
         <button onClick={() => setActiveTab('usersAdmin')} style={{ padding: '8px 16px', fontWeight: activeTab === 'usersAdmin' ? 'bold' : 'normal' }}>
           👥 Users Admin
         </button>
+        
       </nav>
 
       {/* Tab Views */}
@@ -67,6 +75,11 @@ export default function App() {
         {activeTab === 'settings' && (
           <Settings token={token} baseUrl={BASE_URL} />
         )}
+
+        // In your Main Content Area:
+        {activeTab === 'dashboard' && <Dashboard />}
+        {activeTab === 'invoices' && <Invoices />}
+        {/* Other existing tab components */}
         {activeTab === 'usersAdmin' && (
           <UsersAdmin token={token} baseUrl={BASE_URL} />
         )}
