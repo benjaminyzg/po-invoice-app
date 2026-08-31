@@ -1,13 +1,31 @@
 import React, { useState } from 'react';
+import { validateInvoiceMatch } from '../../services/api';
+import { MatchResultModal } from './MatchResultModal';
 
 export default function InvoiceRecordTable({invoices = [], handleEdit, handleDelete, handleMarkAsPaid, handleCancelInvoice, onSelectInvoice }) {  const [expandedRowId, setExpandedRowId] = useState(null);
   console.log('INVOICES RECEIVED BY TABLE:', invoices); // <-- Add this line
   const [statusFilter, setStatusFilter] = useState('all');
 
+  // Inside your InvoiceRecordTable component:
+  const [matchResult, setMatchResult] = useState(null);
+  const [loadingId, setLoadingId] = useState(null);
   const displayedInvoices = invoices.filter((inv) => {
   if (statusFilter === 'all') return true;
-  return inv.status?.toLowerCase() === statusFilter.toLowerCase();
+    return inv.status?.toLowerCase() === statusFilter.toLowerCase();
   });
+
+  const handleValidateMatch = async (invoiceId) => {
+    setLoadingId(invoiceId);
+    try {
+      const data = await validateInvoiceMatch(invoiceId);
+      setMatchResult(data);
+    } catch (err) {
+      alert(err.response?.data?.detail || err.message || 'Failed to validate match.');
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
@@ -184,6 +202,15 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                           Cancel
                         </button>
                       )}
+
+<button 
+  onClick={() => handleValidateMatch(inv.id)} 
+  disabled={loadingId === inv.id || !inv.purchase_order}
+  style={{ marginRight: '8px' }}
+>
+  {loadingId === inv.id ? 'Matching...' : 'Validate Match'}
+</button>
+
                       </div>
                     </td>      
                   </tr>
