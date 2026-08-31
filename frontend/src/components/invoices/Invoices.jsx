@@ -101,14 +101,12 @@ export default function Invoices({ token, baseUrl }) {
     };
 
     fetchInvoices();
-  }, [token, baseUrl]);
-    
+  }, [token, baseUrl]); 
   // Filter invoices before passing them to InvoiceRecordTable
   const filteredInvoices = invoices.filter((inv) => {
     if (statusFilter === 'all') return true;
     return inv.status === statusFilter;
   });
-
   const fetchCatalogItems = async () => {
     console.log("Token value being sent:", token);
     try {
@@ -266,7 +264,6 @@ export default function Invoices({ token, baseUrl }) {
     if (items.length === 1) return; // Keep at least one row
     setItems(items.filter((_, i) => i !== index));
   };
-
   const handleSelectInvoice = async (inv) => {
     // If line items are already present, set directly
     if (inv.items && inv.items.length > 0) {
@@ -293,50 +290,47 @@ export default function Invoices({ token, baseUrl }) {
     // Smooth scroll up to view the preview
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
   const handleMarkAsPaid = async (invoiceId) => {
-  try {
-    const response = await fetch(`http://127.0.0.1:8000/api/invoices/${invoiceId}/mark-paid/`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`, // Include if using auth tokens
-      },
-    });
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/invoices/${invoiceId}/mark-paid/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Include if using auth tokens
+        },
+      });
 
-    if (response.ok) {
-      const updatedInvoice = await response.json();
-      // Update state locally so the table re-renders instantly
-      setInvoices((prev) =>
-        prev.map((inv) => (inv.id === invoiceId ? updatedInvoice : inv))
-      );
+      if (response.ok) {
+        const updatedInvoice = await response.json();
+        // Update state locally so the table re-renders instantly
+        setInvoices((prev) =>
+          prev.map((inv) => (inv.id === invoiceId ? updatedInvoice : inv))
+        );
+      }
+    } catch (error) {
+      console.error('Error marking invoice as paid:', error);
     }
-  } catch (error) {
-    console.error('Error marking invoice as paid:', error);
-  }
   };
-
   const handleCancelInvoice = async (invoiceId) => {
-  try {
-    const response = await fetch(`http://127.0.0.1:8000/api/invoices/${invoiceId}/cancel/`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/invoices/${invoiceId}/cancel/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-    if (response.ok) {
-      const updatedInvoice = await response.json();
-      setInvoices((prev) =>
-        prev.map((inv) => (inv.id === invoiceId ? updatedInvoice : inv))
-      );
+      if (response.ok) {
+        const updatedInvoice = await response.json();
+        setInvoices((prev) =>
+          prev.map((inv) => (inv.id === invoiceId ? updatedInvoice : inv))
+        );
+      }
+    } catch (error) {
+      console.error('Error cancelling invoice:', error);
     }
-  } catch (error) {
-    console.error('Error cancelling invoice:', error);
-  }
   };
-
   const handleDeleteInvoice = async (invoiceId) => {
     if (!window.confirm('Are you sure you want to delete this invoice?')) return;
 
@@ -356,7 +350,6 @@ export default function Invoices({ token, baseUrl }) {
       console.error('Error deleting invoice:', error);
     }
   };
-
   const handleRestore = async () => {
     if (!lastDeleted) return;
 
@@ -369,7 +362,6 @@ export default function Invoices({ token, baseUrl }) {
     setInvoices([res.data, ...invoices]); // Re-insert into table view
     setLastDeleted(null); // Hide toast
   };
-
   return (
     <div>
       <CardContainer title="Invoices" subtitle="Create New Invoice" maxWidth="100%">

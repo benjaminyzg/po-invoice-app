@@ -165,7 +165,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
   return (
     <div style={{ padding: '10px 0' }}>
-      <h3 style={{ textAlign: 'center' }}>📦 Purchase Orders (PO)</h3>
+      <h3 style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '18px' }}>📦 Purchase Orders (PO)</h3>
       {error && <div style={{ color: 'red', marginBottom: '10px', textAlign: 'center' }}>{error}</div>}
 
       <form 

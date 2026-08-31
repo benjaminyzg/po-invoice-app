@@ -52,7 +52,6 @@ export default function App() {
         <button onClick={() => setActiveTab('usersAdmin')} style={{ padding: '8px 16px', fontWeight: activeTab === 'usersAdmin' ? 'bold' : 'normal' }}>
           👥 Users Admin
         </button>
-        
       </nav>
 
       {/* Tab Views */}
@@ -76,7 +75,7 @@ export default function App() {
           <Settings token={token} baseUrl={BASE_URL} />
         )}
 
-        // In your Main Content Area:
+        {/*} In your Main Content Area: */}
         {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'invoices' && <Invoices />}
         {/* Other existing tab components */}
