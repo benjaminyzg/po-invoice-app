@@ -78,33 +78,35 @@ class CatalogItemSerializer(serializers.ModelSerializer):
 
 # 2. Purchase Order Item Serializer
 class PurchaseOrderItemSerializer(serializers.ModelSerializer):
+    total_price = serializers.SerializerMethodField()
+
     class Meta:
         model = PurchaseOrderItem
-        fields = ['id', 'catalog_item', 'description', 'quantity', 'unit_price', 'total_price']
-        read_only_fields = ['total_price']
+        fields = ['id', 'description', 'quantity', 'unit_price', 'total_price']
+
+    def get_total_price(self, obj):
+        # Dynamically calculate quantity * unit_price for the frontend
+        return (obj.quantity or 0) * (obj.unit_price or 0)
 
 # 3. Purchase Order Serializer
 class PurchaseOrderSerializer(serializers.ModelSerializer):
-    # Add nested serializer (use the related_name from your ForeignKey, e.g. 'items')
-    items = PurchaseOrderItemSerializer(many=True, read_only=False)
-    items_detail = PurchaseOrderItemSerializer(many=True, read_only=True, source='items')
-    items = serializers.JSONField(write_only=True, required=False, allow_null=True)
-        
+    items_detail = PurchaseOrderItemSerializer(source='items', many=True, read_only=True)
+
     class Meta:
         model = PurchaseOrder
         fields = [
-            'id', 'po_number', 'vendor', 'status', 'issued_date', 
-            'remarks', 'created_by', 'items', 'created_at', 'updated_at'
+            'id', 'po_number', 'vendor_name', 'status', 'items_detail', 
+            'remarks', 'created_at', 'updated_at'
         ]
-        read_only_fields = ['created_by', 'po_number']
+        read_only_fields = ['po_number']
 
     def update(self, instance, validated_data):
         items_data = validated_data.pop('items', None)
 
         # Update parent PurchaseOrder attributes
-        instance.po_number = validated_data.get('po_number', instance.po_number)
         instance.vendor_name = validated_data.get('vendor_name', instance.vendor_name)
         instance.status = validated_data.get('status', instance.status)
+        instance.remarks = validated_data.get('remarks', instance.remarks)
         instance.total_amount = validated_data.get('total_amount', instance.total_amount)
         instance.save()
 
@@ -114,10 +116,9 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             calculated_total = 0
 
             for item_data in items_data:
-                qty = float(item_data.pop('quantity', item_data.pop('qty', 1)))
+                qty = float(item_data.get('quantity', item_data.get('qty', 1)))
                 price = float(item_data.get('unit_price', item_data.get('unitPrice', 0)))
                 description = item_data.get('description', '')
-                currency = item_data.get('currency', 'SGD')
 
                 calculated_total += (qty * price)
 
@@ -125,53 +126,10 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                     purchase_order=instance,
                     description=description,
                     quantity=qty,
-                    unit_price=price,
-                    currency=currency
+                    unit_price=price
                 )
-            
-                # Automatically update the parent total amount
-                instance.total_amount = calculated_total
 
-        instance.save()
         return instance
-
-    def create(self, validated_data):
-        items_data = validated_data.pop('items', [])
-        purchase_order = PurchaseOrder.objects.create(**validated_data)
-        validated_data['created_by'] = self.context['request'].user
-        
-        po = PurchaseOrder.objects.create(**validated_data)
-        for item_data in items_data:
-            PurchaseOrderItem.objects.create(purchase_order=po, **item_data)
-        return po
-
-        with transaction.atomic():
-            # 1. Generate atomic PO sequence
-            validated_data['po_number'] = generate_serial_number('PO', 'PO')
-            
-            # 2. Create parent PO
-            purchase_order = PurchaseOrder.objects.create(**validated_data)
-            for item_data in items_data:
-                PurchaseOrderItem.objects.create(purchase_order=purchase_order, **item_data)
-
-        for item_data in items_data:
-            # Make sure these lines are indented under the 'for' loop
-            qty = item_data.get('quantity', item_data.get('qty', 1))
-            price = item_data.get('unit_price', item_data.get('unit_price', 0))
-            description = item_data.get('description', '')
-            currency = item_data.get('currency', 'SGD')
-            
-            calculated_total += (float(qty) * float(price))
-
-            PurchaseOrderItem.objects.create(
-                purchase_order=instance,
-                description=description,
-                quantity=qty,
-                unit_price=price,
-                currency=currency
-            )
-
-        return purchase_order
 
 # 4. Purchase Order Status Serializer
 class PurchaseOrderStatusSerializer(serializers.ModelSerializer):
