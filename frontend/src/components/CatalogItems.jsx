@@ -1,6 +1,8 @@
+import api from '../services/api';
 import React, { useState, useEffect } from 'react';
 import CardContainer from './common/CardContainer';
 import Button from './common/Button';
+
 
 export default function CatalogItems({ token, baseUrl }) {
   console.log('CatalogItems token:', token); 
@@ -49,37 +51,37 @@ export default function CatalogItems({ token, baseUrl }) {
     }
   };
   const handleExport = async () => {
-  const res = await fetch(`${baseUrl}/catalog-items/export-csv/`, {
-    headers: { 'Authorization': `Token ${token}` }
-  });
-  const blob = await res.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'catalog_items.csv';
-  a.click();
+    const res = await fetch(`${baseUrl}/catalog-items/export-csv/`, {
+      headers: { 'Authorization': `Token ${token}` }
+    });
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'catalog_items.csv';
+    a.click();
   };
   const handleImport = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const formData = new FormData();
-  formData.append('file', file);
+    const formData = new FormData();
+    formData.append('file', file);
 
-  const res = await fetch(`${baseUrl}/catalog-items/import-csv/`, {
-    method: 'POST',
-    headers: { 'Authorization': `Token ${token}` },
-    body: formData
-  });
+    const res = await fetch(`${baseUrl}/catalog-items/import-csv/`, {
+      method: 'POST',
+      headers: { 'Authorization': `Token ${token}` },
+      body: formData
+    });
 
-  if (res.ok) {
-    alert('Catalog imported successfully!');
-    fetchCatalog();
-  } else {
-    alert('Failed to import CSV.');
-  }
+    if (res.ok) {
+      alert('Catalog imported successfully!');
+      fetchCatalog();
+    } else {
+      alert('Failed to import CSV.');
+    }
   };
-  
+
   const handleCatalogSelect = (e) => {
       const selectedId = e.target.value;
       const item = catalogItems.find(i => i.id === parseInt(selectedId));
@@ -93,15 +95,24 @@ export default function CatalogItems({ token, baseUrl }) {
         totalAmount: (1 * item.unit_price).toFixed(2)
       });
   };
-  
   const getHeaders = () => ({
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
   });
+
+  const fetchCatalogItems = async () => {
+    try {
+      const response = await api.get('/catalog-items/?active_only=true');
+      setCatalogItems(response.data);
+    } catch (error) {
+      console.error('Error loading catalog items:', error);
+    }
+  };
+
   const fetchCatalog = async () => {
     try {
       const res = await fetch(`${baseUrl}/catalog-items/`, {
-        headers: { 'Authorization': `Token ${token}` },
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`},
       });
       if (res.ok) {
         const data = await res.json();
@@ -111,17 +122,18 @@ export default function CatalogItems({ token, baseUrl }) {
       console.error('Error fetching catalog items:', err);
     }
   };
-  useEffect(() => {
-  fetchCatalog();
-}, []);
   
   useEffect(() => {
-    fetch(`${baseUrl}/catalog-items/?active_only=true`, {
-      headers: { 'Authorization': `Token ${token}` }
-    })
-    .then(res => res.json())
-    .then(data => setCatalogItems(data));
-  }, [token, baseUrl]);
+  fetchCatalogItems();
+  }, []); 
+  
+  // useEffect(() => {
+  //  fetch(`${baseUrl}/catalog-items/?active_only=true`, {
+  //    headers: { 'Authorization': `Token ${token}` }
+  //  })
+  //  .then(res => res.json())
+  //  .then(data => setCatalogItems(data));
+  // }, [token, baseUrl]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -196,6 +208,7 @@ export default function CatalogItems({ token, baseUrl }) {
           >
             📥 Export CSV
           </button>
+          
           <button
             onClick={() => fileInputRef.current.click()}
             style={{
@@ -213,6 +226,7 @@ export default function CatalogItems({ token, baseUrl }) {
           >
             📤 Import CSV
           </button>
+
           <input type="file" ref={fileInputRef} accept=".csv" onChange={handleImport} style={{ display: 'none' }} />
 
           <button

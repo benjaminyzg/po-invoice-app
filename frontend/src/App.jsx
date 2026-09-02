@@ -9,6 +9,7 @@ import CatalogItems from './components/CatalogItems';
 import Settings from './components/settings/Settings';
 import Dashboard from './components/Dashboard';
 import UsersAdmin from './components/UsersAdmin';
+import CatalogManagement from './components/CatalogManagement';
 import './App.css'; 
 
 const BASE_URL = 'http://127.0.0.1:8000/api';

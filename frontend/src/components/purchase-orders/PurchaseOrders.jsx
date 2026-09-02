@@ -3,6 +3,7 @@ import PoHeaderDetails from './PoHeaderDetails';
 import PoLineItems from './PoLineItems';
 import PoSummary from './PoSummary';
 import PoTable from './PoTable';
+import api from '../../services/api';
 
 const commonInputStyle = {
   width: '100%',
@@ -27,6 +28,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
   const [status, setStatus] = useState('PENDING');
   const [file, setFile] = useState(null);
   const [editingPoId, setEditingPoId] = useState(null);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
 
   const getHeaders = () => ({
     'Content-Type': 'application/json',
@@ -71,9 +73,34 @@ export default function PurchaseOrders({ token, baseUrl }) {
       setError(err.message);
     }
   };
+  const fetchPurchaseOrders = async () => {
+    try {
+      const response = await api.get('/purchase-orders/');
+      setPurchaseOrders(response.data);
+    } catch (err) {
+      console.error('Failed to fetch POs:', err);
+    }
+  };
   useEffect(() => {
-    fetchPOs();
-  }, []);
+    const loadPurchaseOrders = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/purchase-orders/', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const data = await response.json();
+        setPurchaseOrders(data);
+      } catch (error) {
+        console.error('Error loading purchase orders:', error);
+      }
+  };
+
+  loadPurchaseOrders();
+}, []);
+
+
   const handleItemChange = (index, field, value) => {
     setItems((prevItems) => {
       const updated = [...prevItems];

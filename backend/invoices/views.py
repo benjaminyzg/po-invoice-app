@@ -1,10 +1,28 @@
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action, api_view
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings
 from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrderSerializer, PurchaseOrderStatusSerializer, CompanySettingsSerializer)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def generate_packing_list_pdf(request, invoice_id):
+    # Retrieve invoice or purchase order details
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    
+    # Render HTML template with context data
+    html_string = render_to_string('pdf/packing_list_template.html', {'invoice': invoice})
+    
+    # Convert HTML to PDF
+    pdf_file = HTML(string=html_string).write_pdf()
+
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Packing_List_{invoice.invoice_number}.pdf"'
+    return response
 
 @api_view(['PUT', 'PATCH'])
 def update_invoice(request, pk):
