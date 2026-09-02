@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Packing List - Invoice #{{ invoice.number }}</title>
+    <style>
+        @page { size: A4; margin: 20mm; }
+        body { font-family: Helvetica, Arial, sans-serif; color: #333; font-size: 12px; }
+        h1 { color: #1a365d; font-size: 24px; margin-bottom: 5px; }
+        .meta-table, .items-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .meta-table td { padding: 4px; vertical-align: top; }
+        .items-table th, .items-table td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+        .items-table th { background-color: #f1f5f9; font-weight: bold; }
+        .text-right { text-align: right; }
+    </style>
+</head>
+<body>
+    <h1>PACKING LIST</h1>
+    <p><strong>Invoice Ref:</strong> {{ invoice.number }} | <strong>Date:</strong> {{ invoice.date }}</p>
+    
+    <table class="meta-table">
+        <tr>
+            <td>
+                <strong>Shipper / Exporter:</strong><br>
+                {{ company.name }}<br>
+                {{ company.address }}
+            </td>
+            <td>
+                <strong>Consignee / Recipient:</strong><br>
+                {{ invoice.vendor_name }}<br>
+                {{ invoice.shipping_address }}
+            </td>
+        </tr>
+    </table>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>Description</th>
+                <th>HS Code</th>
+                <th>Cartons / Packages</th>
+                <th>Unit Weight (kg)</th>
+                <th>Total Weight (kg)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.sku }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.hs_code }}</td>
+                <td class="text-right">{{ item.packages_count }}</td>
+                <td class="text-right">{{ item.unit_weight_kg }}</td>
+                <td class="text-right">{{ item.total_weight }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
