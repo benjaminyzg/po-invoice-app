@@ -78,7 +78,7 @@ export default function App() {
 
         {/*} In your Main Content Area: */}
         {/* {activeTab === 'dashboard' && <Dashboard />} */}
-        {activeTab === 'invoices' && <Invoices />}
+        {activeTab === 'invoices' && <Invoices token={token} baseUrl={BASE_URL} />}
         {/* Other existing tab components */}
         {activeTab === 'usersAdmin' && (
           <UsersAdmin token={token} baseUrl={BASE_URL} />

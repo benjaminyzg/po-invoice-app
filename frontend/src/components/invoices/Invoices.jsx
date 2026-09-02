@@ -96,12 +96,12 @@ export default function Invoices({ token, baseUrl }) {
         setInvoices(records);
       } catch (err) {
         console.error('Fetch error:', err);
-        setInvoices([]); // Fallback to empty array on network failure
+        // setInvoices([]); // Fallback to empty array on network failure
       }
     };
-
     fetchInvoices();
-  }, [token, baseUrl]); 
+  }, []); //[token, baseUrl]);
+  
   // Filter invoices before passing them to InvoiceRecordTable
   const filteredInvoices = invoices.filter((inv) => {
     if (statusFilter === 'all') return true;

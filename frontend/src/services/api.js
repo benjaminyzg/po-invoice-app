@@ -1,4 +1,3 @@
-// src/services/api.js
 import axios from 'axios';
 
 const api = axios.create({
@@ -8,16 +7,15 @@ const api = axios.create({
   },
 });
 
-// Automatically attach Django Token to every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
-    config.headers.Authorization = `Token ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// 3-Way Match validation helper
+// Add and export this named helper function required by InvoiceRecordTable.jsx
 export const validateInvoiceMatch = async (invoiceId) => {
   const response = await api.post(`/invoices/${invoiceId}/validate-match/`);
   return response.data;

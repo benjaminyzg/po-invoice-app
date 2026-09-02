@@ -14,47 +14,33 @@ export default function Dashboard() {
     const [currentUser, setCurrentUser] = useState(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [formData, setFormData] = useState({first_name: '', last_name: '', email: '',});
 
     useEffect(() => {
-      const fetchDashboardData = async () => {
-        setLoading(true);
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
         try {
-          const [invoicesRes, posRes] = await Promise.all([
-            api.get('/invoices/'),
-            api.get('/purchase-orders/'),
-          ]);
-
-          const invoices = invoicesRes.data || [];
-          const pos = posRes.data || [];
-
-          // Compute KPIs
-          const totalSpend = invoices.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
-          const pendingMatches = invoices.filter(inv => inv.status === 'PENDING' || inv.status === 'UNMATCHED').length;
-          
-          // Filter flagged discrepancies
-          const flagged = invoices.filter(inv => inv.status === 'DISCREPANCY' || inv.has_variance);
-
-          setMetrics({
-            totalSpend,
-            pendingMatches,
-            discrepancyCount: flagged.length,
+          const user = JSON.parse(storedUser);
+          setCurrentUser(user);
+          setFormData({
+            first_name: user.first_name || '',
+            last_name: user.last_name || '',
+            email: user.email || '',
           });
-          setDiscrepancies(flagged);
-        } catch (error) {
-          console.error('Failed to load dashboard metrics:', error);
-        } finally {
-          setLoading(false);
+        } catch (e) {
+          console.error(e);
         }
-      };
-      fetchDashboardData();
+      }
     }, []);
 
     const handleLogout = () => {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      setToken(null);
+
       if (onLogout) {
-        onLogout(); // Triggers App.jsx to reset token state and show Login
-      }
+        onLogout(); // Triggers handleLogout in App.jsx
+      }// <-- Crucial: resetting state triggers re-render back to <Login />
     };
     const handleProfileSave = async (e) => {
     e.preventDefault();
@@ -87,30 +73,34 @@ export default function Dashboard() {
       Welcome back, {getUserDisplayName()}!
       </h1>
       
-      <div style={{ position: 'relative' }}>
-        <button 
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          style={{ padding: '8px 16px', background: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
-          👤 {currentUser?.username || 'Account'} ▾
-        </button>
-      </div>
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+      👤 {currentUser?.username || 'Account'} ▾
+      </button>
 
-      {isMenuOpen && (
-        <div style={{ position: 'absolute', right: 0, marginTop: '8px', width: '200px', background: '#FFF', border: '1px solid #E5E7EB', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10 }}>
-          <button 
-            onClick={() => { setIsProfileModalOpen(true); setIsMenuOpen(false); }}
-            style={{ width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: '#374151' }}>
-            ✏️ Edit Profile
-          </button>
-          <hr style={{ margin: 0, borderColor: '#F3F4F6' }} />
-          <button 
-            onClick={handleLogout}
-            style={{ width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', fontWeight: '500' }}>
-            🚪 Log Out
-          </button>
-        </div>
-      )}
-
+    {isMenuOpen && (
+      <div style={{
+        position: 'absolute',
+        top: '100%',     // Positions directly below button
+        left: 0,         // Aligns with the left edge of the button
+        marginTop: '6px',
+        width: '180px',
+        background: '#FFF',
+        border: '1px solid #E5E7EB',
+        borderRadius: '8px',
+        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+        zIndex: 50
+      }}>
+      
+      <button onClick={() => { setIsProfileModalOpen(true); setIsMenuOpen(false); }}>
+        ✏️ Edit Profile
+      </button>
+      <button onClick={handleLogout} style={{ cursor: 'pointer', color: '#EF4444' }}>
+        Log Out
+      </button>
+    </div>
+  )}
+</div>
       <h2 style={{ marginBottom: '20px', color: '1e293b' }}>Executive Spend & Matching Analytics</h2>
 
       {/* KPI Cards Header */}
