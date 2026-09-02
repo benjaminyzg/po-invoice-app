@@ -53,12 +53,10 @@ class UserSerializer(serializers.ModelSerializer):
 
         return instance
 
-
 class CatalogItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CatalogItem
         fields = '__all__'
-
 
 class CatalogPriceHistorySerializer(serializers.ModelSerializer):
     class Meta:

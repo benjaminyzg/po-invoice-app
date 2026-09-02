@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Login from './Login';
 import POList from './components/POList';
 import Invoices from './components/invoices/Invoices';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import PurchaseOrders from './components/purchase-orders/PurchaseOrders';
 import PurchaseOrderList from './components/PurchaseOrderList';
 import CatalogItems from './components/CatalogItems';
@@ -76,12 +77,13 @@ export default function App() {
         )}
 
         {/*} In your Main Content Area: */}
-        {activeTab === 'dashboard' && <Dashboard />}
+        {/* {activeTab === 'dashboard' && <Dashboard />} */}
         {activeTab === 'invoices' && <Invoices />}
         {/* Other existing tab components */}
         {activeTab === 'usersAdmin' && (
           <UsersAdmin token={token} baseUrl={BASE_URL} />
         )}
+        {activeTab === 'dashboard' && <Dashboard onLogout={handleLogout} />}
       </main>
     </div>
   );

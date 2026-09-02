@@ -1,56 +1,116 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 export default function Dashboard() {
-  const [metrics, setMetrics] = useState({
-    totalSpend: 0,
-    pendingMatches: 0,
-    discrepancyCount: 0,
-  });
-  const [discrepancies, setDiscrepancies] = useState([]);
-  const [loading, setLoading] = useState(true);
+    const [metrics, setMetrics] = useState({
+      totalSpend: 0,
+      pendingMatches: 0,
+      discrepancyCount: 0,
+    });
+    const navigate = useNavigate();
+    const [discrepancies, setDiscrepancies] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-      try {
-        const [invoicesRes, posRes] = await Promise.all([
-          api.get('/invoices/'),
-          api.get('/purchase-orders/'),
-        ]);
+    useEffect(() => {
+      const fetchDashboardData = async () => {
+        setLoading(true);
+        try {
+          const [invoicesRes, posRes] = await Promise.all([
+            api.get('/invoices/'),
+            api.get('/purchase-orders/'),
+          ]);
 
-        const invoices = invoicesRes.data || [];
-        const pos = posRes.data || [];
+          const invoices = invoicesRes.data || [];
+          const pos = posRes.data || [];
 
-        // Compute KPIs
-        const totalSpend = invoices.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
-        const pendingMatches = invoices.filter(inv => inv.status === 'PENDING' || inv.status === 'UNMATCHED').length;
-        
-        // Filter flagged discrepancies
-        const flagged = invoices.filter(inv => inv.status === 'DISCREPANCY' || inv.has_variance);
+          // Compute KPIs
+          const totalSpend = invoices.reduce((sum, inv) => sum + Number(inv.total_amount || 0), 0);
+          const pendingMatches = invoices.filter(inv => inv.status === 'PENDING' || inv.status === 'UNMATCHED').length;
+          
+          // Filter flagged discrepancies
+          const flagged = invoices.filter(inv => inv.status === 'DISCREPANCY' || inv.has_variance);
 
-        setMetrics({
-          totalSpend,
-          pendingMatches,
-          discrepancyCount: flagged.length,
-        });
-        setDiscrepancies(flagged);
-      } catch (error) {
-        console.error('Failed to load dashboard metrics:', error);
-      } finally {
-        setLoading(false);
+          setMetrics({
+            totalSpend,
+            pendingMatches,
+            discrepancyCount: flagged.length,
+          });
+          setDiscrepancies(flagged);
+        } catch (error) {
+          console.error('Failed to load dashboard metrics:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchDashboardData();
+    }, []);
+
+    const handleLogout = () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (onLogout) {
+        onLogout(); // Triggers App.jsx to reset token state and show Login
       }
     };
-
-    fetchDashboardData();
-  }, []);
-
-  if (loading) {
-    return <div style={{ padding: '20px', textAlign: 'center' }}>Loading Analytics & Alerts...</div>;
-  }
-
-  return (
+    const handleProfileSave = async (e) => {
+    e.preventDefault();
+    try {
+      // Call DRF endpoint to update profile details
+      const response = await api.patch(`/api/users/${currentUser.id}/`, formData);
+      setCurrentUser(response.data);
+      localStorage.setItem('user', JSON.stringify(response.data));
+      setIsProfileModalOpen(false);
+      alert('Profile updated successfully!');
+    } catch (err) {
+      alert('Failed to update profile.');
+    }
+    }
+    // Format full name with fallback to username or default string
+    const getUserDisplayName = () => {
+      if (!currentUser) return 'User';
+      const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
+      return fullName || currentUser.username || 'User';
+    };
+    return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1 style={{ 
+        fontSize: '2rem', 
+        fontWeight: 'bold', 
+        textAlign: 'left', 
+        marginBottom: '24px', 
+        color: '#111827' 
+      }}>
+      Welcome back, {getUserDisplayName()}!
+      </h1>
+      
+      <div style={{ position: 'relative' }}>
+        <button 
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          style={{ padding: '8px 16px', background: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
+          👤 {currentUser?.username || 'Account'} ▾
+        </button>
+      </div>
+
+      {isMenuOpen && (
+        <div style={{ position: 'absolute', right: 0, marginTop: '8px', width: '200px', background: '#FFF', border: '1px solid #E5E7EB', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', zIndex: 10 }}>
+          <button 
+            onClick={() => { setIsProfileModalOpen(true); setIsMenuOpen(false); }}
+            style={{ width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: '#374151' }}>
+            ✏️ Edit Profile
+          </button>
+          <hr style={{ margin: 0, borderColor: '#F3F4F6' }} />
+          <button 
+            onClick={handleLogout}
+            style={{ width: '100%', padding: '10px 16px', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', fontWeight: '500' }}>
+            🚪 Log Out
+          </button>
+        </div>
+      )}
+
       <h2 style={{ marginBottom: '20px', color: '1e293b' }}>Executive Spend & Matching Analytics</h2>
 
       {/* KPI Cards Header */}
@@ -113,6 +173,61 @@ export default function Dashboard() {
           </table>
         )}
       </div>
+
+      {/* Edit Profile Modal */}
+      {isProfileModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div style={{ background: '#FFF', padding: '24px', borderRadius: '8px', width: '400px', maxWidth: '90%' }}>
+            <h3 style={{ marginTop: 0, fontSize: '1.25rem', color: '#111827' }}>Update Personal Info</h3>
+
+            <form onSubmit={handleProfileSave}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '4px' }}>First Name</label>
+                <input 
+                  type="text" 
+                  value={formData.first_name} 
+                  onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #D1D5DB', borderRadius: '4px' }} 
+                />
+              </div>
+
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '4px' }}>Last Name</label>
+                <input 
+                  type="text" 
+                  value={formData.last_name} 
+                  onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #D1D5DB', borderRadius: '4px' }} 
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', marginBottom: '4px' }}>Email</label>
+                <input 
+                  type="email" 
+                  value={formData.email} 
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #D1D5DB', borderRadius: '4px' }} 
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsProfileModalOpen(false)}
+                  style={{ padding: '8px 16px', background: '#E5E7EB', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  style={{ padding: '8px 16px', background: '#2563EB', color: '#FFF', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
-  );
+  )
 }
