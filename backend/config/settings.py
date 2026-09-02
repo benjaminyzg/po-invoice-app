@@ -112,10 +112,10 @@ CSRF_COOKIE_HTTPONLY = False
 CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-    "http://localhost:5174",
+    # "http://localhost:5173",
+    # "http://127.0.0.1:5173",
+    # "http://127.0.0.1:5174",
+    # "http://localhost:5174",
 ]
 
 REST_FRAMEWORK = {
@@ -125,6 +125,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 }
 
