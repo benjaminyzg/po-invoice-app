@@ -42,19 +42,27 @@ export default function Dashboard() {
         onLogout(); // Triggers handleLogout in App.jsx
       }// <-- Crucial: resetting state triggers re-render back to <Login />
     };
+
     const handleProfileSave = async (e) => {
-    e.preventDefault();
-    try {
-      // Call DRF endpoint to update profile details
-      const response = await api.patch(`/api/users/${currentUser.id}/`, formData);
-      setCurrentUser(response.data);
-      localStorage.setItem('user', JSON.stringify(response.data));
-      setIsProfileModalOpen(false);
-      alert('Profile updated successfully!');
-    } catch (err) {
-      alert('Failed to update profile.');
+      e.preventDefault();
+      // const userId = currentUser?.id || JSON.parse(localStorage.getItem('user'))?.id;
+      
+      try {
+        // Call DRF endpoint to update profile details 
+        // Pass formData directly to the PATCH request
+        const response = await api.patch('/users/me/', formData);
+        
+        setCurrentUser(response.data);
+        localStorage.setItem('user', JSON.stringify(response.data));
+        
+        alert('Profile updated successfully!');
+        setIsProfileModalOpen(false);
+      } catch (err) {
+        console.error('Update profile error:', err.response?.data || err.message);
+        alert('Failed to update profile.');
+      }
     }
-    }
+    
     // Format full name with fallback to username or default string
     const getUserDisplayName = () => {
       if (!currentUser) return 'User';
