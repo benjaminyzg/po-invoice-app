@@ -10,6 +10,7 @@ import Settings from './components/settings/Settings';
 import Dashboard from './components/Dashboard';
 import UsersAdmin from './components/UsersAdmin';
 import CatalogManagement from './components/CatalogManagement';
+import CatalogManager from './CatalogManager';
 import './App.css'; 
 
 const BASE_URL = 'http://127.0.0.1:8000/api';
@@ -39,6 +40,9 @@ export default function App() {
         >
           📊 Dashboard
         </button>
+        <button onClick={() => setActiveTab('catalog')}>
+          🏷️ Catalog SKUs
+        </button>
         <button onClick={() => setActiveTab('invoices')} style={{ padding: '8px 16px', fontWeight: activeTab === 'invoices' ? 'bold' : 'normal' }}>
           📄 Invoices Records
         </button>
@@ -58,6 +62,10 @@ export default function App() {
 
       {/* Tab Views */}
       <main>
+        {activeTab === 'dashboard' && <Dashboard onLogout={handleLogout} />}
+        {activeTab === 'catalog' && (
+          <CatalogManager token={token} baseUrl={BASE_URL} />
+        )} 
         {activeTab === 'invoices' && (
           <Invoices token={token} baseUrl={BASE_URL} />
         )}
@@ -70,9 +78,9 @@ export default function App() {
         )}
         {/* Tab Views */}
         {/* Inside your main App return statement */}
-        {activeTab === 'catalog' && (
-          <CatalogItems token={token} baseUrl="http://localhost:8000/api" />
-        )}
+        {/*{activeTab === 'catalog' && ( */}
+        {/*  <CatalogItems token={token} baseUrl="http://localhost:8000/api" /> */}
+        {/*)}*/}
         {activeTab === 'settings' && (
           <Settings token={token} baseUrl={BASE_URL} />
         )}
@@ -84,7 +92,7 @@ export default function App() {
         {activeTab === 'usersAdmin' && (
           <UsersAdmin token={token} baseUrl={BASE_URL} />
         )}
-        {activeTab === 'dashboard' && <Dashboard onLogout={handleLogout} />}
+
       </main>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import CatalogForm from './CatalogForm';
 
 function CatalogManager({ token }) {
   const [catalog, setCatalog] = useState([]);
@@ -6,6 +7,7 @@ function CatalogManager({ token }) {
   const [defaultQuantity, setDefaultQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState('');
   const [error, setError] = useState('');
+  const [items, setItems] = useState([]);
 
   const inputStyle = {
     width: '100%',
@@ -17,7 +19,6 @@ function CatalogManager({ token }) {
     fontSize: '14px',
     boxSizing: 'border-box'
   };
-
   // 1. Load catalog items from backend
   const fetchCatalog = async () => {
     try {
@@ -32,11 +33,9 @@ function CatalogManager({ token }) {
       setError('Failed to load catalog items.');
     }
   };
-
   useEffect(() => {
     if (token) fetchCatalog();
   }, [token]);
-
   // 2. Add a new standard item
   const handleAddItem = async (e) => {
     e.preventDefault();
@@ -70,7 +69,6 @@ function CatalogManager({ token }) {
       setError('Error connecting to backend server.');
     }
   };
-
   // 3. Delete an item
   const handleDeleteItem = async (id) => {
     try {
@@ -83,13 +81,20 @@ function CatalogManager({ token }) {
       setError('Failed to delete item.');
     }
   };
+  const handleItemCreated = (newItem) => {
+    setItems((prevItems) => [newItem, ...prevItems]);
+  };
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
       <h2>Predefined Item Catalog</h2>
+      <h2>Catalog & SKU Management</h2>
       <p style={{ color: '#666' }}>Define standard products and pricing available for quick selection in invoices.</p>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
+
+      {/* Render CatalogForm */}
+      <CatalogForm onItemCreated={handleItemCreated} />
 
       {/* Form to Add New Predefined Item */}
       <form onSubmit={handleAddItem} style={{ display: 'grid', gap: '10px', backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '30px' }}>

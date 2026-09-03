@@ -45,6 +45,7 @@ class CatalogItem(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)  # Soft delete flag
+    image = models.ImageField(upload_to='catalog_photos/', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if self.pk:
