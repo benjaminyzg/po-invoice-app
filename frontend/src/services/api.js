@@ -9,10 +9,12 @@ const api = axios.create({
 });
 
 // 2. Add Request Interceptor for Auth Header
-api.interceptors.request.use(
-  (config) => {
+api.interceptors.request.use((config) => {
     //const token = localStorage.getItem('access_token');
-    const token = localStorage.getItem('token');
+    const token = 
+    localStorage.getItem('token') || 
+    localStorage.getItem('access_token')|| 
+    localStorage.getItem('accessToken') ;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

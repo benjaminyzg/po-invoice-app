@@ -34,7 +34,7 @@ export default function CreateCatalogItem({onItemCreated}){
 
     try {
       // Axios will automatically set the 'Content-Type': 'multipart/form-data' header
-      const response = await api.post('/catalog/', payload, {
+      const response = await api.post('/catalog-items/', payload, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
