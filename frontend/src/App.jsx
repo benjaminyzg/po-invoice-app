@@ -23,7 +23,7 @@ export default function App() {
   
   const handleLogout = () => {
     localStorage.removeItem('token');
-    setToken(''); // Reset React state to render Login component
+    setToken(null); // Reset React state to render Login component
   };
   // If no token exists, render the Login screen
   if (!token) {
@@ -62,13 +62,15 @@ export default function App() {
 
       {/* Tab Views */}
       <main>
-        {activeTab === 'dashboard' && <Dashboard onLogout={handleLogout} />}
+        {activeTab === 'dashboard' && (
+         <Dashboard token={token} setToken={setToken} />
+        )}
         {activeTab === 'catalog' && (
           <CatalogManager token={token} baseUrl={BASE_URL} />
         )} 
-        {activeTab === 'invoices' && (
+        {/* {activeTab === 'invoices' && (
           <Invoices token={token} baseUrl={BASE_URL} />
-        )}
+        )} */}
         {activeTab === 'purchaseOrders' && (
           <div>
             {/* 1. Form component for creating new POs */}
@@ -77,22 +79,15 @@ export default function App() {
           </div>
         )}
         {/* Tab Views */}
-        {/* Inside your main App return statement */}
-        {/*{activeTab === 'catalog' && ( */}
-        {/*  <CatalogItems token={token} baseUrl="http://localhost:8000/api" /> */}
-        {/*)}*/}
         {activeTab === 'settings' && (
           <Settings token={token} baseUrl={BASE_URL} />
         )}
-
         {/*} In your Main Content Area: */}
-        {/* {activeTab === 'dashboard' && <Dashboard />} */}
         {activeTab === 'invoices' && <Invoices token={token} baseUrl={BASE_URL} />}
         {/* Other existing tab components */}
         {activeTab === 'usersAdmin' && (
           <UsersAdmin token={token} baseUrl={BASE_URL} />
         )}
-
       </main>
     </div>
   );

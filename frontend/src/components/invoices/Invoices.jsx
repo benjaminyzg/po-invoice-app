@@ -20,7 +20,6 @@ const commonInputStyle = {
   boxSizing: 'border-box',
   backgroundColor: '#ffffff',
 };
-
 export default function Invoices({ token, baseUrl }) {
   // Form State
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -101,7 +100,6 @@ export default function Invoices({ token, baseUrl }) {
     };
     fetchInvoices();
   }, []); //[token, baseUrl]);
-  
   // Filter invoices before passing them to InvoiceRecordTable
   const filteredInvoices = invoices.filter((inv) => {
     if (statusFilter === 'all') return true;
@@ -352,13 +350,11 @@ export default function Invoices({ token, baseUrl }) {
   };
   const handleRestore = async () => {
     if (!lastDeleted) return;
-
     const res = await axios.patch(
       `${baseUrl}/api/invoices/${lastDeleted.id}/restore/`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
-
     setInvoices([res.data, ...invoices]); // Re-insert into table view
     setLastDeleted(null); // Hide toast
   };

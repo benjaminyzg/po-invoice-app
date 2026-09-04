@@ -23,7 +23,6 @@ export default function Login({ setToken }) {
       if (response.data.user) {
         localStorage.setItem('user', JSON.stringify(response.data.user));
       }
-
       setToken(accessToken);
     } catch (err) {
       console.error('Login error:', err);
@@ -35,7 +34,6 @@ export default function Login({ setToken }) {
     <div style={{ maxWidth: '350px', margin: '80px auto', padding: '24px', border: '1px solid #ddd', borderRadius: '8px' }}>
       <h2 style={{ textAlign: 'center' }}>Portal Login</h2>
       {errorMsg && <p style={{ color: 'red', textAlign: 'center' }}>{errorMsg}</p>}
-      
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '15px' }}>
           <label>Username</label>
@@ -47,7 +45,6 @@ export default function Login({ setToken }) {
             style={{ width: '100%', padding: '8px', marginTop: '5px', boxSizing: 'border-box' }}
           />
         </div>
-
         <div style={{ marginBottom: '15px' }}>
           <label>Password</label>
           <input
@@ -58,7 +55,6 @@ export default function Login({ setToken }) {
             style={{ width: '100%', padding: '8px', marginTop: '5px', boxSizing: 'border-box' }}
           />
         </div>
-
         <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
           Log In
         </button>

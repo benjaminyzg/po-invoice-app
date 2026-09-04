@@ -81,11 +81,9 @@ export default function CreateCatalogItem({onItemCreated}){
     marginBottom: '6px',
     marginTop: '10px'
   };
-
   return (
     <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '10px', background: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
       <h4>Add Standard Item</h4>
-
       {/* Section 1: Identification */}
       <div>
         <div style={subHeaderStyle}>Item Identification</div>
@@ -94,13 +92,11 @@ export default function CreateCatalogItem({onItemCreated}){
           <input type="text" name="name" placeholder="Item Name" value={formData.name} onChange={handleInputChange} style={{ padding: '8px' }} required />
         </div>
       </div>
-
       {/* Section 2: Description */}
       <div>
         <div style={subHeaderStyle}>Description</div>
         <textarea name="description" placeholder="Item Description / Details" value={formData.description} onChange={handleInputChange} rows="2" style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }} />
       </div>
-
       {/* Section 3: Pricing & Quantity */}
       <div>
         <div style={subHeaderStyle}>Pricing & Default Quantity</div>
@@ -109,7 +105,6 @@ export default function CreateCatalogItem({onItemCreated}){
           <input type="number" step="0.01" name="unit_price" placeholder="Unit Price ($)" value={formData.unit_price} onChange={handleInputChange} style={{ padding: '8px' }} required />
         </div>
       </div>
-
       {/* Section 4: Packing Dimensions */}
       <div>
         <div style={subHeaderStyle}>Packing Dimensions (cm)</div>
@@ -119,7 +114,6 @@ export default function CreateCatalogItem({onItemCreated}){
           <input type="number" step="0.1" name="height" placeholder="Height" value={formData.height} onChange={handleInputChange} style={{ padding: '8px' }} />
         </div>
       </div>
-
       {/* Section 5: Weight & Image */}
       <div>
         <div style={subHeaderStyle}>Weight & Media Asset</div>
@@ -128,7 +122,6 @@ export default function CreateCatalogItem({onItemCreated}){
           <input type="file" accept="image/*" onChange={handleFileChange} />
         </div>
       </div>
-      
       <button type="submit" style={{ padding: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
         + Add To Catalog
       </button>
