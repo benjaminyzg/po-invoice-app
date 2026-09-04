@@ -68,9 +68,6 @@ export default function App() {
         {activeTab === 'catalog' && (
           <CatalogManager token={token} baseUrl={BASE_URL} />
         )} 
-        {/* {activeTab === 'invoices' && (
-          <Invoices token={token} baseUrl={BASE_URL} />
-        )} */}
         {activeTab === 'purchaseOrders' && (
           <div>
             {/* 1. Form component for creating new POs */}

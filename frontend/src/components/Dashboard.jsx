@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
-export default function Dashboard() {
+export default function Dashboard({token, setToken}){
     const [metrics, setMetrics] = useState({
       totalSpend: 0,
       pendingMatches: 0,
@@ -35,14 +35,8 @@ export default function Dashboard() {
 
     const handleLogout = () => {
       localStorage.removeItem('token');
-      localStorage.removeItem('user');
       setToken(null);
-
-      if (onLogout) {
-        onLogout(); // Triggers handleLogout in App.jsx
-      }// <-- Crucial: resetting state triggers re-render back to <Login />
     };
-
     const handleProfileSave = async (e) => {
       e.preventDefault();
       // const userId = currentUser?.id || JSON.parse(localStorage.getItem('user'))?.id;
@@ -62,13 +56,13 @@ export default function Dashboard() {
         alert('Failed to update profile.');
       }
     }
-    
     // Format full name with fallback to username or default string
     const getUserDisplayName = () => {
       if (!currentUser) return 'User';
       const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
       return fullName || currentUser.username || 'User';
     };
+    
     return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       <h1 style={{ 
