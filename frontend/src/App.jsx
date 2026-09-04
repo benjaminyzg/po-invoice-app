@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import Login from './Login';
 import POList from './components/POList';
 import Invoices from './components/invoices/Invoices';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import PurchaseOrders from './components/purchase-orders/PurchaseOrders';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import QuotationForm from './components/QuotationForm';
 import PurchaseOrderList from './components/PurchaseOrderList';
 import CatalogItems from './components/CatalogItems';
 import Settings from './components/settings/Settings';
@@ -49,6 +50,9 @@ export default function App() {
         <button onClick={() => setActiveTab('purchaseOrders')} style={{ padding: '8px 16px', fontWeight: activeTab === 'purchaseOrders' ? 'bold' : 'normal' }}>
           📦 Purchase Orders
         </button>
+        <button onClick={() => setActiveTab('quotations')} style={{ padding: '8px 16px', background: activeTab === 'quotations' ? '#2563eb' : '#e5e7eb',color: activeTab === 'quotations' ? '#ffffff' : '#374151', border: 'none', borderRadius: '4px', cursor: 'pointer'}}>
+          Quotations
+        </button>
         <button onClick={() => setActiveTab('catalog')} style={{ padding: '8px 16px', fontWeight: activeTab === 'catalog' ? 'bold' : 'normal' }}>
           🏷️ Catalog Items
         </button>
@@ -75,6 +79,8 @@ export default function App() {
             <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #ddd' }} />
           </div>
         )}
+        {/* Add your new Quotation Form view here */}
+        {activeTab === 'quotations' && <QuotationForm />}
         {/* Tab Views */}
         {activeTab === 'settings' && (
           <Settings token={token} baseUrl={BASE_URL} />
