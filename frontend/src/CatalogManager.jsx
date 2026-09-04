@@ -34,6 +34,7 @@ function CatalogManager({ token }) {
   useEffect(() => {
     if (token) fetchCatalog();
   }, [token]);
+  
   // CSV Export Handler
   const handleExportCSV = () => {
     if (catalog.length === 0) {
@@ -60,6 +61,7 @@ function CatalogManager({ token }) {
     link.click();
     document.body.removeChild(link);
   };
+
   const handleImportCSV = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -202,6 +204,7 @@ function CatalogManager({ token }) {
             <th style={{ padding: '10px' }}>SKU</th>
             <th style={{ padding: '10px' }}>Description</th>
             <th style={{ padding: '10px' }}>Std. Qty</th>
+            <th style={{ padding: '10px' }}>Packing Dimensions</th>
             <th style={{ padding: '10px' }}>Unit Price ($)</th>
             <th style={{ padding: '10px', textAlign: 'center' }}>Action</th>
           </tr>
@@ -212,13 +215,16 @@ function CatalogManager({ token }) {
           ) : (
             catalog.map((item) => (
               <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
+                <td style={{ padding: '8px' }}>{item.sku}<span style={{ color: '#666', fontSize: '0.9em' }}>{item.description}</span></td>
                 <td style={{ padding: '8px' }}>{item.description}</td>
                 <td style={{ padding: '8px' }}>{item.default_quantity}</td>
                 <td style={{ padding: '10px', fontSize: '0.9em' }}>
-                  Dims: {item.packing_dimensions || '-'}<br />
-                  Wt: {item.gross_weight ? `${item.gross_weight} kg` : '-'}
+                  Dims: {item.length && item.width && item.height ? `${item.length}x${item.width}x${item.height} cm` : '-'}<br />
+                  Wt: {item.weight ? `${item.weight} kg` : '-'}
                 </td>
-                <td style={{ padding: '8px' }}>${parseFloat(item.unit_price).toFixed(2)}</td>
+                <td style={{ padding: '8px' }}>
+                  ${parseFloat(item.unit_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
                 <td style={{ padding: '8px', textAlign: 'center' }}>
                   <button onClick={() => handleDeleteItem(item.id)} 
                   style={{ backgroundColor: '#dc3545', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>
