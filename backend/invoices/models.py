@@ -37,6 +37,8 @@ class CatalogItem(models.Model):
     description = models.TextField(blank=True, null=True)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     is_deleted = models.BooleanField(default=False)
+    packing_dimensions = models.CharField(max_length=100, blank=True, null=True)
+    gross_weight = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} (${self.unit_price})"

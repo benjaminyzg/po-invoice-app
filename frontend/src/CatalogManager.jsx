@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from './services/api';
 import CatalogForm from './CatalogForm';
 
 function CatalogManager({ token }) {
@@ -22,20 +23,84 @@ function CatalogManager({ token }) {
   // 1. Load catalog items from backend
   const fetchCatalog = async () => {
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/catalog-items/', {
-        headers: { 'Authorization': `Token ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCatalog(data);
-      }
+      const res = await api.get('/catalog-items/');
+      // Handle potential pagination wrappers (results array vs direct array)
+      const data = res.data.results ? res.data.results : res.data;
+      setCatalog(data);
     } catch (err) {
       setError('Failed to load catalog items.');
     }
   };
+
   useEffect(() => {
     if (token) fetchCatalog();
   }, [token]);
+
+  // CSV Export Handler
+  const handleExportCSV = () => {
+    if (catalog.length === 0) {
+      alert('No catalog items to export.');
+      return;
+    }
+    const headers = ['SKU', 'Name', 'Description', 'Std Qty', 'Unit Price', 'Packing Dimensions', 'Gross Weight'];
+    const rows = catalog.map(item => [
+      item.sku,
+      `"${item.name || ''}"`,
+      `"${item.description || ''}"`,
+      item.default_quantity,
+      item.unit_price,
+      `"${item.packing_dimensions || ''}"`,
+      item.gross_weight || ''
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'catalog_items.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  const handleImportCSV = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const text = event.target.result;
+      const lines = text.split('\n');
+      const headers = lines[0].split(',');
+
+      let successCount = 0;
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const currentLine = lines[i].split(',');
+        
+        // Basic mapping assuming standard column order: SKU, Name, Description, Std Qty, Unit Price
+        const itemData = {
+          sku: currentLine[0]?.trim(),
+          name: currentLine[1]?.replace(/"/g, '').trim(),
+          description: currentLine[2]?.replace(/"/g, '').trim(),
+          default_quantity: parseInt(currentLine[3]?.trim()) || 1,
+          unit_price: parseFloat(currentLine[4]?.trim()) || 0.0,
+          packing_dimensions: currentLine[5]?.replace(/"/g, '').trim() || '',
+          gross_weight: parseFloat(currentLine[6]?.trim()) || 0.0,
+        };
+
+        try {
+          await api.post('/catalog-items/', itemData);
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to import row ${i}:`, err.response?.data);
+        }
+      }
+      alert(`CSV Import completed. Successfully imported ${successCount} items.`);
+      fetchCatalog();
+    };
+    reader.readAsText(file);
+  };
+
   // 2. Add a new standard item
   const handleAddItem = async (e) => {
     e.preventDefault();
@@ -97,7 +162,7 @@ function CatalogManager({ token }) {
       <CatalogForm onItemCreated={handleItemCreated} />
 
       {/* Form to Add New Predefined Item */}
-      <form onSubmit={handleAddItem} style={{ display: 'grid', gap: '10px', backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '30px' }}>
+      {/* <form onSubmit={handleAddItem} style={{ display: 'grid', gap: '10px', backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '30px' }}>
         <h4>Add Standard Item</h4>
         <input
           type="text"
@@ -130,7 +195,7 @@ function CatalogManager({ token }) {
         <button type="submit" style={{ padding: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
           + Add To Catalog
         </button>
-      </form>
+      </form> */}
 
       {/* Catalog Table */}
       <h4>Saved Standard Items</h4>
@@ -151,9 +216,14 @@ function CatalogManager({ token }) {
               <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
                 <td style={{ padding: '8px' }}>{item.description}</td>
                 <td style={{ padding: '8px' }}>{item.default_quantity}</td>
+                <td style={{ padding: '10px', fontSize: '0.9em' }}>
+                  Dims: {item.packing_dimensions || '-'}<br />
+                  Wt: {item.gross_weight ? `${item.gross_weight} kg` : '-'}
+                </td>
                 <td style={{ padding: '8px' }}>${parseFloat(item.unit_price).toFixed(2)}</td>
                 <td style={{ padding: '8px', textAlign: 'center' }}>
-                  <button onClick={() => handleDeleteItem(item.id)} style={{ backgroundColor: '#dc3545', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>
+                  <button onClick={() => handleDeleteItem(item.id)} 
+                  style={{ backgroundColor: '#dc3545', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>
                     Delete
                   </button>
                 </td>
