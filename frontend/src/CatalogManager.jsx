@@ -31,11 +31,9 @@ function CatalogManager({ token }) {
       setError('Failed to load catalog items.');
     }
   };
-
   useEffect(() => {
     if (token) fetchCatalog();
   }, [token]);
-
   // CSV Export Handler
   const handleExportCSV = () => {
     if (catalog.length === 0) {
@@ -100,7 +98,6 @@ function CatalogManager({ token }) {
     };
     reader.readAsText(file);
   };
-
   // 2. Add a new standard item
   const handleAddItem = async (e) => {
     e.preventDefault();
@@ -202,10 +199,11 @@ function CatalogManager({ token }) {
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid #ccc' }}>
-            <th style={{ padding: '8px' }}>Description</th>
-            <th style={{ padding: '8px' }}>Std. Qty</th>
-            <th style={{ padding: '8px' }}>Unit Price ($)</th>
-            <th style={{ padding: '8px', textAlign: 'center' }}>Action</th>
+            <th style={{ padding: '10px' }}>SKU</th>
+            <th style={{ padding: '10px' }}>Description</th>
+            <th style={{ padding: '10px' }}>Std. Qty</th>
+            <th style={{ padding: '10px' }}>Unit Price ($)</th>
+            <th style={{ padding: '10px', textAlign: 'center' }}>Action</th>
           </tr>
         </thead>
         <tbody>
