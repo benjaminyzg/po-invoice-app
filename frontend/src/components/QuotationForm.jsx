@@ -29,7 +29,6 @@ export default function QuotationForm() {
         setLoading(false);
       });
   }, []);
-
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
@@ -43,16 +42,13 @@ export default function QuotationForm() {
     }
     setItems(newItems);
   };
-
   const addItemRow = () => {
     setItems([...items, { catalog_item: '', quantity: 1, unit_price: '' }]);
   };
-
   const removeItemRow = (index) => {
     if (items.length === 1) return;
     setItems(items.filter((_, i) => i !== index));
   };
-
   // Calculate live total amount
   const calculateTotal = () => {
     return items.reduce((sum, item) => {
@@ -61,7 +57,6 @@ export default function QuotationForm() {
       return sum + (qty * price);
     }, 0).toFixed(2);
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -83,7 +78,6 @@ export default function QuotationForm() {
       alert("Failed to create quotation. Check console for validation details.");
     }
   };
-
   const handleExportPDF = () => {
     if (!clientName || !validUntil || items.some(i => !i.catalog_item)) {
       alert("Please complete client name, validity date, and select catalog items before exporting to PDF.");
@@ -135,16 +129,20 @@ export default function QuotationForm() {
 
     doc.save(`Quotation_${clientName.replace(/\s+/g, '_')}.pdf`);
   };
-
   if (loading) {
     return <div className="p-8 text-center text-gray-500">Loading quotation workspace...</div>;
   }
-
   return (
     <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-xl overflow-hidden my-6 border border-gray-100">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4 text-white flex justify-between items-center">
-        <h2 className="text-xl font-semibold">New Quotation Generator</h2>
-        <span className="text-xs bg-blue-500/30 px-3 py-1 rounded-full uppercase tracking-wider font-medium">Master Catalog Linked</span>
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-slate-900 to-blue-900 px-8 py-6 text-white flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">New Quotation Generator</h2>
+          <p className="text-sm text-blue-200 mt-1">Create professional quotations linked with master catalog pricing.</p>
+        </div>
+        <span className="text-xs bg-blue-600/40 border border-blue-400/30 px-3.5 py-1.5 rounded-full uppercase tracking-wider font-semibold">
+          Master Catalog Linked
+        </span>
       </div>
 
       <form onSubmit={handleSubmit} className="p-8 space-y-6">
