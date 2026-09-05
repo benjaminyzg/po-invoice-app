@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.db import transaction
 from django.utils import timezone
 from .models import Invoice, InvoiceItem, CatalogItem, PurchaseOrder, PurchaseOrderItem, CompanySettings
+from .models import PaymentTermTemplate, Quotation, QuotationItem
 from .utils import generate_serial_number  # Adjust import based on where you put it
 
 def generate_serial_number(doc_type):
@@ -13,6 +14,33 @@ def generate_serial_number(doc_type):
         # Adjust field names based on your actual models.py fields
         # ...
         pass
+
+class PaymentTermTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentTermTemplate
+        fields = '__all__'
+
+class QuotationItemSerializer(serializers.ModelSerializer):
+    catalog_item_name = serializers.CharField(source='catalog_item.name', read_only=True)
+
+    class Meta:
+        model = QuotationItem
+        fields = ['id', 'catalog_item', 'catalog_item_name', 'quantity', 'unit_price']
+
+class QuotationSerializer(serializers.ModelSerializer):
+    items = QuotationItemSerializer(many=True)
+    payment_term_details = PaymentTermTemplateSerializer(source='payment_term', read_only=True)
+
+    class Meta:
+        model = Quotation
+        fields = ['id', 'client_name', 'created_at', 'valid_until', 'payment_term', 'payment_term_details', 'status', 'items']
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items')
+        quotation = Quotation.objects.create(**validated_data)
+        for item_data in items_data:
+            QuotationItem.objects.create(quotation=quotation, **item_data)
+        return quotation
 
 class CompanySettingsSerializer(serializers.ModelSerializer):
     class Meta:

@@ -6,9 +6,19 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings
+from .models import PaymentTermTemplate, Quotation
 from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrderSerializer, PurchaseOrderStatusSerializer, CompanySettingsSerializer)
+from .serializers import PaymentTermTemplateSerializer, QuotationSerializer
 from weasyprint import HTML
 from .models import Invoice
+
+class PaymentTermTemplateViewSet(viewsets.ModelViewSet):
+    queryset = PaymentTermTemplate.objects.all()
+    serializer_class = PaymentTermTemplateSerializer
+
+class QuotationViewSet(viewsets.ModelViewSet):
+    queryset = Quotation.objects.all()
+    serializer_class = QuotationSerializer
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

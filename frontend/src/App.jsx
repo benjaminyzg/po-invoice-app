@@ -39,7 +39,7 @@ export default function App() {
           onClick={() => setActiveTab('dashboard')}
           style={{ fontWeight: activeTab === 'dashboard' ? 'bold' : 'normal' }}
         >
-          📊 Dashboard
+          📊 Dashboard Summmary
         </button>
         <button onClick={() => setActiveTab('catalog')}>
           🏷️ Catalog SKUs
@@ -50,8 +50,8 @@ export default function App() {
         <button onClick={() => setActiveTab('purchaseOrders')} style={{ padding: '8px 16px', fontWeight: activeTab === 'purchaseOrders' ? 'bold' : 'normal' }}>
           📦 Purchase Orders
         </button>
-        <button onClick={() => setActiveTab('quotations')} style={{ padding: '8px 16px', background: activeTab === 'quotations' ? '#2563eb' : '#e5e7eb',color: activeTab === 'quotations' ? '#ffffff' : '#374151', border: 'none', borderRadius: '4px', cursor: 'pointer'}}>
-          Quotations
+        <button onClick={() => setActiveTab('quotations')} style={{ padding: '8px 16px', fontWeight: activeTab === 'quotations' ? 'bold' : 'normal' }}>
+          📋 Quotation Form
         </button>
         <button onClick={() => setActiveTab('catalog')} style={{ padding: '8px 16px', fontWeight: activeTab === 'catalog' ? 'bold' : 'normal' }}>
           🏷️ Catalog Items
@@ -80,7 +80,8 @@ export default function App() {
           </div>
         )}
         {/* Add your new Quotation Form view here */}
-        {activeTab === 'quotations' && <QuotationForm />}
+        {activeTab === 'quotations' && (
+          <QuotationForm token={token} baseUrl={BASE_URL} />)}
         {/* Tab Views */}
         {activeTab === 'settings' && (
           <Settings token={token} baseUrl={BASE_URL} />
