@@ -57,7 +57,6 @@ export default function QuotationForm() {
       return sum + (qty * price);
     }, 0).toFixed(2);
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -79,7 +78,6 @@ export default function QuotationForm() {
       alert("Failed to create quotation. Check console for validation details.");
     }
   };
-
   const handleExportPDF = () => {
     if (!clientName || !validUntil || items.some(i => !i.catalog_item)) {
       alert("Please complete client name, validity date, and select catalog items before exporting to PDF.");
@@ -203,16 +201,16 @@ export default function QuotationForm() {
             </button>
           </div>
           
-          {/* Table Headers aligned with PO style */}
-          <div className="grid grid-cols-12 gap-3 px-4 py-2 bg-gray-50 rounded-t-lg border border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-            <div className="col-span-6">Item Description</div>
-            <div className="col-span-2">Quantity</div>
-            <div className="col-span-2">Unit Price ($)</div>
-            <div className="col-span-1 text-right">Total ($)</div>
-            <div className="col-span-1"></div>
-          </div>
+        {/* Table Headers aligned with PO style */}
+        <div className="grid grid-cols-12 gap-3 px-4 py-2 bg-gray-50 rounded-t-lg border border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+          <div className="col-span-6 font-bold">Item Description</div>
+          <div className="col-span-2 font-bold">Quantity</div>
+          <div className="col-span-2 font-bold">Unit Price ($)</div>
+          <div className="col-span-1 text-left" font-bold>Total Amount($)</div>
+          {/* <div className="col-span-1"></div> */}
+        </div>
 
-          <div className="space-y-3">
+        <div className="space-y-3">
             {items.map((item, index) => (
               <div key={index} className="flex gap-3 items-center bg-gray-50 p-3 rounded-lg border border-gray-200">
                 <div className="flex-1">
@@ -278,7 +276,7 @@ export default function QuotationForm() {
             Total Amount: <span className="text-blue-600 font-mono">${calculateTotal()}</span>
           </div>
 
-          {/* Total Summary Block matching PO layout style */}
+        {/* Total Summary Block matching PO layout style */}
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
           <div className="text-sm font-semibold text-gray-600">Total Summary:</div>
           <div className="text-xl font-bold text-gray-900 font-mono mt-1">

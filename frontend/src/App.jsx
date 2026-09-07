@@ -41,9 +41,6 @@ export default function App() {
         >
           📊 Dashboard Summmary
         </button>
-        <button onClick={() => setActiveTab('catalog')}>
-          🏷️ Catalog SKUs
-        </button>
         <button onClick={() => setActiveTab('invoices')} style={{ padding: '8px 16px', fontWeight: activeTab === 'invoices' ? 'bold' : 'normal' }}>
           📄 Invoices Records
         </button>
