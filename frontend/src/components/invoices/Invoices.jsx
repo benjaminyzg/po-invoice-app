@@ -20,6 +20,7 @@ const commonInputStyle = {
   boxSizing: 'border-box',
   backgroundColor: '#ffffff',
 };
+
 export default function Invoices({ token, baseUrl }) {
   // Form State
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -83,6 +84,7 @@ export default function Invoices({ token, baseUrl }) {
       console.error('Error loading invoices:', err);
     }
   };
+  
   // 3. Call both functions inside useEffect on mount
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -100,6 +102,17 @@ export default function Invoices({ token, baseUrl }) {
     };
     fetchInvoices();
   }, []); //[token, baseUrl]);
+
+  // Fixed implementation with Bearer token
+  // useEffect(() => {
+  //   const token = localStorage.getItem('token');
+  //   const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+  //   axios.get('http://127.0.0.1:8000/api/invoices/', { headers })
+  //     .then(res => setInvoices(res.data))
+  //     .catch(err => console.error(err));
+  // }, []);
+
   // Filter invoices before passing them to InvoiceRecordTable
   const filteredInvoices = invoices.filter((inv) => {
     if (statusFilter === 'all') return true;

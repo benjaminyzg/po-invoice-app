@@ -91,15 +91,15 @@ export default function PurchaseOrders({ token, baseUrl }) {
           },
         });
         const data = await response.json();
-        setPurchaseOrders(data);
+        console.log("RAW API DATA:", data);
+        //setPurchaseOrders(data);
+        setPurchaseOrders(Array.isArray(data) ? data : (data.results || []));
       } catch (error) {
         console.error('Error loading purchase orders:', error);
       }
-  };
-
+  }
   loadPurchaseOrders();
-}, []);
-
+  }, []);
 
   const handleItemChange = (index, field, value) => {
     setItems((prevItems) => {
@@ -292,7 +292,17 @@ export default function PurchaseOrders({ token, baseUrl }) {
         </div>
       </form>
 
-      <PoTable
+      <PoTable 
+        purchaseOrders={purchaseOrders} 
+        handleEdit={handleEdit} 
+        handleCancel={handleCancel} 
+      />    
+
+      {/* 
+        NOTE: Old incorrect prop passing snippet kept for reference. 
+        Passed single loop variable 'pos' instead of the 'purchaseOrders' state array.
+      */}
+      {/* <PoTable
         purchaseOrders={pos}
         handleEdit={(po) => {
           setEditingPoId(po.id);
@@ -319,7 +329,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
             handleStatusChange(po.id, 'CANCELLED');
           }
         }}
-      />
+      /> */}
     </div>
   );
 }
