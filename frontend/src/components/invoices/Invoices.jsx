@@ -86,22 +86,40 @@ export default function Invoices({ token, baseUrl }) {
   };
   
   // 3. Call both functions inside useEffect on mount
+  // useEffect(() => {
+  //   const fetchInvoices = async () => {
+  //     try {
+  //       const res = await axios.get(`${baseUrl}/invoices/`, {
+  //         headers: token ? { Authorization: `Bearer ${token}` } : {}
+  //       });
+  //       // Handle both raw arrays and paginated responses cleanly
+  //       const records = Array.isArray(res.data) ? res.data : (res.data.results || []);
+  //       setInvoices(records);
+  //     } catch (err) {
+  //       console.error('Fetch error:', err);
+  //       // setInvoices([]); // Fallback to empty array on network failure
+  //     }
+  //   };
+  //   fetchInvoices();
+  // }, []); //[token, baseUrl]);
+
   useEffect(() => {
-    const fetchInvoices = async () => {
+    const loadInvoices = async () => {
       try {
-        const res = await axios.get(`${baseUrl}/invoices/`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        const response = await fetch('http://127.0.0.1:8000/api/invoices/', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
         });
-        // Handle both raw arrays and paginated responses cleanly
-        const records = Array.isArray(res.data) ? res.data : (res.data.results || []);
-        setInvoices(records);
-      } catch (err) {
-        console.error('Fetch error:', err);
-        // setInvoices([]); // Fallback to empty array on network failure
+        const data = await response.json();
+        setInvoices(Array.isArray(data) ? data : (data.results || []));
+      } catch (error) {
+        console.error('Error loading invoices:', error);
       }
     };
-    fetchInvoices();
-  }, []); //[token, baseUrl]);
+    loadInvoices();
+  }, []);
 
   // Fixed implementation with Bearer token
   // useEffect(() => {
