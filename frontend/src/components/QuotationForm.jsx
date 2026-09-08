@@ -206,7 +206,8 @@ export default function QuotationForm() {
           <div className="col-span-6 font-bold">Item Description</div>
           <div className="col-span-2 font-bold">Quantity</div>
           <div className="col-span-2 font-bold">Unit Price ($)</div>
-          <div className="col-span-1 text-left" font-bold>Total Amount($)</div>
+          {/* <div className="col-span-1 text-left" font-bold>Total Amount($)</div> */}   
+          <div className="col-span-1 text-left font-bold">Total Amount($)</div>
           {/* <div className="col-span-1"></div> */}
         </div>
 

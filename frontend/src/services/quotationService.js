@@ -4,9 +4,8 @@ const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 // Helper to get auth headers consistently
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return token ? { headers: { Authorization: `Bearer ${token}` } } : {}; 
-  // Note: Change 'Bearer' to 'Token' if your Django backend uses Token auth instead of JWT Bearer
+  const token = localStorage.getItem('access') || localStorage.getItem('token');
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 };
 
 export const quotationService = {
