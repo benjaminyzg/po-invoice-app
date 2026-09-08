@@ -1,0 +1,28 @@
+{
+  "name": "po-invoice-app",
+  "version": "1.0.0",
+  "description": "readme_content = \"\"\"# PO-Invoice-App",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev:backend": "cd backend && . venv/bin/activate && python manage.py runserver",     "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benjaminyzg/po-invoice-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/benjaminyzg/po-invoice-app/issues"
+  },
+  "homepage": "https://github.com/benjaminyzg/po-invoice-app#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
