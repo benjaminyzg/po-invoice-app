@@ -50,27 +50,46 @@ export default function Settings({ token, baseUrl }) {
   const [logoPreview, setLogoPreview] = useState('');
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    const token = localStorage.getItem('token'); // or retrieve from AuthContext / props
+  // useEffect(() => {
+  //   const token = localStorage.getItem('access'); // or retrieve from AuthContext / props
 
-    fetch(`${baseUrl}/company-settings/1/`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/json',
-      },
-    })
+  //   fetch(`${baseUrl}/company-settings/1/`, {
+  //     headers: {
+  //       'Authorization': `Bearer ${localStorage.getItem('access')}`,
+  //       //'Authorization': `Bearer ${token}`,
+  //       'Accept': 'application/json',
+  //     },
+  //   })
+  //     .then((res) => {
+  //       if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+  //       return res.json();
+  //     })
+  //     .then((data) => {
+  //       if (data) {
+  //         setFormData(data);
+  //         if (data.logo) setLogoPreview(data.logo);
+  //       }
+  //     })
+  //     .catch((err) => console.error('Error fetching settings:', err));
+  // }, [baseUrl]);
+
+  useEffect(() => {
+      fetch(`${baseUrl}/company-settings/1/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`, // Use the token prop directly!
+          'Accept': 'application/json',
+        },
+      })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
         return res.json();
       })
       .then((data) => {
-        if (data) {
-          setFormData(data);
-          if (data.logo) setLogoPreview(data.logo);
-        }
+        setFormData(data);
+        if (data.logo) setLogoPreview(data.logo);
       })
-      .catch((err) => console.error('Error fetching settings:', err));
-  }, [baseUrl]);
+    .catch((err) => console.error('Error fetching settings:', err));
+  }, [baseUrl, token]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -105,7 +124,8 @@ export default function Settings({ token, baseUrl }) {
       const response = await fetch('http://127.0.0.1:8000/api/company-settings/1/', {
         method: 'PATCH', // or POST if creating
         headers: {
-          'Authorization': `Bearer ${token}`, // Do NOT set Content-Type header manually; fetch/axios will set the multipart boundary automatically
+          //'Authorization': `Bearer ${access}`,
+          'Authorization': `Bearer ${localStorage.getItem('access')}`,
         },
         body: formData,
       });

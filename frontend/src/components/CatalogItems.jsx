@@ -81,7 +81,6 @@ export default function CatalogItems({ token, baseUrl }) {
       alert('Failed to import CSV.');
     }
   };
-
   const handleCatalogSelect = (e) => {
       const selectedId = e.target.value;
       const item = catalogItems.find(i => i.id === parseInt(selectedId));
@@ -95,11 +94,32 @@ export default function CatalogItems({ token, baseUrl }) {
         totalAmount: (1 * item.unit_price).toFixed(2)
       });
   };
+  const handleDelete = async (id) => {
+    try {
+      const response = await fetch(`${baseUrl}/catalog-items/${id}/`, {
+        method: 'DELETE',
+        // headers: {
+        //   'Authorization': `Bearer ${token}`, // Use the token prop directly
+        //   'Content-Type': 'application/json',
+        // },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access') || localStorage.getItem('token')}`,          
+        },
+      });
+      if (response.ok) {
+        setCatalogItems(catalogItems.filter((item) => item.id !== id));
+      } else {
+        console.error('Failed to delete catalog item');
+      }s
+    } catch (error) {
+      console.error('Error deleting catalog item:', error);
+    }
+  };
   const getHeaders = () => ({
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
   });
-
   const fetchCatalogItems = async () => {
     try {
       const response = await api.get('/catalog-items/?active_only=true');
@@ -108,7 +128,6 @@ export default function CatalogItems({ token, baseUrl }) {
       console.error('Error loading catalog items:', error);
     }
   };
-
   const fetchCatalog = async () => {
     try {
       const res = await fetch(`${baseUrl}/catalog-items/`, {
@@ -122,9 +141,8 @@ export default function CatalogItems({ token, baseUrl }) {
       console.error('Error fetching catalog items:', err);
     }
   };
-  
   useEffect(() => {
-  fetchCatalogItems();
+    fetchCatalogItems();
   }, []); 
   
   // useEffect(() => {
@@ -276,12 +294,12 @@ export default function CatalogItems({ token, baseUrl }) {
               <td style={{ padding: '12px' }}>${parseFloat(item.unit_price).toFixed(2)}</td>
               <td style={{ padding: '12px', fontSize: '13px', color: '#666' }}>{item.description || '—'}</td>
               <td style={{ padding: '12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-  <button onClick={() => handleViewHistory(item)} style={{ marginRight: '4px', padding: '4px 8px', fontSize: '12px' }}>📈 History</button>
-  <button onClick={() => setEditItem(item)} style={{ marginRight: '4px', padding: '4px 8px', fontSize: '12px' }}>✏️ Edit</button>
-  <button onClick={() => handleToggleActive(item)} style={{ padding: '4px 8px', fontSize: '12px' }}>
-    {item.is_active ? '🚫 Deactivate' : '✅ Activate'}
-  </button>
-</td>
+              <button onClick={() => handleViewHistory(item)} style={{ marginRight: '4px', padding: '4px 8px', fontSize: '12px' }}>📈 History</button>
+              <button onClick={() => setEditItem(item)} style={{ marginRight: '4px', padding: '4px 8px', fontSize: '12px' }}>✏️ Edit</button>
+              <button onClick={() => handleToggleActive(item)} style={{ padding: '4px 8px', fontSize: '12px' }}>
+                {item.is_active ? '🚫 Deactivate' : '✅ Activate'}
+              </button>
+            </td>
             </tr>
           ))}
         </tbody>

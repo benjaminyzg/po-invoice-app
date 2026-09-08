@@ -34,7 +34,6 @@ function CatalogManager({ token }) {
   useEffect(() => {
     if (token) fetchCatalog();
   }, [token]);
-  
   // CSV Export Handler
   const handleExportCSV = () => {
     if (catalog.length === 0) {
@@ -114,9 +113,13 @@ function CatalogManager({ token }) {
     try {
       const res = await fetch('http://127.0.0.1:8000/api/catalog-items/', {
         method: 'POST',
+        // headers: {
+        //   'Content-Type': 'application/json',
+        //   'Authorization': `Token ${token}`
+        // },
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Token ${token}`
+          'Authorization': `Bearer ${localStorage.getItem('access') || localStorage.getItem('token')}`
         },
         body: JSON.stringify(payload)
       });
@@ -135,16 +138,21 @@ function CatalogManager({ token }) {
   };
   // 3. Delete an item
   const handleDeleteItem = async (id) => {
-    try {
-      const res = await fetch(`http://127.0.0.1:8000/api/catalog-items/${id}/`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Token ${token}` }
-      });
-      if (res.ok) fetchCatalog();
-    } catch (err) {
-      setError('Failed to delete item.');
+  try {
+    const res = await fetch(`http://127.0.0.1:8000/api/catalog-items/${id}/`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token || localStorage.getItem('access') || localStorage.getItem('token')}`
+      },
+    });
+    if (res.ok) {
+      fetchCatalog(); // Refresh list
     }
-  };
+  } catch (err) {
+    console.error('Failed to delete item.');
+  }
+};
   const handleItemCreated = (newItem) => {
     setItems((prevItems) => [newItem, ...prevItems]);
   };
