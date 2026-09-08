@@ -10,18 +10,14 @@ const api = axios.create({
 
 // 2. Add Request Interceptor for Auth Header
 api.interceptors.request.use((config) => {
-    //const token = localStorage.getItem('access_token');
-    const token = 
-    localStorage.getItem('token') || 
-    localStorage.getItem('access_token')|| 
-    localStorage.getItem('accessToken') ;
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+  const token = localStorage.getItem('access') || localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
 
 api.interceptors.response.use(
   (response) => response,
@@ -55,13 +51,11 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
 // 3. Helper Functions
 export const validateInvoiceMatch = async (invoiceId) => {
   const response = await api.post(`/invoices/${invoiceId}/validate-match/`);
   return response.data;
 };
-
 export const downloadPackingList = async (invoiceId) => {
   const response = await api.get(`/invoices/${invoiceId}/packing-list/`, {
     responseType: 'blob',
