@@ -9,6 +9,9 @@ const getAuthHeaders = () => {
 };
 
 export const quotationService = {
+
+  
+
   // Fetch all payment term templates
   getPaymentTerms: async () => {
     const response = await axios.get(`${API_BASE_URL}/payment-terms/`, getAuthHeaders());
@@ -21,9 +24,21 @@ export const quotationService = {
     return response.data;
   },
 
+  // Fetch all quotations
+  getAll: async () => {
+    const response = await axios.get(`${API_BASE_URL}/quotations/`, getAuthHeaders());
+    return response.data;
+  },
+
   // Fetch list of existing quotations
   getQuotations: async () => {
     const response = await axios.get(`${API_BASE_URL}/quotations/`, getAuthHeaders());
+    return response.data;
+  },
+
+  // Create quotation (supports both .create and .createQuotation)
+  create: async (data) => {
+    const response = await axios.post(`${API_BASE_URL}/quotations/`, data, getAuthHeaders());
     return response.data;
   },
 
@@ -33,9 +48,21 @@ export const quotationService = {
     return response.data;
   },
 
+  // Update quotation (supports both .update and .updateQuotation)
+  update: async (id, data) => {
+    const response = await axios.put(`${API_BASE_URL}/quotations/${id}/`, data, getAuthHeaders());
+    return response.data;
+  },
+
   // Update an existing quotation
   updateQuotation: async (id, quotationData) => {
     const response = await axios.put(`${API_BASE_URL}/quotations/${id}/`, quotationData, getAuthHeaders());
+    return response.data;
+  },
+
+  // Delete quotation (supports both .delete and .deleteQuotation)
+  delete: async (id) => {
+    const response = await axios.delete(`${API_BASE_URL}/quotations/${id}/`, getAuthHeaders());
     return response.data;
   },
 
