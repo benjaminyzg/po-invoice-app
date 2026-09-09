@@ -12,7 +12,6 @@ const commonInputStyle = {
   boxSizing: 'border-box',
   backgroundColor: '#ffffff'
 };
-
 const labelStyle = {
   display: 'block',
   fontSize: '13px',
@@ -21,7 +20,6 @@ const labelStyle = {
   marginBottom: '6px',
   textAlign: 'left'
 };
-
 const sectionTitleStyle = {
   fontSize: '15px',
   fontWeight: '600',
@@ -50,29 +48,6 @@ export default function Settings({ token, baseUrl }) {
   const [logoPreview, setLogoPreview] = useState('');
   const [message, setMessage] = useState('');
 
-  // useEffect(() => {
-  //   const token = localStorage.getItem('access'); // or retrieve from AuthContext / props
-
-  //   fetch(`${baseUrl}/company-settings/1/`, {
-  //     headers: {
-  //       'Authorization': `Bearer ${localStorage.getItem('access')}`,
-  //       //'Authorization': `Bearer ${token}`,
-  //       'Accept': 'application/json',
-  //     },
-  //   })
-  //     .then((res) => {
-  //       if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-  //       return res.json();
-  //     })
-  //     .then((data) => {
-  //       if (data) {
-  //         setFormData(data);
-  //         if (data.logo) setLogoPreview(data.logo);
-  //       }
-  //     })
-  //     .catch((err) => console.error('Error fetching settings:', err));
-  // }, [baseUrl]);
-
   useEffect(() => {
       fetch(`${baseUrl}/company-settings/1/`, {
         headers: {
@@ -96,18 +71,15 @@ export default function Settings({ token, baseUrl }) {
       setLogoFile(e.target.files[0]);
     }
   };
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
   const handleLogoChange = (e) => {
     if (e.target.files[0]) {
       setLogoFile(e.target.files[0]);
       setLogoPreview(URL.createObjectURL(e.target.files[0]));
     }
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     

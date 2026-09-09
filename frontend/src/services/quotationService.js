@@ -4,7 +4,7 @@ const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 // Helper to get auth headers consistently
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('access') || localStorage.getItem('token');
+  const token = localStorage.getItem('token') || localStorage.getItem('access');
   return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
 };
 
