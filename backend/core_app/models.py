@@ -37,6 +37,14 @@ class Invoice(models.Model):
     item_description = models.TextField(blank=True, null=True)
     vendor_address = models.TextField(blank=True, null=True)
 
+    vendor_name = models.CharField(max_length=255)
+    client_email = models.EmailField(blank=True, null=True)
+    client_phone_number = models.CharField(max_length=20, blank=True, null=True)
+    client_office_number = models.CharField(max_length=20, blank=True, null=True)
+    client_postal_code = models.CharField(max_length=20, blank=True, null=True)
+    client_billing_address = models.TextField(blank=True, null=True)
+    client_contact_person = models.CharField(max_length=100, blank=True, null=True)
+
     def __str__(self):
         return self.invoice_number
 
@@ -79,3 +87,13 @@ class LineItem(models.Model):
     @property
     def total_price(self):
         return self.quantity * self.unit_price
+
+class CompanySettings(models.Model):
+    name = models.CharField(max_length=255, default="My Company")
+    tax_uen = models.CharField(max_length=50, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    office_number = models.CharField(max_length=20, blank=True, null=True)
+    contact_person = models.CharField(max_length=100, blank=True, null=True)
+    full_address = models.TextField(blank=True, null=True)
+    web = models.URLField(blank=True, null=True)

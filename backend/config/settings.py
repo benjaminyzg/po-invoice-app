@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'import_export',
     'core_app',
+    'orders',    
+    'catalog',
     'invoices',
 ]
 

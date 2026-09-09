@@ -33,7 +33,7 @@ class QuotationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quotation
-        fields = ['id', 'client_name', 'created_at', 'valid_until', 'payment_term', 'payment_term_details', 'status', 'items']
+        fields = '__all__'
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')
@@ -41,6 +41,21 @@ class QuotationSerializer(serializers.ModelSerializer):
         for item_data in items_data:
             QuotationItem.objects.create(quotation=quotation, **item_data)
         return quotation
+
+    def update(self, instance, validated_data):
+        items_data = validated_data.pop('items', [])
+        
+        # Update basic quotation fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Handle updating/recreating nested items cleanly
+        instance.items.all().delete() # Or implement mapping logic based on your preferences
+        for item_data in items_data:
+            QuotationItemSerializer.create(QuotationItemSerializer(), validated_data={**item_data, 'quotation': instance})
+            
+        return instance
 
 class CompanySettingsSerializer(serializers.ModelSerializer):
     class Meta:
