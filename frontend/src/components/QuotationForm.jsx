@@ -57,26 +57,40 @@ export default function QuotationForm() {
     
     // Safely extract the array whether it's paginated or a plain array
     const data = quotationsRes.data || quotationsRes;
-    const list = Array.isArray(data) ? data : (data.results || []);
-    setQuotations(list);
-
+    const rawList = Array.isArray(data) ? data : (data.results || []);
+    // Deduplication check
+    const uniqueList = rawList.filter((item, index, self) =>
+    index === self.findIndex((t) => (
+        t.client_name === item.client_name && t.valid_until === item.valid_until
+      ))
+    );
+    setQuotations(uniqueList);
     setLoading(false); // Stops the loading screen!
-  })
-  .catch(err => {
-    console.error("Error loading form data:", err);
-    setLoading(false); // Ensures loading stops even if an error occurs
-  });
-}, []);
+    }) // <--- Make sure the .then() block closes here!
+    .catch(err => {
+      console.error("Error loading form data:", err);
+      setLoading(false); // Ensures loading stops even if an error occurs
+    });
+  }, []);
 
   // Fetch history when the form page loads (or after a successful submit)
   const fetchQuotations = async () => {
-    try {
-      const data = await quotationService.getQuotations();
-      setQuotations(data);
-    } catch (error) {
-      console.error("Error fetching quotations:", error);
-    }
-  };
+  try {
+    const response = await quotationService.getQuotations();
+    const data = response.data || response;
+    const rawList = Array.isArray(data) ? data : (data.results || []);
+
+    const uniqueList = rawList.filter((item, index, self) =>
+      index === self.findIndex((t) => (
+        t.client_name === item.client_name && t.valid_until === item.valid_until
+      ))
+    );
+
+    setQuotations(uniqueList);
+  } catch (error) {
+    console.error("Error fetching quotations:", error);
+  }
+};
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
     newItems[index][field] = value;
@@ -106,24 +120,25 @@ export default function QuotationForm() {
     }, 0).toFixed(2);
   };
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        client_name: clientName,
-        valid_until: validUntil,
-        payment_term: selectedPaymentTerm || null,
-        items: items.map(i => ({
-          catalog_item: parseInt(i.catalog_item),
-          quantity: parseInt(i.quantity),
-          unit_price: parseFloat(i.unit_price)
-        }))
-      };
+  e.preventDefault();
+  // App-level duplicate check
+    const duplicateExists = quotations.some(
+      (q) => 
+        q.client_name?.trim().toLowerCase() === formData.client_name?.trim().toLowerCase() && 
+        q.valid_until === formData.valid_until
+    );
 
-      const result = await quotationService.createQuotation(payload);
-      alert(`Quotation #${result.id} successfully created!`);
+    if (duplicateExists) {
+      alert("⚠️ Duplicate Warning: A quotation for this client with the same validity date already exists in your records.");
+      return; // Stop submission
+    }
+
+    try {
+      await quotationService.createQuotation(formData);
+      // Refresh list or reset form here
+      alert("Quotation created successfully!");
     } catch (error) {
-      console.error("Error creating quotation:", error.response?.data || error.message);
-      alert("Failed to create quotation. Check console for validation details.");
+      console.error("Error creating quotation:", error);
     }
   };
   const handleExportPDF = () => {
