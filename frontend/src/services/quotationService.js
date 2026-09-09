@@ -31,5 +31,17 @@ export const quotationService = {
   createQuotation: async (quotationData) => {
     const response = await axios.post(`${API_BASE_URL}/quotations/`, quotationData, getAuthHeaders());
     return response.data;
-  }
+  },
+
+  // Update an existing quotation
+  updateQuotation: async (id, quotationData) => {
+    const response = await axios.put(`${API_BASE_URL}/quotations/${id}/`, quotationData, getAuthHeaders());
+    return response.data;
+  },
+
+  // Delete a quotation by ID
+  deleteQuotation: async (id) => {
+    const response = await axios.delete(`${API_BASE_URL}/quotations/${id}/`, getAuthHeaders());
+    return response.data;
+  },
 };

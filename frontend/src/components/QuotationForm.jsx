@@ -4,6 +4,15 @@ import CardContainer from './common/CardContainer';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
+const inputStyle = {
+  padding: '10px 12px',       // Increases the input box height/size
+  fontSize: '16px',           // Increases the text font size
+  width: '100%',
+  borderRadius: '4px',
+  border: '1px solid #ccc',
+  marginBottom: '12px'
+};
+
 export default function QuotationForm() {
   const [paymentTerms, setPaymentTerms] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);
@@ -23,27 +32,12 @@ export default function QuotationForm() {
   });
   const [quotations, setQuotations] = useState([]);
   const [filter, setFilter] = useState('All');
+  const [editingId, setEditingId] = useState(null);
 
   const filteredQuotations = quotations.filter(q => {
     if (filter === 'All') return true;
     return q.status?.toLowerCase() === filter.toLowerCase();
   });
-
-  // useEffect(() => {
-  //   Promise.all([
-  //     quotationService.getPaymentTerms(),
-  //     quotationService.getCatalogItems()
-  //   ])
-  //     .then(([terms, items]) => {
-  //       setPaymentTerms(terms);
-  //       setCatalogItems(items);
-  //       setLoading(false);
-  //     })
-  //     .catch(err => {
-  //       console.error("Error loading form dependencies:", err);
-  //       setLoading(false);
-  //     });
-  // }, []);
 
   useEffect(() => {
   Promise.all([
@@ -72,7 +66,6 @@ export default function QuotationForm() {
       setLoading(false); // Ensures loading stops even if an error occurs
     });
   }, []);
-
   // Fetch history when the form page loads (or after a successful submit)
   const fetchQuotations = async () => {
   try {
@@ -120,27 +113,28 @@ export default function QuotationForm() {
     }, 0).toFixed(2);
   };
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  // App-level duplicate check
-    const duplicateExists = quotations.some(
-      (q) => 
-        q.client_name?.trim().toLowerCase() === formData.client_name?.trim().toLowerCase() && 
-        q.valid_until === formData.valid_until
-    );
-
-    if (duplicateExists) {
-      alert("⚠️ Duplicate Warning: A quotation for this client with the same validity date already exists in your records.");
-      return; // Stop submission
-    }
+    e.preventDefault();
 
     try {
-      await quotationService.createQuotation(formData);
-      // Refresh list or reset form here
-      alert("Quotation created successfully!");
+      if (editingId) {
+        // Update existing record
+        await quotationService.updateQuotation(editingId, formData);
+        alert("Quotation updated successfully!");
+        setEditingId(null);
+      } else {
+        // Create new record
+        await quotationService.createQuotation(formData);
+        alert("Quotation created successfully!");
+      }
+
+      // Reset form and refresh list
+      setEditingId(null);
+      // call fetchQuotations() here if you have it scoped, or reload data
     } catch (error) {
-      console.error("Error creating quotation:", error);
+      console.error("Error submitting quotation form:", error);
     }
   };
+  
   const handleExportPDF = () => {
     if (!clientName || !validUntil || items.some(i => !i.catalog_item)) {
       alert("Please complete client name, validity date, and select catalog items before exporting to PDF.");
@@ -192,6 +186,35 @@ export default function QuotationForm() {
 
     doc.save(`Quotation_${clientName.replace(/\s+/g, '_')}.pdf`);
   };
+  // 1. Delete Handler
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this quotation?")) {
+      try {
+        await quotationService.deleteQuotation(id);
+        // Immediately filter out the deleted record from local state
+        setQuotations(quotations.filter(q => q.id !== id));
+      } catch (error) {
+        console.error("Error deleting quotation:", error);
+      }
+    }
+  };
+  // 2. Edit Handler (Populates the form with existing record data)
+  const handleEdit = (quotation) => {
+    setEditingId(quotation.id);
+    setClientName(quotation.client_name || '');
+    setValidUntil(quotation.valid_until || '');
+    setSelectedPaymentTerm(quotation.payment_term || '');
+    setItems(quotation.items || []);
+    // Populate any other relevant form fields here as needed
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll up to the form
+  };
+  // 3. View / Export Handler
+  const handleViewExport = (quotation) => {
+    console.log("Viewing/Exporting quotation:", quotation);
+    // You can trigger a PDF modal or window open route here
+    alert(`Exporting quotation for: ${quotation.client_name}`);
+  };
+
   if (loading) {
     return <div className="p-8 text-center text-gray-500">Loading quotation workspace...</div>;
   }
@@ -213,44 +236,42 @@ export default function QuotationForm() {
   
     {/* General Metadata Section */}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="w-full">
-          <label className="block text-sm font-bold text-slate-800 mb-1.5">Client Name *</label>
-          <input
-            type="text"
-            placeholder="e.g., Acme Corporation"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
-          />
-        </div>
-        <div className="w-full">
-          <label className="block text-sm font-bold text-slate-800 mb-1.5">Valid Until *</label>
-          <input
-            type="date"
-            value={validUntil}
-            onChange={(e) => setValidUntil(e.target.value)}
-            required
-            className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
-          />
-        </div>
-        <div className="w-full">
-          <label className="block text-sm font-bold text-slate-800 mb-1.5">Payment Term Template</label>
-          <select
-            value={selectedPaymentTerm}
-            onChange={(e) => setSelectedPaymentTerm(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm"
-          >
-            <option value="">Select Terms...</option>
-            {paymentTerms.map(term => (
-              <option key={term.id} value={term.id}>{term.name} ({term.due_days} Days)</option>
-            ))}
-          </select>
-        </div>
+        <div>
+  <label>Client Name *</label>
+  <input 
+    type="text" 
+    value={formData.client_name} 
+    onChange={(e) => setFormData({...formData, client_name: e.target.value})}
+    style={inputStyle}
+    placeholder="e.g., Acme Corporation"
+  />
+</div>
+        <div>
+  <label>Valid Until *</label>
+  <input 
+    type="date" 
+    value={formData.valid_until} 
+    onChange={(e) => setFormData({...formData, valid_until: e.target.value})}
+    style={inputStyle}
+  />
+</div>
+        <div>
+  <label>Payment Term Template</label>
+  <select 
+    value={formData.payment_term} 
+    onChange={(e) => setFormData({...formData, payment_term: e.target.value})}
+    style={inputStyle}
+  >
+    <option value="">Select Terms...</option>
+    {paymentTerms.map(term => (
+      <option key={term.id} value={term.id}>{term.name}</option>
+    ))}
+  </select>
+</div>
     </div>
 
     {/* Client Detailed Billing Information Section (2x2 Grid) */}
-    <div className="p-6 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-5 w-full">
+    <div className="w-full border border-gray-300 rounded-lg p-4 text-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
       <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider">Client Billing Details</h4>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
@@ -313,42 +334,44 @@ export default function QuotationForm() {
     {/* Table matching Invoice Records format */}
     <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <thead>
-        <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #dee2e6', textAlign: 'left' }}>
-          <th style={{ padding: '12px' }}>Quotation #</th>
-          <th style={{ padding: '12px' }}>Client Name</th>
-          <th style={{ padding: '12px' }}>Valid Until</th>
-          <th style={{ padding: '12px' }}>Status</th>
-          <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {filteredQuotations.map((q) => (
-          <tr key={q.id} style={{ borderBottom: '1px solid #dee2e6' }}>
-            <td style={{ padding: '12px', fontWeight: 'bold' }}>QT-{q.id}</td>
-            <td style={{ padding: '12px' }}>{q.client_name}</td>
-            <td style={{ padding: '12px' }}>{q.valid_until}</td>
-            <td style={{ padding: '12px' }}>
-              <span style={{ 
-                background: '#fff3cd', 
-                color: '#856404', 
-                padding: '4px 8px', 
-                borderRadius: '4px', 
-                fontSize: '12px', 
-                fontWeight: 'bold' 
-              }}>
-                {q.status || 'DRAFT'}
-              </span>
-            </td>
-           <td style={{ padding: '12px', textAlign: 'right' }}>
-            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-              <button onClick={() => handleEdit(q.id)} style={{ background: '#28a745', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>Edit</button>
-              <button onClick={() => handleDelete(q.id)} style={{ background: '#dc3545', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>Delete</button>
-              <button onClick={() => handleView(q.id)} style={{ background: '#007bff', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>View / Export</button>
-            </div>
-          </td>         
-        </tr>
-          ))}
-        </tbody>
+  <tr>
+    <th style={{ textAlign: 'center' }}>Quote #</th>
+    <th>Client Name</th>
+    <th style={{ textAlign: 'center' }}>Valid Until</th>
+    <th style={{ textAlign: 'center' }}>Status</th>
+    <th style={{ textAlign: 'center' }}>Actions</th>
+  </tr>
+</thead>
+<tbody>
+  {filteredQuotations.map((q) => (
+    <tr key={q.id}>
+      <td style={{ textAlign: 'center' }}>{q.quotation_number || `Q-${q.id}`}</td>
+      <td>{q.client_name}</td>
+      <td style={{ textAlign: 'center' }}>{q.valid_until}</td>
+      <td style={{ textAlign: 'center' }}>{q.status || 'DRAFT'}</td>
+      <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+        <button 
+          onClick={() => handleEdit(q)} 
+          style={{ backgroundColor: '#28a745', color: 'white', border: 'none', padding: '4px 8px', marginRight: '4px', borderRadius: '4px', cursor: 'pointer' }}
+        >
+          Edit
+        </button>
+        <button 
+          onClick={() => handleDelete(q.id)} 
+          style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '4px 8px', marginRight: '4px', borderRadius: '4px', cursor: 'pointer' }}
+        >
+          Delete
+        </button>
+        <button 
+          onClick={() => handleViewExport(q)} 
+          style={{ backgroundColor: '#007bff', color: 'white', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
+        >
+          View/Export
+        </button>
+      </td>
+    </tr>
+  ))}
+</tbody>
       </table>
     </div>
   </CardContainer>
