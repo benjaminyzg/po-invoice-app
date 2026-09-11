@@ -20,9 +20,12 @@ class PaymentTermTemplate(models.Model):
 
 class Quotation(models.Model):
     """Quotation document tracking pricing validity and payment schedules"""
+    quote_reference = models.CharField(max_length=100, blank=True, null=True)
     client_name = models.CharField(max_length=255) # Or ForeignKey to a Client model if available
+    currency = models.CharField(max_length=10, default="SGD")
     created_at = models.DateTimeField(auto_now_add=True)
     valid_until = models.DateField(help_text="Date until which this quoted price is valid")
+    incoterm = models.CharField(max_length=50, blank=True, null=True)
     payment_term = models.ForeignKey(PaymentTermTemplate, on_delete=models.SET_NULL, null=True)
     
     STATUS_CHOICES = [

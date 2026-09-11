@@ -55,12 +55,40 @@ export default function PurchaseOrders({ token, baseUrl }) {
     }
   };
   const handleSubmit = async (e) => {
+<<<<<<< Updated upstream
     e.preventDefault();
    
     // Resolve active ID cleanly across possible state variable names
     const activeId = editingId;
     const url = editingId 
       ? `${baseUrl}/purchase-orders/${editingId}/` 
+=======
+  e.preventDefault();
+  
+  const calculatedTotal = items.reduce((sum, item) => {
+    const qty = Number(item.qty || item.quantity || 1);
+    const price = Number(item.unitPrice || item.unit_price || 0);
+    return sum + (qty * price);
+  }, 0);
+
+  const payload = {
+    po_number: poNumber,
+    vendor_name: vendor,
+    status: status,
+    total_amount: calculatedTotal,  
+    items: items.map(item => ({
+      description: item.description,
+      // Change 'qty' to 'quantity'
+      quantity: Number(item.qty || item.quantity || 1),
+      unit_price: Number(item.unitPrice || item.unit_price || 0),
+      currency: item.currency || 'SGD'
+    })),
+  };
+
+  try {
+    const url = editingPoId 
+      ? `${baseUrl}/purchase-orders/${editingPoId}/` 
+>>>>>>> Stashed changes
       : `${baseUrl}/purchase-orders/`;
     const method = editingId ? 'PATCH' : 'POST';
 
@@ -75,6 +103,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
     if (file) {
         formData.append('supporting_document', file);
     }
+<<<<<<< Updated upstream
 
     try {
         // 1. ADD THIS: Read the active ID from state
@@ -117,6 +146,15 @@ export default function PurchaseOrders({ token, baseUrl }) {
         console.error('Error handling PO Submission:', err);
         alert(err.message);
     }
+=======
+    // Reset form & edit state
+    handleResetForm();
+    fetchPOs(); // Refresh table data
+  } catch (err) {
+    console.error('Save Error:', err);
+    setError(err.message);
+  }
+>>>>>>> Stashed changes
   };
   const handleStatusChange = async (poId, newStatus) => { 
     // Point 1: Check if click handler was triggered and inspect arguments
@@ -186,7 +224,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
   });
-  
   const formatCurrency = (amount) => {
     const num = Number(amount) || 0;
     return num.toLocaleString('en-US', {
@@ -194,7 +231,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
       maximumFractionDigits: 2,
     });
   };
-  
   const handleResetForm = () => {
     setEditingPoId(null);
     setSelectedPoToEdit(null);
@@ -203,8 +239,8 @@ export default function PurchaseOrders({ token, baseUrl }) {
     setStatus('PENDING');
     setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
+<<<<<<< Updated upstream
     return (
-      <>
         <CardContainer title="Purchase Orders (PO)" subtitle="Create New PO" maxWidth="100%">
           <div style={{ padding: '10px 0' }}>
           {/* <h3 style={{ textAlign: 'center' }}>📦 Purchase Orders (PO)</h3> */}
@@ -212,6 +248,104 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
           <form 
             onSubmit={handleSubmit} 
+=======
+  const handleDelete = async (poRecord) => {
+      const confirmed = window.confirm(`Are you sure you want to permanently delete PO ${poRecord.po_number}?`);
+      if (!confirmed) return;
+
+        try {
+          const response = await fetch(`${baseUrl}/purchase-orders/${poRecord.id}/`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Token ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to delete purchase order');
+          }
+
+          // Refresh data if fetch function is available
+          if (typeof fetchPurchaseOrders === 'function') {
+            fetchPurchaseOrders();
+          } else {
+            window.location.reload();
+          }
+        } catch (err) {
+          console.error('Error deleting purchase order:', err);
+          alert(err.message);
+        }
+  };
+
+  return (
+    <div style={{ padding: '10px 0' }}>
+      <h3 style={{ textAlign: 'center' }}>📦 Purchase Orders (PO)</h3>
+      {error && <div style={{ color: 'red', marginBottom: '10px', textAlign: 'center' }}>{error}</div>}
+
+      <form 
+        onSubmit={handleSubmit} 
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '16px', 
+          maxWidth: '750px', 
+          margin: '0 auto 30px auto', 
+          textAlign: 'left' 
+        }}
+      >
+      <h4 style={{ textAlign: 'center', margin: '0 0 5px 0', fontSize: '18px', fontWeight: '500' }}>
+        Create New PO
+      </h4>
+
+      {/* 1. Header Details */}
+      <PoHeaderDetails 
+        poNumber={poNumber} 
+        setPoNumber={setPoNumber} 
+        vendor={vendor} 
+        setVendor={setVendor} 
+        status={status} 
+        setStatus={setStatus} 
+      />
+
+      <hr style={{ border: '0', borderTop: '1px solid #eee', margin: '5px 0' }} />
+
+      {/* 2. Dynamic Line Items */}
+      <PoLineItems 
+        items={items} 
+        handleItemChange={handleItemChange} 
+        handleAddItem={handleAddItem} 
+        handleRemoveItem={handleRemoveItem} 
+      />
+
+      {/* 3. Summary Block */}
+      <PoSummary totalsByCurrency={totalsByCurrency}/>
+
+      {/* Submit Button */}
+      <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+        <button 
+          type="submit"
+          style={{
+            flex: 1,
+            padding: '12px',
+            backgroundColor: editingPoId ? '#28a745' : '#0d6efd', // Green for update, blue for create
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '6px',
+            fontWeight: 'bold',
+            fontSize: '15px',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s'
+          }}
+        >
+          {editingPoId ? 'Update Purchase Order' : 'Create Purchase Order'}
+        </button>
+
+        {editingPoId && (
+          <button 
+            type="button" 
+            onClick={handleResetForm} 
+>>>>>>> Stashed changes
             style={{ 
               display: 'flex', 
               flexDirection: 'column', 
@@ -237,6 +371,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
           <hr style={{ border: '0', borderTop: '1px solid #eee', margin: '5px 0' }} />
 
+<<<<<<< Updated upstream
           {/* 2. Dynamic Line Items */}
           <PoLineItems 
             items={items} 
@@ -244,9 +379,24 @@ export default function PurchaseOrders({ token, baseUrl }) {
             handleAddItem={handleAddItem} 
             handleRemoveItem={handleRemoveItem} 
           />
+=======
+          if (po.items && Array.isArray(po.items) && po.items.length > 0) {
+            setItems(
+              po.items.map((item) => ({
+                description: item.description || '',
+                qty: item.qty || item.quantity || 1,
+                unitPrice: item.unit_price || item.unitPrice || '',
+                currency: item.currency || 'SGD'
+              }))
+            );
+          } else {
+            setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
+          }
+>>>>>>> Stashed changes
 
           {/* 3. Summary Block */}
           <PoSummary totalsByCurrency={totalsByCurrency}/>
+
           {/* 4. Supporting Document Upload */}
           <div style={{ marginTop: '12px', marginBottom: '12px', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>
@@ -259,6 +409,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
               style={{ fontSize: '14px' }}
             />
           </div>
+          
           {/* Submit Button */}
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
             <button 
@@ -336,8 +487,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
             }
           }}
         />
-      </>
-    )
+    );
 }  
   /* 1. Header Details */
   function PoHeaderDetails({ poNumber, setPoNumber, vendor, setVendor, status, setStatus }) {
@@ -664,12 +814,20 @@ export default function PurchaseOrders({ token, baseUrl }) {
     setExpandedPoIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
+<<<<<<< Updated upstream
   };
 
     return (
       <div>
         <h4 style={{ textAlign: 'center', fontWeight: 'bold', margin: '20px 0 15px 0', color: '#333' }}>
           Purchase Order History
+=======
+  }
+    return (
+      <div>
+        <h4 style={{ textAlign: 'center', margin: '20px 0 15px 0', color: '#333', fontWeight: 'bold', textDecoration: 'underline', fontSize: '15px'}}>
+        Purchase Order History
+>>>>>>> Stashed changes
         </h4>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
@@ -733,11 +891,15 @@ export default function PurchaseOrders({ token, baseUrl }) {
                       <div style={{ display: 'inline-flex', gap: '6px' }}>
                         <button
                           type="button"
+<<<<<<< Updated upstream
                           onClick={() =>{
                               console.log("Clicked Edit for PO:", po);
                               console.log("PO ID is:", po?.id);
                               handleEdit(po);
                           }}
+=======
+                          onClick={() => handleEdit(po)}
+>>>>>>> Stashed changes
                           style={{
                             padding: '4px 8px',
                             fontSize: '12px',
@@ -757,7 +919,11 @@ export default function PurchaseOrders({ token, baseUrl }) {
                             padding: '4px 8px',
                             fontSize: '12px',
                             cursor: po.status === 'CANCELLED' ? 'not-allowed' : 'pointer',
+<<<<<<< Updated upstream
                             backgroundColor: po.status === 'CANCELLED' ? '#e9ecef' : '#dc3545',
+=======
+                            backgroundColor: po.status === 'CANCELLED' ? '#e9ecef' : '#d97706',
+>>>>>>> Stashed changes
                             color: po.status === 'CANCELLED' ? '#adb5bd' : '#ffffff',
                             border: 'none',
                             borderRadius: '4px'
@@ -765,6 +931,24 @@ export default function PurchaseOrders({ token, baseUrl }) {
                         >
                           Cancel
                         </button>
+<<<<<<< Updated upstream
+=======
+                        <button
+                          type="button"
+                          onClick={() => handleDelete && handleDelete(po)}
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            backgroundColor: '#dc3545',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '4px'
+                          }}
+                        >
+                          Delete
+                        </button>
+>>>>>>> Stashed changes
                       </div>
                     </td>
                   </tr>

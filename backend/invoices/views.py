@@ -3,6 +3,8 @@ from rest_framework import viewsets, permissions, status
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework import viewsets, permissions, status, generics
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings
@@ -115,15 +117,20 @@ class CatalogItemViewSet(viewsets.ModelViewSet):
     # permission_classes = [permissions.IsAuthenticated]
     permission_classes = [permissions.AllowAny]
 
+class PurchaseOrderDeleteView(generics.DestroyAPIView):
+    queryset = PurchaseOrder.objects.all()
+    serializer_class = PurchaseOrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
     # queryset = PurchaseOrder.objects.all().order_by('-created_at')
     # Prefetch related items to avoid N+1 queries
     queryset = PurchaseOrder.objects.all().order_by('-created_at')
     queryset = PurchaseOrder.objects.all().prefetch_related('items')
     serializer_class = PurchaseOrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
     # Temporarily allow unauthenticated requests for testing:
-    # permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
 
     # inside PurchaseOrderViewSet or view method
     def partial_update(self, request, *args, **kwargs):

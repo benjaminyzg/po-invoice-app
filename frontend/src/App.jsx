@@ -11,6 +11,7 @@ import Settings from './components/settings/Settings';
 import Dashboard from './components/Dashboard';
 import UsersAdmin from './components/UsersAdmin';
 import CatalogManagement from './components/CatalogManagement';
+import QuotationFormWip from './components/QuotationFormWip';
 import CatalogManager from './CatalogManager';
 import './App.css'; 
 
@@ -50,6 +51,9 @@ export default function App() {
         <button onClick={() => setActiveTab('quotations')} style={{ padding: '8px 16px', fontWeight: activeTab === 'quotations' ? 'bold' : 'normal' }}>
           📋 Quotation Form
         </button>
+        <button onClick={() => setActiveTab('quotation-wip')} className={`px-3 py-2 text-sm font-semibold rounded-md ${activeTab === 'quotation-wip' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+          📋 Quotation Form (New)
+        </button>
         <button onClick={() => setActiveTab('catalog')} style={{ padding: '8px 16px', fontWeight: activeTab === 'catalog' ? 'bold' : 'normal' }}>
           🏷️ Catalog Items
         </button>
@@ -80,6 +84,7 @@ export default function App() {
         {activeTab === 'quotations' && (
           <QuotationForm token={token} baseUrl={BASE_URL} />)}
         {/* Tab Views */}
+        {activeTab === 'quotation-wip' && <QuotationFormWip />}
         {activeTab === 'settings' && (
           <Settings token={token} baseUrl={BASE_URL} />
         )}

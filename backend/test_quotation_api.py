@@ -26,47 +26,56 @@ def get_auth_headers():
 def test_quotation_lifecycle():
     print("--- Starting Quotation API Tests ---")
 
-    # # 1. READ (Get all quotations)
-    # print("\n1. Testing GET /quotations/...")
-    # response = requests.get(f"{BASE_URL}/quotations/", headers=get_headers())
-    # print(f"Status Code: {response.status_code}")
-    # if response.status_code == 200:
-    #     print(f"Fetched {len(response.json())} quotations successfully.")
-    # else:
-    #     print(f"Failed to fetch: {response.text}")
-    #     return
+    # 1. READ (Get all quotations)
+    print("\n1. Testing GET /quotations/...")
+    response = requests.get(f"{BASE_URL}/quotations/", headers=get_auth_headers())
+    print(f"Status Code: {response.status_code}")
+    if response.status_code == 200:
+        print(f"Fetched {len(response.json())} quotations successfully.")
+    else:
+        print(f"Failed to fetch: {response.text}")
+        return
 
-    # # 2. CREATE (New Quotation)
-    # print("\n2. Testing POST /quotations/ (Create)...")
-    # payload = {
-    #     "client_name": "Test Client Pte Ltd",
-    #     "valid_until": "2026-12-31",
-    #     "payment_term": 1,  # Use a numeric primary key ID instead of a string
-    #     "client_contact_person": "John Doe",
-    #     "client_email": "john@testclient.com",
-    #     "client_phone": "+6591234567",
-    #     "client_postal_code": "123456",
-    #     "client_billing_address": "123 Test Street, Singapore",
-    #     "items": [
-    #         {
-    #             "catalog_item": 1,  # Provide the primary key ID of an existing catalog item
-    #             "description": "Web Development Services",
-    #             "quantity": 2,
-    #             "unit_price": "500.00"
-    #         }
-    #     ]
-    # }
-    # Fetch existing catalog items to get a valid ID
+    # 2. CREATE (New Quotation)
+    print("\n2. Testing POST /quotations/ (Create)...")
+
+    # Fetch existing catalog items to get a valid ID FIRST
     cat_response = requests.get(f"{BASE_URL}/catalog-items/", headers=get_auth_headers())
+    print("Catalog Items API Response:", cat_response.status_code, cat_response.text)
+
     if cat_response.status_code == 200 and len(cat_response.json()) > 0:
         valid_catalog_item_id = cat_response.json()[0]["id"]
     else:
-        valid_catalog_item_id = 1  # fallback
+        # Fallback: Create one programmatically if the API list is empty
+        create_cat = requests.post(f"{BASE_URL}/catalog-items/", json={
+            "sku": "SUP-CAR-001",
+            "name": "Supersport Car",
+            "unit_price": "1500.00",
+            "packing_dimensions": "200 x 200 x 500",
+            "gross_weight": "1599.00"
+        }, headers=get_auth_headers())
         
+        if create_cat.status_code in [200, 201]:
+            valid_catalog_item_id = create_cat.json()["id"]
+        else:
+            print("Catalog creation fallback failed:", create_cat.status_code, create_cat.text)
+            valid_catalog_item_id = 1
+            
+    # Fetch existing payment terms to get a valid ID FIRST
+    payment_response = requests.get(f"{BASE_URL}/payment-terms/", headers=get_auth_headers())
+    if payment_response.status_code == 200 and len(payment_response.json()) > 0:
+        valid_payment_term_id = payment_response.json()[0]["id"]
+    else:
+        valid_payment_term_id = 1  # fallback
+
+    print(f"Using catalog item ID: {valid_catalog_item_id}")
+    print(f"Using payment term ID: {valid_payment_term_id}")
+
+    # NOW define the payload using the dynamic variables
     payload = {
         "client_name": "Test Client Pte Ltd",
         "valid_until": "2026-12-31",
-        "payment_term": 1,
+        "payment_term": valid_payment_term_id, 
         "client_contact_person": "John Doe",
         "client_email": "john@testclient.com",
         "client_phone": "+6591234567",
@@ -74,13 +83,14 @@ def test_quotation_lifecycle():
         "client_billing_address": "123 Test Street, Singapore",
         "items": [
             {
-                "catalog_item": valid_catalog_item_id,  # Use an existing ID
+                "catalog_item": valid_catalog_item_id, 
                 "description": "Web Development Services",
                 "quantity": 2,
                 "unit_price": "500.00"
             }
         ]
     }
+
     response = requests.post(f"{BASE_URL}/quotations/", json=payload, headers=get_auth_headers())
     print(f"Status Code: {response.status_code}")
     
