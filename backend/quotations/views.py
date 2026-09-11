@@ -6,7 +6,14 @@ from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
+from rest_framework import viewsets
 from .models import Quotation
+from .serializers import QuotationSerializer  # Adjust if named differently
+
+class QuotationViewSet(viewsets.ModelViewSet):
+    queryset = Quotation.objects.all().order_by('-id')
+    serializer_class = QuotationSerializer
+    permission_classes = [AllowAny]
 
 @api_view(['GET'])
 @permission_classes([AllowAny])

@@ -1,42 +1,45 @@
 import os
 import django
-import requests
+from datetime import date, timedelta
 
-# 1. Initialize Django context
+# 1. Initialize Django settings context
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from quotations.models import Quotation, QuotationItem  # Adjust imports as needed
-from datetime import date, timedelta
+from quotations.models import Quotation, QuotationItem
 
-def run_test_and_seed():
-    print("--- 1. Seeding Dummy Quotation Records ---")
-    
-    sample_data = [
+
+def seed_quotations():
+    print("--- Clearing existing quotation records ---")
+    Quotation.objects.all().delete()
+
+    dummy_data = [
         {
             "ref": "QT-2026-001",
-            "entity": "Singtech Engineering Pte Ltd",
-            "contact": "David Tan",
-            "email": "david.tan@singtech.sg",
+            "entity": "Nexus Systems Singapore Pte Ltd",
+            "contact": "John Doe",
+            "email": "john.doe@nexussystems.sg",
             "mobile": "+65 9123 4567",
             "office": "+65 6789 0123",
-            "address": "12 Jurong East Street 21, #04-02",
-            "postal": "609601",
+            "address": "3 Bedok South Road, #01-12",
+            "postal": "469269",
             "country": "Singapore",
-            "incoterm": "FOB",
+            "incoterm": "EXW",
             "payment": "30 Days",
             "validity": date.today() + timedelta(days=30),
+            "remarks": "Standard 30-day quote for enterprise networking hardware.",
             "items": [
-                {"description": "Industrial Router Module X1", "quantity": 2, "unit_price": 650.00},
-                {"description": "On-Site Installation & Setup", "quantity": 1, "unit_price": 300.00}
-            ]
+                {"description": "Industrial Mesh Wi-Fi Access Point X90", "quantity": 3, "unit_price": 450.00},
+                {"description": "Cat6A Ethernet Cables (50m Spool)", "quantity": 5, "unit_price": 65.50},
+                {"description": "On-Site Installation & Configuration", "quantity": 1, "unit_price": 500.00},
+            ],
         },
         {
             "ref": "QT-2026-002",
             "entity": "Global Logistics Malaysia Sdn Bhd",
-            "contact": "Ahmad Razak",
-            "email": "ahmad@globallogistics.my",
-            "mobile": "+60 12 345 6789",
+            "contact": "Jane Smith",
+            "email": "jane.smith@globallogistics.my",
+            "mobile": "+60 12 9876 5432",
             "office": "+60 3 5566 7788",
             "address": "Bangsar South, No 8 Jalan Kerinchi",
             "postal": "59200",
@@ -44,61 +47,84 @@ def run_test_and_seed():
             "incoterm": "CIF",
             "payment": "60 Days",
             "validity": date.today() + timedelta(days=45),
+            "remarks": "Cross-border logistics equipment package.",
             "items": [
-                {"description": "Enterprise Server Rack 42U", "quantity": 1, "unit_price": 2400.00}
-            ]
-        }
+                {"description": "Barcode Scanner Terminal Assembly", "quantity": 10, "unit_price": 280.00},
+                {"description": "Thermal Receipt Printers", "quantity": 4, "unit_price": 195.00},
+            ],
+        },
+        {
+            "ref": "QT-2026-003",
+            "entity": "PT Nusantara Tech Indonesia",
+            "contact": "Alex Tan",
+            "email": "alex.tan@nusantara.co.id",
+            "mobile": "+62 811 1222 333",
+            "office": "+62 21 555 4321",
+            "address": "Gudang Logistic Hub, Jl. Yos Sudarso No. 45",
+            "postal": "14350",
+            "country": "Indonesia",
+            "incoterm": "DDP",
+            "payment": "Cash",
+            "validity": date.today() + timedelta(days=14),
+            "remarks": "Urgent procurement order. Payment upon delivery confirmation.",
+            "items": [
+                {"description": "Server Cabinet Rack 42U", "quantity": 2, "unit_price": 1250.00},
+                {"description": "Uninterruptible Power Supply (UPS) 3kVA", "quantity": 2, "unit_price": 890.00},
+            ],
+        },
+        {
+            "ref": "QT-2026-004",
+            "entity": "Siam Automation Works Co., Ltd.",
+            "contact": "Prasert Somchai",
+            "email": "prasert@siamauto.co.th",
+            "mobile": "+66 81 234 5678",
+            "office": "+66 2 345 6789",
+            "address": "77 Bangna-Trad Road, KM 18",
+            "postal": "10540",
+            "country": "Thailand",
+            "incoterm": "FOB",
+            "payment": "30 Days",
+            "validity": date.today() + timedelta(days=60),
+            "remarks": "FOB Singapore Port freight agreement.",
+            "items": [
+                {"description": "PLC Controller Processing Unit", "quantity": 5, "unit_price": 1100.00},
+                {"description": "Digital I/O Expansion Module", "quantity": 8, "unit_price": 320.00},
+                {"description": "Calibration & Inspection Certificate", "quantity": 1, "unit_price": 250.00},
+            ],
+        },
     ]
 
-    for data in sample_data:
-        quotation, created = Quotation.objects.get_or_create(
+    print("\n--- Preloading Quotation Test Entries ---")
+    for data in dummy_data:
+        quotation = Quotation.objects.create(
             quotation_ref=data["ref"],
-            defaults={
-                "entity_name": data["entity"],
-                "contact_person": data["contact"],
-                "contact_email": data["email"],
-                "mobile_number": data["mobile"],
-                "office_number": data["office"],
-                "entity_address": data["address"],
-                "entity_postal_code": data["postal"],
-                "country_of_origin": data["country"],
-                "incoterm": data["incoterm"],
-                "payment_term": data["payment"],
-                "validity_of_quotation": data["validity"],
-                "remarks": "Automated system test entry."
-            }
+            entity_name=data["entity"],
+            contact_person=data["contact"],
+            contact_email=data["email"],
+            mobile_number=data["mobile"],
+            office_number=data["office"],
+            entity_address=data["address"],
+            entity_postal_code=data["postal"],
+            country_of_origin=data["country"],
+            incoterm=data["incoterm"],
+            payment_term=data["payment"],
+            validity_of_quotation=data["validity"],
+            remarks=data["remarks"],
         )
-        if created:
-            print(f"[SUCCESS] Created Quotation: {quotation.quotation_ref}")
-            # Add line items
-            for item in data["items"]:
-                QuotationItem.objects.create(
-                    quotation=quotation,
-                    description=item["description"],
-                    quantity=item["quantity"],
-                    unit_price=item["unit_price"]
-                )
-        else:
-            print(f"[EXISTS] Quotation {quotation.quotation_ref} already present.")
 
-    # 2. Test PDF Export Functionality
-    print("\n--- 2. Testing PDF Export Endpoint ---")
-    first_quotation = Quotation.objects.first()
-    if first_quotation:
-        pdf_url = f"http://127.0.0.1:8000/api/quotations/{first_quotation.id}/export-pdf/"
-        print(f"Requesting PDF from: {pdf_url}")
-        
-        try:
-            res = requests.get(pdf_url)
-            if res.status_code == 200 and res.headers.get('content-type') == 'application/pdf':
-                file_name = f"test_{first_quotation.quotation_ref}.pdf"
-                with open(file_name, 'wb') as f:
-                    f.write(res.content)
-                print(f"[SUCCESS] Exported PDF successfully saved to '{file_name}'")
-            else:
-                print(f"[FAILED] HTTP {res.status_code}: Could not retrieve PDF")
-        except requests.exceptions.ConnectionError:
-            print("[NOTE] Ensure 'python manage.py runserver' is active to test HTTP PDF download.")
+        for item in data["items"]:
+            QuotationItem.objects.create(
+                quotation=quotation,
+                description=item["description"],
+                quantity=item["quantity"],
+                unit_price=item["unit_price"],
+            )
 
-if __name__ == '__main__':
-    run_test_and_seed()
+        total_amount = sum(i["quantity"] * i["unit_price"] for i in data["items"])
+        print(f"✅ Preloaded {quotation.quotation_ref} - {quotation.entity_name} (${total_amount:,.2f})")
+
+    print(f"\n🎉 Successfully preloaded {Quotation.objects.count()} quotation records into SQLite!")
+
+
+if __name__ == "__main__":
+    seed_quotations()
