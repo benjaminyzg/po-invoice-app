@@ -31,7 +31,7 @@ def create_bulk_quotations(access_token):
             "client_phone_number": "+65 6123 4567",
             "client_postal_code": "138588",
             "client_billing_address": "71 Ayer Rajah Crescent, #02-18, Singapore 138588",
-            "items": [{"catalog_item": 2, "quantity": 1, "unit_price": "1500.00"}]
+            "items": [{"catalog_item": 1, "quantity": 1, "unit_price": "1500.00"}]
         },
         {
             "client_name": "Nexus Logistics Pte Ltd",
@@ -42,7 +42,7 @@ def create_bulk_quotations(access_token):
             "client_phone_number": "+65 6899 9000",
             "client_postal_code": "408600",
             "client_billing_address": "10 Ubi Crescent, #04-32, Ubi Techpark, Singapore 408600",
-            "items": [{"catalog_item": 2, "quantity": 5, "unit_price": "220.00"}]  # Changed catalog_item to 2
+            "items": [{"catalog_item": 1, "quantity": 5, "unit_price": "220.00"}]  # Changed catalog_item to 2
         },
         {
             "client_name": "Apex Digital Solutions",
@@ -64,7 +64,7 @@ def create_bulk_quotations(access_token):
             "client_phone_number": "+65 6555 7889",
             "client_postal_code": "048581",
             "client_billing_address": "1 Raffles Quay, #25-01, Singapore 048581",
-            "items": [{"catalog_item": 2, "quantity": 3, "unit_price": "850.00"}]  # Changed catalog_item to 2
+            "items": [{"catalog_item": 1, "quantity": 3, "unit_price": "850.00"}]  # Changed catalog_item to 2
         },
         {
             "client_name": "Sentosa Hospitality Group",
@@ -75,7 +75,7 @@ def create_bulk_quotations(access_token):
             "client_phone_number": "+65 6738 1234",
             "client_postal_code": "098269",
             "client_billing_address": "8 Sentosa Gateway, Singapore 098269",
-            "items": [{"catalog_item": 2, "quantity": 4, "unit_price": "500.00"}]  # Changed catalog_item to 2
+            "items": [{"catalog_item": 1, "quantity": 4, "unit_price": "500.00"}]  # Changed catalog_item to 2
         }
     ]
 
