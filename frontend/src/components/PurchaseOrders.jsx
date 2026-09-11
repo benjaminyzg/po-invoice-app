@@ -186,7 +186,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
     'Content-Type': 'application/json',
     'Authorization': `Token ${token}`
   });
-  
   const formatCurrency = (amount) => {
     const num = Number(amount) || 0;
     return num.toLocaleString('en-US', {
@@ -194,7 +193,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
       maximumFractionDigits: 2,
     });
   };
-  
   const handleResetForm = () => {
     setEditingPoId(null);
     setSelectedPoToEdit(null);
@@ -204,7 +202,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
     setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
     return (
-      <>
         <CardContainer title="Purchase Orders (PO)" subtitle="Create New PO" maxWidth="100%">
           <div style={{ padding: '10px 0' }}>
           {/* <h3 style={{ textAlign: 'center' }}>📦 Purchase Orders (PO)</h3> */}
@@ -247,6 +244,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
           {/* 3. Summary Block */}
           <PoSummary totalsByCurrency={totalsByCurrency}/>
+
           {/* 4. Supporting Document Upload */}
           <div style={{ marginTop: '12px', marginBottom: '12px', padding: '10px', background: '#f8f9fa', borderRadius: '4px' }}>
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px', color: '#333' }}>
@@ -259,6 +257,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
               style={{ fontSize: '14px' }}
             />
           </div>
+          
           {/* Submit Button */}
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
             <button 
@@ -336,8 +335,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
             }
           }}
         />
-      </>
-    )
+    );
 }  
   /* 1. Header Details */
   function PoHeaderDetails({ poNumber, setPoNumber, vendor, setVendor, status, setStatus }) {
