@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'orders',    
     'catalog',
     'invoices',
+    # Your local apps
+    'quotations',  # Ensure this line exists
 ]
 
 MEDIA_URL = '/media/'
