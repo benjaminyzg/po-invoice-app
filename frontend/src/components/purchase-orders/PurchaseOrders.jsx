@@ -73,14 +73,21 @@ export default function PurchaseOrders({ token, baseUrl }) {
       setError(err.message);
     }
   };
+  // Example of fetching purchase orders with an Authorization header
   const fetchPurchaseOrders = async () => {
     try {
-      const response = await api.get('/purchase-orders/');
+      const token = localStorage.getItem('access_token'); // Or wherever your token is stored
+      const response = await axios.get('/api/purchase-orders/', {
+        headers: {
+          Authorization: `Bearer ${token}` // Use `Token ${token}` if using DRF TokenAuth
+        }
+      });
       setPurchaseOrders(response.data);
     } catch (err) {
-      console.error('Failed to fetch POs:', err);
+      console.error("Error fetching purchase orders:", err);
     }
   };
+
   useEffect(() => {
     const loadPurchaseOrders = async () => {
       try {
