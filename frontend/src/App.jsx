@@ -83,8 +83,10 @@ export default function App() {
         {/* Add your new Quotation Form view here */}
         {activeTab === 'quotations' && (
           <QuotationForm token={token} baseUrl={BASE_URL} />)}
+
         {/* Tab Views */}
         {activeTab === 'quotation-wip' && <QuotationFormWip />}
+        
         {activeTab === 'settings' && (
           <Settings token={token} baseUrl={BASE_URL} />
         )}

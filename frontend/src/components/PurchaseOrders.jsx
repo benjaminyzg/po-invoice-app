@@ -55,14 +55,12 @@ export default function PurchaseOrders({ token, baseUrl }) {
     }
   };
   const handleSubmit = async (e) => {
-<<<<<<< Updated upstream
     e.preventDefault();
    
     // Resolve active ID cleanly across possible state variable names
     const activeId = editingId;
     const url = editingId 
       ? `${baseUrl}/purchase-orders/${editingId}/` 
-=======
   e.preventDefault();
   
   const calculatedTotal = items.reduce((sum, item) => {
@@ -88,7 +86,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
   try {
     const url = editingPoId 
       ? `${baseUrl}/purchase-orders/${editingPoId}/` 
->>>>>>> Stashed changes
       : `${baseUrl}/purchase-orders/`;
     const method = editingId ? 'PATCH' : 'POST';
 
@@ -239,7 +236,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
     setStatus('PENDING');
     setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
   };
-<<<<<<< Updated upstream
     return (
         <CardContainer title="Purchase Orders (PO)" subtitle="Create New PO" maxWidth="100%">
           <div style={{ padding: '10px 0' }}>
@@ -248,7 +244,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
           <form 
             onSubmit={handleSubmit} 
-=======
   const handleDelete = async (poRecord) => {
       const confirmed = window.confirm(`Are you sure you want to permanently delete PO ${poRecord.po_number}?`);
       if (!confirmed) return;
@@ -345,7 +340,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
           <button 
             type="button" 
             onClick={handleResetForm} 
->>>>>>> Stashed changes
             style={{ 
               display: 'flex', 
               flexDirection: 'column', 
@@ -371,7 +365,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
           <hr style={{ border: '0', borderTop: '1px solid #eee', margin: '5px 0' }} />
 
-<<<<<<< Updated upstream
           {/* 2. Dynamic Line Items */}
           <PoLineItems 
             items={items} 
@@ -379,7 +372,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
             handleAddItem={handleAddItem} 
             handleRemoveItem={handleRemoveItem} 
           />
-=======
           if (po.items && Array.isArray(po.items) && po.items.length > 0) {
             setItems(
               po.items.map((item) => ({
@@ -392,7 +384,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
           } else {
             setItems([{ description: '', qty: 1, unitPrice: '', currency: 'SGD' }]);
           }
->>>>>>> Stashed changes
 
           {/* 3. Summary Block */}
           <PoSummary totalsByCurrency={totalsByCurrency}/>
@@ -814,20 +805,12 @@ export default function PurchaseOrders({ token, baseUrl }) {
     setExpandedPoIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-<<<<<<< Updated upstream
   };
 
     return (
       <div>
         <h4 style={{ textAlign: 'center', fontWeight: 'bold', margin: '20px 0 15px 0', color: '#333' }}>
           Purchase Order History
-=======
-  }
-    return (
-      <div>
-        <h4 style={{ textAlign: 'center', margin: '20px 0 15px 0', color: '#333', fontWeight: 'bold', textDecoration: 'underline', fontSize: '15px'}}>
-        Purchase Order History
->>>>>>> Stashed changes
         </h4>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead>
@@ -931,8 +914,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
                         >
                           Cancel
                         </button>
-<<<<<<< Updated upstream
-=======
                         <button
                           type="button"
                           onClick={() => handleDelete && handleDelete(po)}
@@ -948,7 +929,6 @@ export default function PurchaseOrders({ token, baseUrl }) {
                         >
                           Delete
                         </button>
->>>>>>> Stashed changes
                       </div>
                     </td>
                   </tr>
