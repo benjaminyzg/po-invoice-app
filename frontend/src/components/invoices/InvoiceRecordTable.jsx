@@ -5,15 +5,12 @@ import { MatchResultModal } from './MatchResultModal';
 export default function InvoiceRecordTable({invoices = [], handleEdit, handleDelete, handleMarkAsPaid, handleCancelInvoice, onSelectInvoice }) {  const [expandedRowId, setExpandedRowId] = useState(null);
   console.log('INVOICES RECEIVED BY TABLE:', invoices); // <-- Add this line
   const [statusFilter, setStatusFilter] = useState('all');
-
-  // Inside your InvoiceRecordTable component:
   const [matchResult, setMatchResult] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
   const displayedInvoices = invoices.filter((inv) => {
   if (statusFilter === 'all') return true;
     return inv.status?.toLowerCase() === statusFilter.toLowerCase();
   });
-
   const handleValidateMatch = async (invoiceId) => {
     setLoadingId(invoiceId);
     try {
@@ -25,11 +22,9 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
       setLoadingId(null);
     }
   };
-
   const toggleRow = (id) => {
     setExpandedRowId(expandedRowId === id ? null : id);
   };
-
   const getStatusStyle = (status) => {
     switch (status?.toUpperCase()) {
       case 'PAID':
@@ -41,7 +36,6 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
         return { backgroundColor: '#fff3cd', color: '#856404' }; // PENDING
     }
   };
-  
   return (
     <div style={{ marginTop: '30px' }}>
       <h3 style={{ textAlign: 'center', color: '#333', marginBottom: '15px', fontSize: '15px', fontWeight: 'bold' }}>
@@ -133,7 +127,6 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                         {inv.status || 'Pending'}
                       </span>
                     </td>
-
                     <td style={{ padding: '10px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
                       <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
                       {/* Edit Button */}
@@ -204,16 +197,51 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                           Cancel
                         </button>
                       )}
-
-<button 
-  onClick={() => handleValidateMatch(inv.id)} 
-  disabled={loadingId === inv.id || !inv.purchase_order}
-  style={{ marginRight: '8px' }}
->
-  {loadingId === inv.id ? 'Matching...' : 'Validate Match'}
-</button>
-
+                      <button 
+                        onClick={() => handleValidateMatch(inv.id)} 
+                        disabled={loadingId === inv.id || !inv.purchase_order}
+                        style={{ marginRight: '8px' }}
+                      >
+                        {loadingId === inv.id ? 'Matching...' : 'Validate Match'}
+                      </button>
                       </div>
+                      {/* Compact PDF Export Dropdown */}
+                    <div className="btn-group" style={{ position: 'relative', display: 'inline-block' }}>
+                      <button 
+                        className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        📄 PDF Docs ▾
+                      </button>
+                      <ul className="dropdown-menu shadow">
+                        <li>
+                          <button 
+                            className="dropdown-item" 
+                            onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-invoice-pdf/`, '_blank')}
+                          >
+                            📄 Commercial Invoice
+                          </button>
+                        </li>
+                        <li>
+                          <button 
+                            className="dropdown-item" 
+                            onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-do-pdf/`, '_blank')}
+                          >
+                            🚚 Delivery Order (DO)
+                          </button>
+                        </li>
+                        <li>
+                          <button 
+                            className="dropdown-item" 
+                            onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-packing-pdf/`, '_blank')}
+                          >
+                            📦 Packing List
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
                     </td>      
                   </tr>
                   {/* Expanded Detail Drawer */}

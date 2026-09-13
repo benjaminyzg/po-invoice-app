@@ -1,6 +1,4 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework import viewsets, permissions
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status, generics
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -9,11 +7,14 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse
 from invoices.models import Invoice
 from invoices.serializers import InvoiceSerializer
-from .serializers import CatalogItemSerializer, CatalogPriceHistorySerializer
-from .serializers import UserSerializer
-from .models import CatalogItem, CatalogPriceHistory
+from .models import CatalogItem, CatalogPriceHistory, CompanySettings
+from .serializers import (
+    CatalogItemSerializer, 
+    CatalogPriceHistorySerializer, 
+    UserSerializer, 
+    CompanySettingsSerializer
+)
 from tablib import Dataset
-from .models import CatalogItem, CatalogPriceHistory
 from .resources import CatalogItemResource
 
 class CatalogItemViewSet(viewsets.ModelViewSet):
@@ -77,6 +78,17 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+class CompanySettingDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = CompanySettingsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        # Fetch existing settings or create default instance
+        setting = CompanySettings.objects.first()
+        if not setting:
+            setting = CompanySettings.objects.create(name="My Company")
+        return setting
 
 @api_view(['GET'])
 def health_check(request):

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import CatalogItem, CatalogPriceHistory
+from .models import CatalogItem, CatalogPriceHistory, CompanySettings
 
 class UserSerializer(serializers.ModelSerializer):
     role = serializers.CharField(source='profile.role', default='VIEWER', required=False)
@@ -52,6 +52,11 @@ class UserSerializer(serializers.ModelSerializer):
             instance.profile.save()
 
         return instance
+
+class CompanySettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanySettings
+        fields = '__all__'
 
 class CatalogItemSerializer(serializers.ModelSerializer):
     class Meta:

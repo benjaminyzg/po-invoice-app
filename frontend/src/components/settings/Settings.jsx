@@ -29,7 +29,6 @@ const sectionTitleStyle = {
   borderBottom: '1px solid #e5e7eb',
   textAlign: 'left'
 };
-
 export default function Settings({ token, baseUrl }) {
   const [formData, setFormData] = useState({
     company_name: '',
@@ -47,7 +46,11 @@ export default function Settings({ token, baseUrl }) {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
   const [message, setMessage] = useState('');
-
+  const [settings, setSettings] = useState({
+    name: '',
+    email: '',
+    quotation_format: 'QT-{YYYY}-{SEQ}',
+  });
   useEffect(() => {
       fetch(`${baseUrl}/company-settings/1/`, {
         headers: {
@@ -65,7 +68,6 @@ export default function Settings({ token, baseUrl }) {
       })
     .catch((err) => console.error('Error fetching settings:', err));
   }, [baseUrl, token]);
-
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setLogoFile(e.target.files[0]);
@@ -73,6 +75,19 @@ export default function Settings({ token, baseUrl }) {
   };
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+  const handleSave = async () => {
+    const token = localStorage.getItem('token');
+    const response = await fetch('http://127.0.0.1:8000/api/company-settings/1/', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(settings)
+    });
+
+    if (response.ok) alert('Company settings updated successfully!');
   };
   const handleLogoChange = (e) => {
     if (e.target.files[0]) {
@@ -107,7 +122,6 @@ export default function Settings({ token, baseUrl }) {
       console.error('Error saving settings:', error);
     }
   };
-
   return (
     <CardContainer title="Company Settings & Branding">
       {message && (
@@ -201,6 +215,42 @@ export default function Settings({ token, baseUrl }) {
         <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
           <Button type="submit">Save Company Settings</Button>
         </div>
+
+        {/* Section 4: Quotation Settings */}
+        <div style={{ marginBottom: '28px' }}>
+          <h4 style={{ marginBottom: '16px', fontSize: '1.1rem', fontWeight: '600' }}>Quotation Configuration</h4>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
+            {/* 1. Custom Label / Header Name */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Field Label (Header Name)</label>
+              <input
+                type="text"
+                className="form-control"
+                value={settings.quotation_ref_label || 'Quotation Reference'}
+                onChange={(e) => setSettings({ ...settings, quotation_ref_label: e.target.value })}
+                placeholder="e.g. Quotation Reference, Estimate No, Doc ID"
+              />
+            </div>
+
+            {/* 2. Custom Format Pattern */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Reference Format Pattern</label>
+              <input
+                type="text"
+                className="form-control"
+                value={settings.quotation_format || 'QT-{YYYY}-{SEQ}'}
+                onChange={(e) => setSettings({ ...settings, quotation_format: e.target.value })}
+                placeholder="e.g. FMQ-{DDMMYY}/{CLIENT_NAME}/{SEQ}"
+              />
+            </div>
+          </div>
+
+          <small style={{ color: '#6c757d' }}>
+            Available pattern tags: <code>{'{DDMMYY}'}</code>, <code>{'{YYYY}'}</code>, <code>{'{CLIENT_NAME}'}</code>, <code>{'{SEQ}'}</code>
+          </small>
+        </div>
+
       </form>
     </CardContainer>
   );

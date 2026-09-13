@@ -8,8 +8,7 @@ export const InvoicePreview = ({ invoice, companySettings, onClose }) => {
 
   // 2. Define the PDF export handler
   const handleDownloadPdf = () => {
-    const element = pdfRef.current;
-    
+    const element = pdfRef.current; 
     const options = {
       margin:       0.5,
       filename:     `Invoice_${invoice?.invoice_number || 'draft'}.pdf`,
@@ -41,6 +40,26 @@ export const InvoicePreview = ({ invoice, companySettings, onClose }) => {
               Close
             </button>
           )}
+          <button 
+            onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${invoice.id}/export-invoice-pdf/`, '_blank')}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+          >
+            📄 Commercial Invoice PDF
+          </button>
+
+          <button 
+            onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${invoice.id}/export-do-pdf/`, '_blank')}
+            className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+          >
+            🚚 Delivery Order PDF
+          </button>
+
+          <button 
+            onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${invoice.id}/export-packing-pdf/`, '_blank')}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+          >
+            📦 Packing List PDF
+          </button>
         </div>
       </div>
 

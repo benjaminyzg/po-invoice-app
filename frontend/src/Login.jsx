@@ -32,7 +32,7 @@ export default function Login({ setToken }) {
 
   return (
     <div style={{ maxWidth: '350px', margin: '80px auto', padding: '24px', border: '1px solid #ddd', borderRadius: '8px' }}>
-      <h2 style={{ textAlign: 'center' }}>Portal Login</h2>
+      <h2 style={{ textAlign: 'center' }}>Focus Machinery; PO-Invoice-App; Portal Login</h2>
       {errorMsg && <p style={{ color: 'red', textAlign: 'center' }}>{errorMsg}</p>}
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '15px' }}>

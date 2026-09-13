@@ -262,7 +262,6 @@ function DataTable({ title, headers, children }) {
     </div>
   );
 }
-
 export default function Invoices({ token, baseUrl }) {
   const invoiceHeaders = [
     { label: 'Invoice #', align: 'left' },
@@ -303,7 +302,9 @@ export default function Invoices({ token, baseUrl }) {
   // 1. Fetch Invoices and Predefined Catalog Items
   const fetchData = async () => {
     try {
-      const headers = { Authorization: `Token ${token}` };
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
       const [invRes, catRes] = await Promise.all([
         fetch(`${baseUrl}/invoices/`, { headers }),
         fetch(`${baseUrl}/catalog-items/`, { headers }),

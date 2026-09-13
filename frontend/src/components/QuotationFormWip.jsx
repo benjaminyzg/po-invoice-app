@@ -348,147 +348,147 @@ export default function QuotationFormWip() {
         <hr className="my-6 border-gray-200" />
 
         {/* --- Line Items Section --- */}
-<div style={{ marginTop: '24px', marginBottom: '24px' }}>
-  <label style={{ ...labelStyle, fontSize: '15px', marginBottom: '12px' }}>
-    Quotation Line Items
-  </label>
-  
-  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
-    <thead>
-      <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-        <th style={{ padding: '8px', fontSize: '13px', fontWeight: 'bold' }}>Description</th>
-        <th style={{ padding: '8px', fontSize: '13px', fontWeight: 'bold', width: '90px' }}>Qty</th>
-        <th style={{ padding: '8px', fontSize: '13px', fontWeight: 'bold', width: '120px' }}>Unit Price ($)</th>
-        <th style={{ padding: '8px', fontSize: '13px', fontWeight: 'bold', width: '120px', textAlign: 'right' }}>Total Amount ($)</th>
-        <th style={{ padding: '8px', width: '40px' }}></th>
-      </tr>
-    </thead>
-    <tbody>
-      {items.map((item, index) => {
-        const lineTotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
-        return (
-          <tr key={index} style={{ borderBottom: '1px solid #edf2f7' }}>
-            <td style={{ padding: '8px 4px' }}>
-              <input
-                type="text"
-                placeholder="Item Description"
-                value={item.description}
-                onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                style={inputStyle}
-                required
-              />
-            </td>
-            <td style={{ padding: '8px 4px' }}>
-              <input
-                type="number"
-                min="1"
-                value={item.quantity}
-                onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                style={{ ...inputStyle, textAlign: 'center' }}
-                required
-              />
-            </td>
-            <td style={{ padding: '8px 4px' }}>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={item.unitPrice}
-                onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-                style={{ ...inputStyle, textAlign: 'right' }}
-                required
-              />
-            </td>
-            <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: '600', fontSize: '14px' }}>
-              ${lineTotal.toFixed(2)}
-            </td>
-            <td style={{ padding: '8px 4px', textAlign: 'center' }}>
-              {items.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeLineItem(index)}
-                  style={{
-                    backgroundColor: '#fed7d7',
-                    color: '#c53030',
-                    border: 'none',
-                    borderRadius: '4px',
-                    width: '28px',
-                    height: '28px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  ✕
-                </button>
-              )}
-            </td>
-          </tr>
-        );
-      })}
-    </tbody>
-  </table>
+        <div style={{ marginTop: '24px', marginBottom: '24px' }}>
+          <label style={{ ...labelStyle, fontSize: '15px', marginBottom: '12px' }}>
+            Quotation Line Items
+          </label>
+          
+          <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '16px' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <th style={{ padding: '8px', fontSize: '13px', fontWeight: 'bold' }}>Description</th>
+                <th style={{ padding: '8px', fontSize: '13px', fontWeight: 'bold', width: '90px' }}>Qty</th>
+                <th style={{ padding: '8px', fontSize: '13px', fontWeight: 'bold', width: '120px' }}>Unit Price ($)</th>
+                <th style={{ padding: '8px', fontSize: '13px', fontWeight: 'bold', width: '120px', textAlign: 'right' }}>Total Amount ($)</th>
+                <th style={{ padding: '8px', width: '40px' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item, index) => {
+                const lineTotal = (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
+                return (
+                  <tr key={index} style={{ borderBottom: '1px solid #edf2f7' }}>
+                    <td style={{ padding: '8px 4px' }}>
+                      <input
+                        type="text"
+                        placeholder="Item Description"
+                        value={item.description}
+                        onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                        style={inputStyle}
+                        required
+                      />
+                    </td>
+                    <td style={{ padding: '8px 4px' }}>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                        style={{ ...inputStyle, textAlign: 'center' }}
+                        required
+                      />
+                    </td>
+                    <td style={{ padding: '8px 4px' }}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={item.unitPrice}
+                        onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
+                        style={{ ...inputStyle, textAlign: 'right' }}
+                        required
+                      />
+                    </td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: '600', fontSize: '14px' }}>
+                      ${lineTotal.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '8px 4px', textAlign: 'center' }}>
+                      {items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeLineItem(index)}
+                          style={{
+                            backgroundColor: '#fed7d7',
+                            color: '#c53030',
+                            border: 'none',
+                            borderRadius: '4px',
+                            width: '28px',
+                            height: '28px',
+                            cursor: 'pointer',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
 
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-    <button
-      type="button"
-      onClick={addLineItem}
-      style={{
-        padding: '8px 16px',
-        backgroundColor: '#4a5568',
-        color: '#ffffff',
-        border: 'none',
-        borderRadius: '4px',
-        fontWeight: '600',
-        cursor: 'pointer',
-        fontSize: '13px'
-      }}
-    >
-      + Add Line Item
-    </button>
-    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a202c' }}>
-      Grand Total: ${grandTotal.toFixed(2)}
-    </div>
-  </div>
-</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={addLineItem}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#4a5568',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '4px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                fontSize: '13px'
+              }}
+            >
+              + Add Line Item
+            </button>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#1a202c' }}>
+              Grand Total: ${grandTotal.toFixed(2)}
+            </div>
+          </div>
+        </div>
 
-{/* --- Remarks / Notes Section --- */}
-<div style={{ marginBottom: '24px' }}>
-  <label style={labelStyle}>Remarks / Notes:</label>
-  <textarea
-    name="remarks"
-    rows={3}
-    value={formData.remarks || ''}
-    onChange={handleInputChange}
-    placeholder="Enter any remarks, payment terms, or quotation notes..."
-    style={{ ...inputStyle, height: 'auto', resize: 'vertical' }}
-  />
-</div>
+        {/* --- Remarks / Notes Section --- */}
+        <div style={{ marginBottom: '24px' }}>
+          <label style={labelStyle}>Remarks / Notes:</label>
+          <textarea
+            name="remarks"
+            rows={3}
+            value={formData.remarks || ''}
+            onChange={handleInputChange}
+            placeholder="Enter any remarks, payment terms, or quotation notes..."
+            style={{ ...inputStyle, height: 'auto', resize: 'vertical' }}
+          />
+        </div>
 
-{/* --- Submit Button --- */}
-<div style={{ textAlign: 'right' }}>
-  <button
-    type="submit"
-    style={{
-      padding: '10px 24px',
-      backgroundColor: '#3182ce',
-      color: '#ffffff',
-      border: 'none',
-      borderRadius: '6px',
-      fontSize: '15px',
-      fontWeight: 'bold',
-      cursor: 'pointer'
-    }}
-  >
-    Create Quotation
-  </button>
-</div>
+        {/* --- Submit Button --- */}
+        <div style={{ textAlign: 'right' }}>
+          <button
+            type="submit"
+            style={{
+              padding: '10px 24px',
+              backgroundColor: '#3182ce',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '15px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            Create Quotation
+          </button>
+        </div>
       </form>
 
-{/* Place QuotationList below </form> */}
-    <QuotationList 
-      onEditQuotation={handleEditQuotation} 
-      refreshKey={refreshKey} 
-    />
+        {/* Place QuotationList below </form> */}
+        <QuotationList 
+          onEditQuotation={handleEditQuotation} 
+          refreshKey={refreshKey} 
+        />
 
     </div>
   );

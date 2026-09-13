@@ -1,18 +1,297 @@
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from rest_framework import viewsets, permissions, status
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import viewsets, permissions, status, generics
-from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings
-from .models import PaymentTermTemplate, Quotation
-from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrderSerializer, PurchaseOrderStatusSerializer, CompanySettingsSerializer)
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings, PaymentTermTemplate, Quotation
+from .models import from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrderSerializer, PurchaseOrderStatusSerializer, CompanySettingsSerializer)
 from .serializers import PaymentTermTemplateSerializer, QuotationSerializer
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
 from weasyprint import HTML
-from .models import Invoice
+import io
+
+def build_pdf_header(title, ref_no, styles):
+    elements = []
+    title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=20, leading=24, textColor=colors.HexColor('#1A365D'))
+    elements.append(Paragraph(f"{title}: {ref_no}", title_style))
+    elements.append(Spacer(1, 12))
+    return elements
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def export_commercial_invoice_pdf(request, pk):
+    try:
+        invoice = Invoice.objects.get(pk=pk)
+    except Invoice.DoesNotExist:
+        return HttpResponse("Invoice not found", status=404)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    elements = build_pdf_header("COMMERCIAL INVOICE", invoice.invoice_number, styles)
+
+    # Details Section
+    details = [
+        [f"Billed To: {invoice.client_name}", f"Invoice Date: {invoice.issue_date}"],
+        [f"Address: {invoice.billing_address}", f"Due Date: {invoice.due_date}"],
+        [f"Payment Term: {invoice.payment_terms}", f"PO Ref: {invoice.po_reference or '-'}"],
+    ]
+    info_table = Table(details, colWidths=[270, 270])
+    info_table.setStyle(TableStyle([('FONTNAME', (0,0), (-1,-1), 'Helvetica'), ('FONTSIZE', (0,0), (-1,-1), 9)]))
+    elements.extend([info_table, Spacer(1, 16)])
+
+    # Financial Line Items Table
+    items_data = [["Description", "Qty", "Unit Price ($)", "Amount ($)"]]
+    grand_total = 0
+    for item in invoice.items.all():
+        line_total = item.quantity * item.unit_price
+        grand_total += line_total
+        items_data.append([item.description, str(item.quantity), f"${item.unit_price:.2f}", f"${line_total:.2f}"])
+    items_data.append(["", "", "Total Due:", f"${grand_total:.2f}"])
+
+    item_table = Table(items_data, colWidths=[260, 60, 100, 120])
+    item_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
+        ('GRID', (0,0), (-1,-2), 0.5, colors.HexColor('#CBD5E0')),
+        ('ALIGN', (1,0), (-1,-1), 'RIGHT'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTNAME', (2,-1), (-1,-1), 'Helvetica-Bold'),
+    ]))
+    elements.append(item_table)
+
+    doc.build(elements)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
+    return response
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def export_delivery_order_pdf(request, pk):
+    try:
+        invoice = Invoice.objects.get(pk=pk)
+    except Invoice.DoesNotExist:
+        return HttpResponse("Document not found", status=404)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    elements = build_pdf_header("DELIVERY ORDER", f"DO-{invoice.invoice_number}", styles)
+
+    details = [
+        [f"Deliver To: {invoice.client_name}", f"Delivery Date: {invoice.issue_date}"],
+        [f"Address: {invoice.billing_address}", f"PO Ref: {invoice.po_reference or '-'}"],
+    ]
+    elements.extend([Table(details, colWidths=[270, 270]), Spacer(1, 16)])
+
+    # Logistics Items Table (No Financial Figures)
+    items_data = [["Item Description", "Qty Ordered", "Qty Delivered", "Remarks"]]
+    for item in invoice.items.all():
+        items_data.append([item.description, str(item.quantity), str(item.quantity), "Good Condition"])
+
+    item_table = Table(items_data, colWidths=[260, 80, 80, 120])
+    item_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E0')),
+        ('ALIGN', (1,0), (2,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+    ]))
+    elements.extend([item_table, Spacer(1, 40)])
+
+    # Signature Block for Delivery Confirmation
+    sig_data = [["Received By (Name & Signature): ______________________", "Date: _______________"]]
+    sig_table = Table(sig_data, colWidths=[360, 180])
+    elements.append(sig_table)
+
+    doc.build(elements)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="DO_{invoice.invoice_number}.pdf"'
+    return response
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def export_packing_list_pdf(request, pk):
+    try:
+        invoice = Invoice.objects.get(pk=pk)
+    except Invoice.DoesNotExist:
+        return HttpResponse("Document not found", status=404)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    elements = build_pdf_header("PACKING LIST", f"PL-{invoice.invoice_number}", styles)
+
+    details = [
+        [f"Ship To: {invoice.client_name}", f"Packing Date: {invoice.issue_date}"],
+        [f"Destination: {invoice.billing_address}", f"Shipping Ref: {invoice.po_reference or '-'}"],
+    ]
+    elements.extend([Table(details, colWidths=[270, 270]), Spacer(1, 16)])
+
+    # Package Specs Table (Focus on Units/Packaging)
+    items_data = [["Pkg #", "Item Description", "Qty", "Pkg Type", "Notes"]]
+    for idx, item in enumerate(invoice.items.all(), 1):
+        items_data.append([f"Box {idx}", item.description, str(item.quantity), "Carton", "-"])
+
+    item_table = Table(items_data, colWidths=[60, 240, 60, 80, 100])
+    item_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E0')),
+        ('ALIGN', (0,0), (0,-1), 'CENTER'),
+        ('ALIGN', (2,0), (2,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+    ]))
+    elements.append(item_table)
+
+    doc.build(elements)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="PackingList_{invoice.invoice_number}.pdf"'
+    return response
+
+def build_pdf_header(title, ref_no, styles):
+    elements = []
+    title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=20, leading=24, textColor=colors.HexColor('#1A365D'))
+    elements.append(Paragraph(f"{title}: {ref_no}", title_style))
+    elements.append(Spacer(1, 12))
+    return elements
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def export_commercial_invoice_pdf(request, pk):
+    try:
+        invoice = Invoice.objects.get(pk=pk)
+    except Invoice.DoesNotExist:
+        return HttpResponse("Invoice not found", status=404)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    elements = build_pdf_header("COMMERCIAL INVOICE", invoice.invoice_number, styles)
+
+    # Details Section
+    details = [
+        [f"Billed To: {invoice.client_name}", f"Invoice Date: {invoice.issue_date}"],
+        [f"Address: {invoice.billing_address}", f"Due Date: {invoice.due_date}"],
+        [f"Payment Term: {invoice.payment_terms}", f"PO Ref: {invoice.po_reference or '-'}"],
+    ]
+    info_table = Table(details, colWidths=[270, 270])
+    info_table.setStyle(TableStyle([('FONTNAME', (0,0), (-1,-1), 'Helvetica'), ('FONTSIZE', (0,0), (-1,-1), 9)]))
+    elements.extend([info_table, Spacer(1, 16)])
+
+    # Financial Line Items Table
+    items_data = [["Description", "Qty", "Unit Price ($)", "Amount ($)"]]
+    grand_total = 0
+    for item in invoice.items.all():
+        line_total = item.quantity * item.unit_price
+        grand_total += line_total
+        items_data.append([item.description, str(item.quantity), f"${item.unit_price:.2f}", f"${line_total:.2f}"])
+    items_data.append(["", "", "Total Due:", f"${grand_total:.2f}"])
+
+    item_table = Table(items_data, colWidths=[260, 60, 100, 120])
+    item_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
+        ('GRID', (0,0), (-1,-2), 0.5, colors.HexColor('#CBD5E0')),
+        ('ALIGN', (1,0), (-1,-1), 'RIGHT'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTNAME', (2,-1), (-1,-1), 'Helvetica-Bold'),
+    ]))
+    elements.append(item_table)
+
+    doc.build(elements)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
+    return response
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def export_delivery_order_pdf(request, pk):
+    try:
+        invoice = Invoice.objects.get(pk=pk)
+    except Invoice.DoesNotExist:
+        return HttpResponse("Document not found", status=404)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    elements = build_pdf_header("DELIVERY ORDER", f"DO-{invoice.invoice_number}", styles)
+
+    details = [
+        [f"Deliver To: {invoice.client_name}", f"Delivery Date: {invoice.issue_date}"],
+        [f"Address: {invoice.billing_address}", f"PO Ref: {invoice.po_reference or '-'}"],
+    ]
+    elements.extend([Table(details, colWidths=[270, 270]), Spacer(1, 16)])
+
+    # Logistics Items Table (No Financial Figures)
+    items_data = [["Item Description", "Qty Ordered", "Qty Delivered", "Remarks"]]
+    for item in invoice.items.all():
+        items_data.append([item.description, str(item.quantity), str(item.quantity), "Good Condition"])
+
+    item_table = Table(items_data, colWidths=[260, 80, 80, 120])
+    item_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E0')),
+        ('ALIGN', (1,0), (2,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+    ]))
+    elements.extend([item_table, Spacer(1, 40)])
+
+    # Signature Block for Delivery Confirmation
+    sig_data = [["Received By (Name & Signature): ______________________", "Date: _______________"]]
+    sig_table = Table(sig_data, colWidths=[360, 180])
+    elements.append(sig_table)
+
+    doc.build(elements)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="DO_{invoice.invoice_number}.pdf"'
+    return response
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def export_packing_list_pdf(request, pk):
+    try:
+        invoice = Invoice.objects.get(pk=pk)
+    except Invoice.DoesNotExist:
+        return HttpResponse("Document not found", status=404)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    elements = build_pdf_header("PACKING LIST", f"PL-{invoice.invoice_number}", styles)
+
+    details = [
+        [f"Ship To: {invoice.client_name}", f"Packing Date: {invoice.issue_date}"],
+        [f"Destination: {invoice.billing_address}", f"Shipping Ref: {invoice.po_reference or '-'}"],
+    ]
+    elements.extend([Table(details, colWidths=[270, 270]), Spacer(1, 16)])
+
+    # Package Specs Table (Focus on Units/Packaging)
+    items_data = [["Pkg #", "Item Description", "Qty", "Pkg Type", "Notes"]]
+    for idx, item in enumerate(invoice.items.all(), 1):
+        items_data.append([f"Box {idx}", item.description, str(item.quantity), "Carton", "-"])
+
+    item_table = Table(items_data, colWidths=[60, 240, 60, 80, 100])
+    item_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E0')),
+        ('ALIGN', (0,0), (0,-1), 'CENTER'),
+        ('ALIGN', (2,0), (2,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+    ]))
+    elements.append(item_table)
+
+    doc.build(elements)
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="PackingList_{invoice.invoice_number}.pdf"'
+    return response
 
 class PaymentTermTemplateViewSet(viewsets.ModelViewSet):
     queryset = PaymentTermTemplate.objects.all()
@@ -330,3 +609,42 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         invoice.save()
         serializer = self.get_serializer(invoice)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_path='export-invoice-pdf', permission_classes=[AllowAny])
+    def export_invoice_pdf(self, request, pk=None):
+        invoice = self.get_object()
+        buffer = io.BytesIO()
+        # Build Commercial Invoice PDF...
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        # (Insert your ReportLab elements construction here)
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
+        return response
+
+    @action(detail=True, methods=['get'], url_path='export-do-pdf', permission_classes=[AllowAny])
+    def export_do_pdf(self, request, pk=None):
+        invoice = self.get_object()
+        buffer = io.BytesIO()
+        # Build Delivery Order PDF...
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        # (Insert your Delivery Order ReportLab elements here)
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="DO_{invoice.invoice_number}.pdf"'
+        return response
+
+    @action(detail=True, methods=['get'], url_path='export-packing-pdf', permission_classes=[AllowAny])
+    def export_packing_pdf(self, request, pk=None):
+        invoice = self.get_object()
+        buffer = io.BytesIO()
+        # Build Packing List PDF...
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        # (Insert your Packing List ReportLab elements here)
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="PackingList_{invoice.invoice_number}.pdf"'
+        return response

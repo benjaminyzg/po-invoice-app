@@ -97,3 +97,7 @@ class CompanySettings(models.Model):
     contact_person = models.CharField(max_length=100, blank=True, null=True)
     full_address = models.TextField(blank=True, null=True)
     web = models.URLField(blank=True, null=True)
+    # Add this new field:
+    quotation_format = models.CharField(max_length=100, default="QT-{YYYY}-{SEQ}")
+    quotation_ref_label = models.CharField(max_length=100, default="Quotation Reference")
+    quotation_format = models.CharField(max_length=100, default="QT-{YYYY}-{SEQ}")
