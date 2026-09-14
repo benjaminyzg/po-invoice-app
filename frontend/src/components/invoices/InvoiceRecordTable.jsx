@@ -2,6 +2,202 @@ import React, { useState } from 'react';
 import { validateInvoiceMatch } from '../../services/api';
 import { MatchResultModal } from './MatchResultModal';
 
+// Helper styling for dropdown items
+const dropdownItemStyle = {
+  display: 'block',
+  width: '100%',
+  padding: '8px 12px',
+  fontSize: '12px',
+  color: '#334155',
+  backgroundColor: 'transparent',
+  border: 'none',
+  textAlign: 'left',
+  cursor: 'pointer',
+  transition: 'background-color 0.15s ease'
+};
+function RowActions({ inv, handleEdit, handleDelete, handleMarkAsPaid, handleCancelInvoice }) {
+  const [openPdf, setOpenPdf] = useState(false);
+  const [openActions, setOpenActions] = useState(false);
+
+  return (
+    <td style={{ padding: '8px 10px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+        {/* 1. Primary Direct Action */}
+        {handleEdit && (
+          <button
+            type="button"
+            style={{
+              padding: '4px 10px',
+              fontSize: '12px',
+              backgroundColor: '#ffffff',
+              color: '#2563eb',
+              border: '1px solid #2563eb',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: '500'
+            }}
+            onClick={() => handleEdit(inv)}
+          >
+            Edit
+          </button>
+        )}
+        {/* 2. Document Export Dropdown */}
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <button
+            type="button"
+            style={{
+              padding: '4px 10px',
+              fontSize: '12px',
+              backgroundColor: '#ffffff',
+              color: '#475569',
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: '500'
+            }}
+            onClick={() => {
+              setOpenPdf(!openPdf);
+              setOpenActions(false);
+            }}
+          >
+            📄 PDF Docs ▾
+          </button>
+
+          {openPdf && (
+            <div style={{
+              position: 'absolute',
+              right: 0,
+              top: '100%',
+              marginTop: '4px',
+              backgroundColor: '#ffffff',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              borderRadius: '6px',
+              border: '1px solid #e2e8f0',
+              zIndex: 1000,
+              minWidth: '160px',
+              overflow: 'hidden'
+            }}>
+              {/* 1. Commercial Invoice */}
+<button
+  type="button"
+  style={dropdownItemStyle}
+  onClick={() => {
+    window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-invoice-pdf/`, '_blank');
+    setOpenPdf(false);
+  }}
+  onMouseEnter={(e) => (e.target.style.backgroundColor = '#f1f5f9')}
+  onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
+>
+  Commercial Invoice
+</button>
+
+{/* 2. Delivery Order (DO) */}
+<button
+  type="button"
+  style={dropdownItemStyle}
+  onClick={() => {
+    window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-do-pdf/`, '_blank');
+    setOpenPdf(false);
+  }}
+  onMouseEnter={(e) => (e.target.style.backgroundColor = '#f1f5f9')}
+  onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
+>
+  Delivery Order (DO)
+</button>
+
+{/* 3. Packing List */}
+<button
+  type="button"
+  style={dropdownItemStyle}
+  onClick={() => {
+    window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-packing-pdf/`, '_blank');
+    setOpenPdf(false);
+  }}
+  onMouseEnter={(e) => (e.target.style.backgroundColor = '#f1f5f9')}
+  onMouseLeave={(e) => (e.target.style.backgroundColor = 'transparent')}
+>
+  Packing List
+</button>
+            </div>
+          )}
+        </div>
+        {/* 3. Workflow Actions Dropdown */}
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <button
+            type="button"
+            style={{
+              padding: '4px 10px',
+              fontSize: '12px',
+              backgroundColor: '#f8fafc',
+              color: '#334155',
+              border: '1px solid #cbd5e1',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: '500'
+            }}
+            onClick={() => {
+              setOpenActions(!openActions);
+              setOpenPdf(false);
+            }}
+          >
+            Actions ▾
+          </button>
+
+          {openActions && (
+            <div style={{
+              position: 'absolute',
+              right: 0,
+              top: '100%',
+              marginTop: '4px',
+              backgroundColor: '#ffffff',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+              borderRadius: '6px',
+              border: '1px solid #e2e8f0',
+              zIndex: 1000,
+              minWidth: '140px',
+              overflow: 'hidden'
+            }}>
+              {inv.status !== 'paid' && inv.status !== 'cancelled' && handleMarkAsPaid && (
+                <button
+                  type="button"
+                  style={dropdownItemStyle}
+                  onClick={() => { handleMarkAsPaid(inv.id); setOpenActions(false); }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                >
+                  Mark Paid
+                </button>
+              )}
+              {inv.status !== 'cancelled' && handleCancelInvoice && (
+                <button
+                  type="button"
+                  style={dropdownItemStyle}
+                  onClick={() => { handleCancelInvoice(inv.id); setOpenActions(false); }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                >
+                  Cancel Invoice
+                </button>
+              )}
+              {handleDelete && (
+                <button
+                  type="button"
+                  style={{ ...dropdownItemStyle, color: '#dc2626', borderTop: '1px solid #f1f5f9' }}
+                  onClick={() => { handleDelete(inv.id); setOpenActions(false); }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#fef2f2'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </td>
+  );
+}
 export default function InvoiceRecordTable({invoices = [], handleEdit, handleDelete, handleMarkAsPaid, handleCancelInvoice, onSelectInvoice }) {  const [expandedRowId, setExpandedRowId] = useState(null);
   console.log('INVOICES RECEIVED BY TABLE:', invoices); // <-- Add this line
   const [statusFilter, setStatusFilter] = useState('all');
@@ -41,7 +237,6 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
       <h3 style={{ textAlign: 'center', color: '#333', marginBottom: '15px', fontSize: '15px', fontWeight: 'bold' }}>
         Invoice Records
       </h3>
-      
       {/* Status Filter Tabs */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '15px' }}>
         {['all', 'pending', 'paid', 'cancelled'].map((status) => (
@@ -64,7 +259,6 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
           </button>
         ))}
       </div>
-
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
         <thead>
           <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
@@ -127,142 +321,14 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                         {inv.status || 'Pending'}
                       </span>
                     </td>
-                    <td style={{ padding: '10px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                      {/* Flex container holding ALL action buttons on one row */}
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center', flexWrap: 'nowrap' }}>
-                      {/* Edit Button */}
-                      <button
-                        onClick={() => handleEdit(inv)}
-                        style={{
-                          padding: '4px 10px',
-                          marginRight: '6px',
-                          backgroundColor: '#28a745',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Edit
-                      </button>
-                      {/* Delete Button */}
-                      <button
-                        onClick={() => handleDelete(inv.id)}
-                        style={{
-                          padding: '4px 10px',
-                          backgroundColor: '#dc3545',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Delete
-                      </button>
-                      {/* Export Button */}
-                      <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevents expanding/collapsing the row when exporting
-                            if (onSelectInvoice) onSelectInvoice(inv);
-                          }}
-                          style={{
-                            padding: '4px 8px',
-                            fontSize: '12px',
-                            borderRadius: '4px',
-                            border: '1px solid #2563eb',
-                            backgroundColor: '#eff6ff',
-                            color: '#2563eb',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            marginRight: '6px'
-                          }}
-                        >
-                        📄 View / Export
-                      </button>
-                      {/* Mark Paid Button */}
-                      {inv.status !== 'paid' && inv.status !== 'cancelled' && (
-                        <button
-                          onClick={() => handleMarkAsPaid(inv.id)}
-                          className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-semibold py-1 px-2 rounded"
-                        >
-                          Mark Paid
-                        </button>
-                      )}
-                      {/* Cancel Button */}
-                      {inv.status !== 'cancelled' && (
-                        <button
-                          onClick={() => handleCancelInvoice(inv.id)}
-                          className="text-xs bg-amber-100 text-amber-700 hover:bg-amber-200 font-semibold py-1 px-2 rounded"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                      <button 
-                        onClick={() => handleValidateMatch(inv.id)} 
-                        disabled={loadingId === inv.id || !inv.purchase_order}
-                        style={{ marginRight: '8px' }}
-                      >
-                        {loadingId === inv.id ? 'Matching...' : 'Validate Match'}
-                      </button>
-                      </div>
-                      {/* Compact PDF Export Dropdown */}
-                      <div className="btn-group" style={{ position: 'relative', display: 'inline-block' }}>
-                        <button 
-                          className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                        >
-                          📄 PDF Docs ▾
-                        </button>
-                        <ul
-                          className="dropdown-menu shadow"
-                          style={{ 
-                            listStyle: 'none', 
-                            padding: '4px 0', 
-                            margin: '4px 0 0 0', 
-                            minWidth: '180px',
-                            position: 'absolute',
-                            right: 0,
-                            top: '100%',
-                            zIndex: 1000,
-                            backgroundColor: '#ffffff',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '6px',
-                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                          }}
-                        >
-                          <li style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                            <button 
-                              className="dropdown-item text-start w-100 px-3 py-1" 
-                              style={{ border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                              onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-invoice-pdf/`, '_blank')}
-                            >
-                              📄 Commercial Invoice
-                            </button>
-                          </li>
-                          <li style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                            <button 
-                              className="dropdown-item text-start w-100 px-3 py-1" 
-                              style={{ border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                              onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-do-pdf/`, '_blank')}
-                            >
-                              🚚 Delivery Order (DO)
-                            </button>
-                          </li>
-                          <li style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                            <button 
-                              className="dropdown-item text-start w-100 px-3 py-1" 
-                              style={{ border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
-                              onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-packing-pdf/`, '_blank')}
-                            >
-                              📦 Packing List
-                            </button>
-                          </li>
-                        </ul>
-                      </div>
-                    </td>      
+                    {/* Replace lines 309-318 with just this: */}
+                    <RowActions
+                      inv={inv}
+                      handleEdit={handleEdit}
+                      handleDelete={handleDelete}
+                      handleMarkAsPaid={handleMarkAsPaid}
+                      handleCancelInvoice={handleCancelInvoice}
+                    />
                   </tr>
                   {/* Expanded Detail Drawer */}
                   {isExpanded && (

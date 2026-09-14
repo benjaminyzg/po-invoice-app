@@ -39,6 +39,9 @@ export default function Settings({ token, baseUrl }) {
     email: '',
     website: '',
     bank_name: '',
+    bank_code: '',
+    branch_code: '',
+    bank_address: '',
     account_name: '',
     account_number: '',
     swift_code: '',
@@ -101,6 +104,9 @@ export default function Settings({ token, baseUrl }) {
             email: data.email || '',
             website: data.website || '',
             bank_name: data.bank_name || '',
+            bank_code: '',
+            branch_code: '',
+            bank_address: '',
             account_name: data.account_name || '',
             account_number: data.account_number || '',
             swift_code: data.swift_code || '',
@@ -129,6 +135,9 @@ export default function Settings({ token, baseUrl }) {
     data.append('email', formData.email || '');
     data.append('website', formData.website || '');
     data.append('bank_name', formData.bank_name || '');
+    data.append('bank_code', formData.bank_code || '');
+    data.append('branch_code', formData.branch_code || '');
+    data.append('bank_address', formData.bank_address || '');
     data.append('account_name', formData.account_name || '');
     data.append('account_number', formData.account_number || '');
     data.append('swift_code', formData.swift_code || '');
@@ -166,30 +175,81 @@ export default function Settings({ token, baseUrl }) {
         {/* Section 1: Profile & Logo */}
         <div style={{ marginBottom: '28px' }}>
           <h3 style={sectionTitleStyle}>🏢 Company Profile & Logo</h3>
+          {/* Row 1: Company Name & Tax Registration */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <div>
               <label style={labelStyle}>Company Name *</label>
-              <input type="text" name="company_name" value={formData.company_name || ''} onChange={handleChange} style={commonInputStyle} required />
+              <input
+                type="text"
+                name="company_name"
+                value={formData.company_name || ''}
+                onChange={handleChange}
+                style={commonInputStyle}
+                required
+              />
             </div>
             <div>
               <label style={labelStyle}>Tax / UEN Registration No.</label>
-              <input type="text" name="tax_registration_no" value={formData.tax_registration_no || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. 201812345M" />
+              <input
+                type="text"
+                name="tax_registration_no"
+                value={formData.tax_registration_no || ''}
+                onChange={handleChange}
+                style={commonInputStyle}
+                placeholder="e.g. 201812345M"
+              />
             </div>
           </div>
-
+          {/* Row 2: Company Logo Dropzone Box */}
           <div>
             <label style={labelStyle}>Company Logo</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px', border: '1px dashed #d1d5db', borderRadius: '8px', backgroundColor: '#f9fafb' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '20px',
+              padding: '20px',
+              border: '2px dashed #cbd5e1',
+              borderRadius: '8px',
+              backgroundColor: '#f8fafc',
+              minHeight: '90px'
+            }}>
               {logoPreview ? (
-                <img src={logoPreview} alt="Company Logo" style={{ maxHeight: '50px', maxWidth: '160px', objectFit: 'contain', borderRadius: '4px', border: '1px solid #e5e7eb', padding: '4px', backgroundColor: '#fff' }} />
+                <img
+                  src={logoPreview}
+                  alt="Company Logo"
+                  style={{
+                    maxHeight: '80px',
+                    maxWidth: '220px',
+                    objectFit: 'contain',
+                    borderRadius: '6px',
+                    border: '1px solid #e2e8f0',
+                    padding: '6px',
+                    backgroundColor: '#ffffff'
+                  }}
+                />
               ) : (
-                <div style={{ fontSize: '13px', color: '#6b7280' }}>No logo uploaded</div>
+                <div style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>
+                  No logo uploaded
+                </div>
               )}
-              <input type="file" accept="image/*" onChange={handleLogoChange} style={{ fontSize: '13px', color: '#374151' }} />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                style={{
+                  fontSize: '14px',
+                  color: '#334155',
+                  padding: '8px 14px',
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  flex: 1
+                }}
+              />
             </div>
           </div>
         </div>
-
         {/* Section 2: Contact Details */}
         <div style={{ marginBottom: '28px' }}>
           <h3 style={sectionTitleStyle}>📍 Contact Details</h3>
@@ -213,25 +273,26 @@ export default function Settings({ token, baseUrl }) {
             </div>
           </div>
         </div>
-
         {/* Section 3: Banking Details */}
         <div style={{ marginBottom: '28px' }}>
           <h3 style={sectionTitleStyle}>💳 Banking & Payment Instructions</h3>
+          {/* Row 1: Bank Name & Account Name */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <div>
               <label style={labelStyle}>Bank Name</label>
-              <input type="text" name="bank_name" value={formData.bank_name || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. DBS Bank Ltd" />
+              <input type="text" name="bank_name" value={formData.bank_name || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. DBS Bank Pte Ltd" />
             </div>
             <div>
               <label style={labelStyle}>Account Name</label>
-              <input type="text" name="account_name" value={formData.account_name || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. My Company Pte Ltd" />
+              <input type="text" name="account_name" value={formData.account_name || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. Focus Machinery Pte Ltd" />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+          {/* Row 2: Account Number, SWIFT / BIC, PayNow UEN */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <div>
               <label style={labelStyle}>Account Number</label>
-              <input type="text" name="account_number" value={formData.account_number || ''} onChange={handleChange} style={commonInputStyle} placeholder="120-901234-5" />
+              <input type="text" name="account_number" value={formData.account_number || ''} onChange={handleChange} style={commonInputStyle} placeholder="070-003801-2" />
             </div>
             <div>
               <label style={labelStyle}>SWIFT / BIC Code</label>
@@ -239,16 +300,32 @@ export default function Settings({ token, baseUrl }) {
             </div>
             <div>
               <label style={labelStyle}>PayNow UEN</label>
-              <input type="text" name="paynow_uen" value={formData.paynow_uen || ''} onChange={handleChange} style={commonInputStyle} placeholder="201812345M" />
+              <input type="text" name="paynow_uen" value={formData.paynow_uen || ''} onChange={handleChange} style={commonInputStyle} placeholder="199902857E" />
             </div>
           </div>
-        </div>
 
+          {/* Row 3: Bank Code & Branch Code */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div>
+              <label style={labelStyle}>Bank Code</label>
+              <input type="text" name="bank_code" value={formData.bank_code || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. 7171" />
+            </div>
+            <div>
+              <label style={labelStyle}>Branch Code</label>
+              <input type="text" name="branch_code" value={formData.branch_code || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. 070" />
+            </div>
+          </div>
+
+          {/* Row 4: Bank Address */}
+          <div>
+            <label style={labelStyle}>Bank Address</label>
+            <textarea name="bank_address" value={formData.bank_address || ''} onChange={handleChange} style={{ ...commonInputStyle, minHeight: '60px', resize: 'vertical' }} placeholder="12 Marina Boulevard, DBS Asia Central, MBFC Tower 3, Singapore 018982" />
+          </div>
+        </div>
         {/* Submit */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
           <Button type="submit">Save Company Settings</Button>
         </div>
-
         {/* Section 4: Quotation Settings */}
         <div style={{ marginBottom: '28px' }}>
           <h4 style={{ marginBottom: '16px', fontSize: '1.1rem', fontWeight: '600' }}>Quotation Configuration</h4>
@@ -256,10 +333,11 @@ export default function Settings({ token, baseUrl }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
             {/* 1. Custom Label / Header Name */}
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Field Label (Header Name)</label>
+              <label style={labelStyle}>Field Label (Header Name)</label>
               <input
                 type="text"
-                className="form-control"
+                name="quotation_ref_label"
+                style={commonInputStyle}
                 value={settings.quotation_ref_label || 'Quotation Reference'}
                 onChange={(e) => setSettings({ ...settings, quotation_ref_label: e.target.value })}
                 placeholder="e.g. Quotation Reference, Estimate No, Doc ID"
@@ -268,10 +346,11 @@ export default function Settings({ token, baseUrl }) {
 
             {/* 2. Custom Format Pattern */}
             <div>
-              <label style={{ display: 'block', marginBottom: '6px', fontWeight: '500' }}>Reference Format Pattern</label>
+              <label style={labelStyle}>Reference Format Pattern</label>
               <input
                 type="text"
-                className="form-control"
+                name="quotation_format"
+                style={commonInputStyle}
                 value={settings.quotation_format || 'QT-{YYYY}-{SEQ}'}
                 onChange={(e) => setSettings({ ...settings, quotation_format: e.target.value })}
                 placeholder="e.g. FMQ-{DDMMYY}/{CLIENT_NAME}/{SEQ}"
@@ -283,7 +362,6 @@ export default function Settings({ token, baseUrl }) {
             Available pattern tags: <code>{'{DDMMYY}'}</code>, <code>{'{YYYY}'}</code>, <code>{'{CLIENT_NAME}'}</code>, <code>{'{SEQ}'}</code>
           </small>
         </div>
-
       </form>
     </CardContainer>
   );
