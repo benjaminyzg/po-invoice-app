@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import CardContainer from '../common/CardContainer';
+import api from '../../services/api';
 
 const commonInputStyle = {
   width: '100%',
@@ -51,30 +52,19 @@ export default function Settings({ token, baseUrl }) {
     email: '',
     quotation_format: 'QT-{YYYY}-{SEQ}',
   });
-  useEffect(() => {
-      fetch(`${baseUrl}/company-settings/1/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`, // Use the token prop directly!
-          'Accept': 'application/json',
-        },
-      })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        setFormData(data);
-        if (data.logo) setLogoPreview(data.logo);
-      })
-    .catch((err) => console.error('Error fetching settings:', err));
-  }, [baseUrl, token]);
+  const [settingId, setSettingId] = useState(null);
+  
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setLogoFile(e.target.files[0]);
     }
   };
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
   const handleSave = async () => {
     const token = localStorage.getItem('token');
@@ -95,29 +85,72 @@ export default function Settings({ token, baseUrl }) {
       setLogoPreview(URL.createObjectURL(e.target.files[0]));
     }
   };
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await api.get('/company-settings/');
+        const data = Array.isArray(res.data) ? res.data[0] : res.data;
+
+        if (data && data.id) {
+          setSettingId(data.id);
+          setFormData({
+            company_name: data.company_name || '',
+            tax_registration_no: data.tax_registration_no || '',
+            registered_address: data.registered_address || '',
+            phone: data.phone || '',
+            email: data.email || '',
+            website: data.website || '',
+            bank_name: data.bank_name || '',
+            account_name: data.account_name || '',
+            account_number: data.account_number || '',
+            swift_code: data.swift_code || '',
+            paynow_uen: data.paynow_uen || '',
+          });
+          if (data.logo) {
+            setLogoPreview(data.logo);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const formData = new FormData();
-    formData.append('company_name', companyData.company_name);
-    // Add other text fields...
+    const data = new FormData();
 
-    // Only append logo if a new file was selected
+    // Append fields from formData (the state updated by your inputs)
+    data.append('company_name', formData.company_name || '');
+    data.append('tax_registration_no', formData.tax_registration_no || '');
+    data.append('registered_address', formData.registered_address || '');
+    data.append('phone', formData.phone || '');
+    data.append('email', formData.email || '');
+    data.append('website', formData.website || '');
+    data.append('bank_name', formData.bank_name || '');
+    data.append('account_name', formData.account_name || '');
+    data.append('account_number', formData.account_number || '');
+    data.append('swift_code', formData.swift_code || '');
+    data.append('paynow_uen', formData.paynow_uen || '');
+
     if (logoFile) {
-      formData.append('logo', logoFile);
+      data.append('logo', logoFile);
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/company-settings/1/', {
-        method: 'PATCH', // or POST if creating
-        headers: {
-          //'Authorization': `Bearer ${access}`,
-          'Authorization': `Bearer ${localStorage.getItem('access')}`,
-        },
-        body: formData,
-      });
-      const updatedSettings = await response.json();
-      setCompanyData(updatedSettings);
+      if (settingId) {
+        await api.put(`/company-settings/${settingId}/`, data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        const res = await api.post('/company-settings/', data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (res.data && res.data.id) setSettingId(res.data.id);
+      }
+
+      alert('Company settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
     }
