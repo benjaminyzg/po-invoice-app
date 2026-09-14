@@ -635,9 +635,12 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             Spacer(1, 12)
         ]
 
+        # Use getattr to safely handle optional/missing credit terms fields
+        credit_terms_val = getattr(invoice, 'credit_terms', None) or getattr(invoice, 'payment_terms', '-')
+
         details = [
             [f"Billed To: {invoice.vendor_name}", f"Issue Date: {invoice.issued_date or '-'}"],
-            [f"PO Ref: {invoice.po_number or '-'}", f"Credit Terms: {invoice.credit_terms or '-'}"],
+            [f"PO Ref: {invoice.po_number or '-'}", f"Credit Terms: {credit_terms_val}"],
         ]
         info_table = Table(details, colWidths=[270, 270])
         info_table.setStyle(TableStyle([('FONTNAME', (0,0), (-1,-1), 'Helvetica'), ('FONTSIZE', (0,0), (-1,-1), 9)]))
