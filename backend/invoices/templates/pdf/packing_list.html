@@ -4,58 +4,98 @@
     <meta charset="utf-8">
     <title>Packing List - Invoice #{{ invoice.number }}</title>
     <style>
-        @page { size: A4; margin: 20mm; }
-        body { font-family: Helvetica, Arial, sans-serif; color: #333; font-size: 12px; }
-        h1 { color: #1a365d; font-size: 24px; margin-bottom: 5px; }
-        .meta-table, .items-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .meta-table td { padding: 4px; vertical-align: top; }
-        .items-table th, .items-table td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
-        .items-table th { background-color: #f1f5f9; font-weight: bold; }
+        @page { size: A4; margin: 15mm; }
+        body { font-family: Helvetica, Arial, sans-serif; color: #333; font-size: 12px; margin: 0; padding: 0; }
+        
+        /* Header Layout */
+        .header-container { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; }
+        .company-info { width: 55%; }
+        .company-logo { max-height: 75px; max-width: 220px; object-fit: contain; margin-bottom: 8px; display: block; }
+        .company-name { font-size: 18px; font-weight: bold; color: #1e3a8a; margin: 0 0 4px 0; }
+        .company-address { font-size: 11px; color: #475569; line-height: 1.4; margin-bottom: 6px; }
+        .company-contact { font-size: 10px; color: #64748b; }
+        
+        /* Document Title & Metadata */
+        .doc-title-container { width: 40%; text-align: right; }
+        .doc-title { font-size: 22px; font-weight: bold; color: #1e3a8a; margin: 0 0 10px 0; text-transform: uppercase; }
+        .meta-details { font-size: 11px; line-height: 1.6; text-align: left; display: inline-block; }
+        .meta-details strong { color: #1e293b; }
+        .highlight-ref { color: #2563eb; font-weight: bold; }
+
+        /* Tables */
+        .meta-table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 20px; }
+        .meta-table td { padding: 10px; vertical-align: top; background-color: #f8fafc; border: 1px solid #e2e8f0; }
+        .items-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .items-table th { background-color: #1e3a8a; color: #ffffff; padding: 8px; text-align: left; font-size: 11px; }
+        .items-table td { border: 1px solid #cbd5e1; padding: 8px; font-size: 11px; }
         .text-right { text-align: right; }
     </style>
 </head>
 <body>
-    <h1>PACKING LIST</h1>
-    <p><strong>Invoice Ref:</strong> {{ invoice.number }} | <strong>Date:</strong> {{ invoice.date }}</p>
-    
+
+    <!-- Header Section -->
+    <div class="header-container">
+        <!-- Left Column: Enlarged Logo & Registered Entity Address -->
+        <div class="company-info">
+            {% if company.logo %}
+                <img src="{{ company.logo }}" class="company-logo" alt="Company Logo" />
+            {% endif %}
+            <h2 class="company-name">{{ company.name|default:"Focus Machinery Pte Ltd" }}</h2>
+            <div class="company-address">
+                {{ company.address|default:company.registered_address|linebreaksbr }}
+            </div>
+            <div class="company-contact">
+                {% if company.tax_registration_no %}<strong>Tax / UEN:</strong> {{ company.tax_registration_no }} | {% endif %}
+                <strong>Tel:</strong> {{ company.phone_number|default:"+65 6356 1915" }} | 
+                <strong>Email:</strong> {{ company.email_address|default:"enquiry@focusmachinery.com.sg" }}
+            </div>
+        </div>
+
+        <!-- Right Column: Title & Metadata (Shifted Right) -->
+        <div class="doc-title-container">
+            <h1 class="doc-title">PACKING LIST</h1>
+            <div class="meta-details">
+                <div><strong>PL #:</strong> <span class="highlight-ref">PL-{{ invoice.number }}</span></div>
+                <div><strong>Packing Date:</strong> {{ invoice.date }}</div>
+                <div><strong>PO Ref:</strong> {{ invoice.po_number|default:"-" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ship To Section -->
     <table class="meta-table">
         <tr>
             <td>
-                <strong>Shipper / Exporter:</strong><br>
-                {{ company.name }}<br>
-                {{ company.address }}
-            </td>
-            <td>
-                <strong>Consignee / Recipient:</strong><br>
-                {{ invoice.vendor_name }}<br>
-                {{ invoice.shipping_address }}
+                <strong>SHIP TO:</strong><br>
+                <strong>{{ invoice.vendor_name }}</strong><br>
+                {{ invoice.shipping_address|default:invoice.address }}
             </td>
         </tr>
     </table>
 
+    <!-- Items Table -->
     <table class="items-table">
         <thead>
             <tr>
-                <th>SKU</th>
-                <th>Description</th>
-                <th>HS Code</th>
-                <th>Cartons / Packages</th>
-                <th>Unit Weight (kg)</th>
-                <th>Total Weight (kg)</th>
+                <th>Pkg #</th>
+                <th>Item Description</th>
+                <th class="text-right">Qty</th>
+                <th>Pkg Type</th>
+                <th>Notes / Remarks</th>
             </tr>
         </thead>
         <tbody>
             {% for item in items %}
             <tr>
-                <td>{{ item.sku }}</td>
+                <td>Box {{ forloop.counter }}</td>
                 <td>{{ item.description }}</td>
-                <td>{{ item.hs_code }}</td>
-                <td class="text-right">{{ item.packages_count }}</td>
-                <td class="text-right">{{ item.unit_weight_kg }}</td>
-                <td class="text-right">{{ item.total_weight }}</td>
+                <td class="text-right">{{ item.quantity|default:item.packages_count }}</td>
+                <td>Carton</td>
+                <td>{{ item.notes|default:"-" }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
 </body>
 </html>

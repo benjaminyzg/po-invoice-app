@@ -21,10 +21,10 @@ from .serializers import (
 )
 from .serializers import PaymentTermTemplateSerializer, QuotationSerializer
 
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import Table, TableStyle, Image, Paragraph, Spacer
 from reportlab.lib import colors
+from reportlab.lib.styles import ParagraphStyle
+from core_app.models import CompanySettings
 from weasyprint import HTML
 
 
@@ -169,9 +169,52 @@ def export_packing_list_pdf(request, pk):
 
 def build_pdf_header(title, ref_no, styles):
     elements = []
-    title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=20, leading=24, textColor=colors.HexColor('#1A365D'))
-    elements.append(Paragraph(f"{title}: {ref_no}", title_style))
-    elements.append(Spacer(1, 12))
+    company = CompanySettings.objects.first()
+
+    # Left Column: Logo + Entity Address & Details
+    left_flowables = []
+    if company and company.company_logo:
+        try:
+            # Enlarged Logo (width=180, height=65)
+            img = Image(company.company_logo.path, width=180, height=65)
+            img.hAlign = 'LEFT'
+            left_flowables.append(img)
+            left_flowables.append(Spacer(1, 6))
+        except Exception:
+            pass
+
+    company_name = company.company_name if company else "Focus Machinery Pte Ltd"
+    address = company.registered_address if company and company.registered_address else ""
+    tax_no = company.tax_registration_no if company and company.tax_registration_no else ""
+    phone = company.phone_number if company and company.phone_number else "+65 6356 1915"
+    email = company.email_address if company and company.email_address else "enquiry@focusmachinery.com.sg"
+
+    left_text = f"<b><font size=14 color='#1e3a8a'>{company_name}</font></b><br/>"
+    if address:
+        left_text += f"<font size=9 color='#475569'>{address.replace('\n', '<br/>')}</font><br/>"
+    left_text += f"<font size=8 color='#64748b'>"
+    if tax_no:
+        left_text += f"<b>Tax / UEN:</b> {tax_no} | "
+    left_text += f"<b>Tel:</b> {phone} | <b>Email:</b> {email}</font>"
+
+    left_paragraph = Paragraph(left_text, styles['Normal'])
+    left_flowables.append(left_paragraph)
+
+    # Right Column: Document Title
+    right_text = f"<para align='right'><b><font size=18 color='#1e3a8a'>{title}</font></b></para>"
+    right_paragraph = Paragraph(right_text, styles['Normal'])
+
+    # Header Table Container (Shifted right with colWidths=[330, 210])
+    header_table = Table([[left_flowables, right_paragraph]], colWidths=[330, 210])
+    header_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+    ]))
+    
+    elements.append(header_table)
+    elements.append(Spacer(1, 10))
     return elements
 
 @api_view(['GET'])
@@ -279,11 +322,29 @@ def export_packing_list_pdf(request, pk):
     styles = getSampleStyleSheet()
     elements = build_pdf_header("PACKING LIST", f"PL-{invoice.invoice_number}", styles)
 
-    details = [
-        [f"Ship To: {invoice.client_name}", f"Packing Date: {invoice.issue_date}"],
-        [f"Destination: {invoice.billing_address}", f"Shipping Ref: {invoice.po_reference or '-'}"],
-    ]
-    elements.extend([Table(details, colWidths=[270, 270]), Spacer(1, 16)])
+    # Right-align metadata and format Ship To box
+    details_style_left = ParagraphStyle('DetailsLeft', parent=styles['Normal'], fontSize=9, leading=14)
+    details_style_right = ParagraphStyle('DetailsRight', parent=styles['Normal'], fontSize=9, leading=14, alignment=2)
+
+    ship_to_text = f"<b>SHIP TO:</b><br/><b>{invoice.client_name}</b><br/>{invoice.billing_address or ''}"
+    meta_text = (
+        f"<b>PL #:</b> <font color='#2563eb'><b>PL-{invoice.invoice_number}</b></font><br/>"
+        f"<b>Packing Date:</b> {invoice.issue_date}<br/>"
+        f"<b>PO Ref:</b> {invoice.po_reference or '-'}"
+    )
+
+    details_table = Table(
+        [[Paragraph(ship_to_text, details_style_left), Paragraph(meta_text, details_style_right)]],
+        colWidths=[320, 220]
+    )
+    details_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BACKGROUND', (0, 0), (0, 0), colors.HexColor('#F8FAFC')),
+        ('BOX', (0, 0), (0, 0), 0.5, colors.HexColor('#E2E8F0')),
+        ('PADDING', (0, 0), (-1, -1), 8),
+    ]))
+
+    elements.extend([details_table, Spacer(1, 16)])
 
     # Package Specs Table (Focus on Units/Packaging)
     items_data = [["Pkg #", "Item Description", "Qty", "Pkg Type", "Notes"]]
