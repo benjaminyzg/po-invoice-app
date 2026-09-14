@@ -1,4 +1,5 @@
 import io
+import os
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 
@@ -8,6 +9,7 @@ from rest_framework import viewsets, permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
 from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings, PaymentTermTemplate, Quotation
 from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings
 from .serializers import (
@@ -20,7 +22,7 @@ from .serializers import (
 from .serializers import PaymentTermTemplateSerializer, QuotationSerializer
 
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from weasyprint import HTML
@@ -612,40 +614,109 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         instance.is_deleted = True
         instance.save()
 
-    # Endpoint to recall/restore a soft-deleted invoice
-    @action(detail=True, methods=['patch'], url_path='restore')
-    def restore(self, request, pk=None):
-        invoice = Invoice.objects.get(pk=pk, is_deleted=True)
-        invoice.is_deleted = False
-        invoice.save()
-        serializer = self.get_serializer(invoice)
-        return Response(serializer.data)
+    def get_company_logo(self, company, max_w=140, max_h=50):
+        """
+        Safely retrieves and scales the company logo for ReportLab documents.
+        """
+        if not company:
+            return None
+            
+        logo_field = getattr(company, 'logo', None) or getattr(company, 'company_logo', None)
+        if logo_field:
+            try:
+                logo_path = logo_field.path
+                if os.path.exists(logo_path):
+                    img = Image(logo_path)
+                    
+                    # Maintain aspect ratio
+                    aspect = img.imageWidth / float(img.imageHeight)
+                    if aspect > (max_w / float(max_h)):
+                        img.drawWidth = max_w
+                        img.drawHeight = max_w / aspect
+                    else:
+                        img.drawHeight = max_h
+                        img.drawWidth = max_h * aspect
+                    return img
+            except Exception:
+                pass
+        return None
 
     @action(detail=True, methods=['get'], url_path='export-invoice-pdf', permission_classes=[AllowAny])
     def export_invoice_pdf(self, request, pk=None):
         invoice = self.get_object()
+        company = CompanySettings.objects.first()
+
+        co_name = getattr(company, 'company_name', 'My Company') if company else 'My Company'
+        co_address = getattr(company, 'address', '') if company else ''
+        co_postal = getattr(company, 'postal_code', '') if company else ''
+        co_full_addr = f"{co_address} Singapore {co_postal}".strip() if co_postal else co_address or '-'
+        co_pic = getattr(company, 'person_in_charge', None) or getattr(company, 'contact_person', '-') if company else '-'
+        co_phone = getattr(company, 'phone', '-') if company else '-'
+        co_email = getattr(company, 'email', '-') if company else '-'
+
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
-        
         styles = getSampleStyleSheet()
-        title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=20, leading=24, textColor=colors.HexColor('#1A365D'))
-        
-        elements = [
-            Paragraph(f"COMMERCIAL INVOICE: {invoice.invoice_number}", title_style),
-            Spacer(1, 12)
-        ]
+        elements = []
 
-        # Use getattr to safely handle optional/missing credit terms fields
+        # Logo & Company Details
+        logo_img = self.get_company_logo(company)
+        co_info_text = f"""
+        <b><font size=12 color="#1A365D">{co_name}</font></b><br/>
+        <font size=8 color="#4A5568">{co_full_addr}<br/>
+        <b>Attn:</b> {co_pic} &nbsp;|&nbsp; <b>Tel:</b> {co_phone} &nbsp;|&nbsp; <b>Email:</b> {co_email}</font>
+        """
+
+        left_header_flowables = [logo_img, Spacer(1, 4), Paragraph(co_info_text, styles['Normal'])] if logo_img else [Paragraph(co_info_text, styles['Normal'])]
+
         credit_terms_val = getattr(invoice, 'credit_terms', None) or getattr(invoice, 'payment_terms', '-')
+        doc_info_text = f"""
+        <b><font size=14 color='#1A365D'>COMMERCIAL INVOICE</font></b><br/><br/>
+        <b>Invoice #:</b> <font color='#2B6CB0'><b>{invoice.invoice_number}</b></font><br/>
+        <b>Issue Date:</b> {invoice.issued_date or '-'}<br/>
+        <b>PO Ref:</b> {invoice.po_number or '-'}<br/>
+        <b>Credit Terms:</b> {credit_terms_val}
+        """
 
-        details = [
-            [f"Billed To: {invoice.vendor_name}", f"Issue Date: {invoice.issued_date or '-'}"],
-            [f"PO Ref: {invoice.po_number or '-'}", f"Credit Terms: {credit_terms_val}"],
-        ]
-        info_table = Table(details, colWidths=[270, 270])
-        info_table.setStyle(TableStyle([('FONTNAME', (0,0), (-1,-1), 'Helvetica'), ('FONTSIZE', (0,0), (-1,-1), 9)]))
-        elements.extend([info_table, Spacer(1, 16)])
+        header_table = Table([[left_header_flowables, Paragraph(doc_info_text, styles['Normal'])]], colWidths=[320, 220])
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ]))
+        elements.append(header_table)
+        elements.append(Spacer(1, 10))
 
+        # Divider Line
+        divider = Table([['']], colWidths=[540])
+        divider.setStyle(TableStyle([('LINEABOVE', (0, 0), (-1, -1), 1, colors.HexColor('#CBD5E0'))]))
+        elements.append(divider)
+        elements.append(Spacer(1, 12))
+
+        # Billed To
+        vendor_name = getattr(invoice, 'vendor_name', '-')
+        vendor_address = getattr(invoice, 'vendor_address', '')
+        vendor_pic = getattr(invoice, 'vendor_contact_person', '')
+        vendor_phone = getattr(invoice, 'vendor_phone', '')
+        vendor_email = getattr(invoice, 'vendor_email', '')
+
+        billed_to_text = f"<b><font color='#1A365D'>BILLED TO:</font></b><br/><b>{vendor_name}</b>"
+        if vendor_address:
+            billed_to_text += f"<br/>{vendor_address}"
+        if vendor_pic:
+            billed_to_text += f"<br/><b>Attn:</b> {vendor_pic}"
+        if vendor_phone or vendor_email:
+            billed_to_text += f"<br/><b>Tel:</b> {vendor_phone or '-'} &nbsp;|&nbsp; <b>Email:</b> {vendor_email or '-'}"
+
+        billed_table = Table([[Paragraph(billed_to_text, styles['Normal'])]], colWidths=[540])
+        billed_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F7FAFC')),
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
+            ('PADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.append(billed_table)
+        elements.append(Spacer(1, 14))
+
+        # Items Table
         items_data = [["Description", "Qty", "Unit Price ($)", "Amount ($)"]]
         total_val = 0
         items = invoice.items.all() if hasattr(invoice, 'items') else []
@@ -658,66 +729,325 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
         item_table = Table(items_data, colWidths=[260, 60, 100, 120])
         item_table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
-            ('GRID', (0,0), (-1,-2), 0.5, colors.HexColor('#CBD5E0')),
-            ('ALIGN', (1,0), (-1,-1), 'RIGHT'),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-            ('FONTNAME', (2,-1), (-1,-1), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('GRID', (0, 0), (-1, -2), 0.5, colors.HexColor('#CBD5E0')),
+            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (2, -1), (-1, -1), 'Helvetica-Bold'),
+            ('PADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(item_table)
+        elements.append(Spacer(1, 16))
+
+        # Payment Instructions Block
+        bank_name = getattr(company, 'bank_name', '-') if company else '-'
+        account_name = getattr(company, 'account_name', co_name) if company else '-'
+        account_no = getattr(company, 'account_number', '-') if company else '-'
+        swift = getattr(company, 'swift_code', '-') if company else '-'
+        paynow_uen = getattr(company, 'paynow_uen', '-') if company else '-'
+
+        payment_text = f"""
+        <b><font color="#1A365D">PAYMENT INSTRUCTIONS</font></b><br/>
+        <b>Bank Name:</b> {bank_name} &nbsp;&nbsp;|&nbsp;&nbsp; <b>SWIFT / BIC:</b> {swift}<br/>
+        <b>Account Name:</b> {account_name} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Account Number:</b> {account_no}<br/>
+        <b>PayNow UEN:</b> {paynow_uen}
+        """
+        pay_table = Table([[Paragraph(payment_text, styles['Normal'])]], colWidths=[540])
+        pay_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#EDF2F7')),
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
+            ('PADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.append(pay_table)
+
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="Invoice_{invoice.invoice_number}.pdf"'
+        return response
+
+    @action(detail=True, methods=['get'], url_path='export-do-pdf', permission_classes=[AllowAny])
+    def export_do_pdf(self, request, pk=None):
+        invoice = self.get_object()
+        company = CompanySettings.objects.first()
+
+        # Company Info
+        co_name = getattr(company, 'company_name', 'My Company') if company else 'My Company'
+        co_address = getattr(company, 'address', '') if company else ''
+        co_postal = getattr(company, 'postal_code', '') if company else ''
+        co_full_addr = f"{co_address} Singapore {co_postal}".strip() if co_postal else co_address or '-'
+        co_pic = getattr(company, 'person_in_charge', None) or getattr(company, 'contact_person', '-') if company else '-'
+        co_phone = getattr(company, 'phone', '-') if company else '-'
+        co_email = getattr(company, 'email', '-') if company else '-'
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # Logo & Header
+        logo_img = self.get_company_logo(company)
+        co_info_text = f"""
+        <b><font size=12 color='#1A365D'>{co_name}</font></b><br/>
+        <font size=8 color='#4A5568'>{co_full_addr}<br/>
+        <b>Attn:</b> {co_pic} &nbsp;|&nbsp; <b>Tel:</b> {co_phone} &nbsp;|&nbsp; <b>Email:</b> {co_email}</font>
+        """
+        left_header_flowables = [logo_img, Spacer(1, 4), Paragraph(co_info_text, styles['Normal'])] if logo_img else [Paragraph(co_info_text, styles['Normal'])]
+
+        doc_info_text = f"""
+        <b><font size=14 color='#1A365D'>DELIVERY ORDER</font></b><br/><br/>
+        <b>DO #:</b> <font color='#2B6CB0'><b>DO-{invoice.invoice_number}</b></font><br/>
+        <b>Delivery Date:</b> {invoice.issued_date or '-'}<br/>
+        <b>PO Ref:</b> {invoice.po_number or '-'}
+        """
+
+        header_table = Table([[left_header_flowables, Paragraph(doc_info_text, styles['Normal'])]], colWidths=[320, 220])
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ]))
+        elements.extend([header_table, Spacer(1, 10)])
+
+        # Divider Line
+        divider = Table([['']], colWidths=[540])
+        divider.setStyle(TableStyle([('LINEABOVE', (0, 0), (-1, -1), 1, colors.HexColor('#CBD5E0'))]))
+        elements.extend([divider, Spacer(1, 12)])
+
+        # Deliver To Block
+        vendor_name = getattr(invoice, 'vendor_name', '-')
+        vendor_address = getattr(invoice, 'vendor_address', '')
+        vendor_pic = getattr(invoice, 'vendor_contact_person', '')
+        vendor_phone = getattr(invoice, 'vendor_phone', '')
+        vendor_email = getattr(invoice, 'vendor_email', '')
+
+        deliver_to_text = f"<b><font color='#1A365D'>DELIVER TO:</font></b><br/><b>{vendor_name}</b>"
+        if vendor_address:
+            deliver_to_text += f"<br/>{vendor_address}"
+        if vendor_pic:
+            deliver_to_text += f"<br/><b>Attn:</b> {vendor_pic}"
+        if vendor_phone or vendor_email:
+            deliver_to_text += f"<br/><b>Tel:</b> {vendor_phone or '-'} &nbsp;|&nbsp; <b>Email:</b> {vendor_email or '-'}"
+
+        deliver_table = Table([[Paragraph(deliver_to_text, styles['Normal'])]], colWidths=[540])
+        deliver_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F7FAFC')),
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
+            ('PADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.extend([deliver_table, Spacer(1, 14)])
+
+        # Items Table
+        items_data = [["Item Description", "Qty Ordered", "Qty Delivered", "Remarks / Condition"]]
+        items = invoice.items.all() if hasattr(invoice, 'items') else []
+        for item in items:
+            items_data.append([item.description, str(item.quantity), str(item.quantity), "Good Condition"])
+
+        item_table = Table(items_data, colWidths=[240, 85, 85, 130])
+        item_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
+            ('ALIGN', (1, 0), (2, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('PADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.extend([item_table, Spacer(1, 30)])
+
+        # Confirmation / Signature Block
+        sig_text = """
+        <b>Goods Received In Good Order & Condition:</b><br/><br/><br/>
+        ____________________________________<br/>
+        <b>Authorized Signature & Stamp</b><br/>
+        Date: ________________________
+        """
+        sig_table = Table([[Paragraph(sig_text, styles['Normal'])]], colWidths=[540])
+        sig_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#EDF2F7')),
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
+            ('PADDING', (0, 0), (-1, -1), 10),
+        ]))
+        elements.append(sig_table)
+
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="DO_{invoice.invoice_number}.pdf"'
+        return response
+
+    @action(detail=True, methods=['get'], url_path='export-packing-pdf', permission_classes=[AllowAny])
+    def export_packing_pdf(self, request, pk=None):
+        invoice = self.get_object()
+        company = CompanySettings.objects.first()
+
+        co_name = getattr(company, 'company_name', 'My Company') if company else 'My Company'
+        co_address = getattr(company, 'address', '') if company else ''
+        co_postal = getattr(company, 'postal_code', '') if company else ''
+        co_full_addr = f"{co_address} Singapore {co_postal}".strip() if co_postal else co_address or '-'
+        co_pic = getattr(company, 'person_in_charge', None) or getattr(company, 'contact_person', '-') if company else '-'
+        co_phone = getattr(company, 'phone', '-') if company else '-'
+        co_email = getattr(company, 'email', '-') if company else '-'
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # Logo & Header
+        logo_img = self.get_company_logo(company)
+        co_info_text = f"""
+        <b><font size=12 color='#1A365D'>{co_name}</font></b><br/>
+        <font size=8 color='#4A5568'>{co_full_addr}<br/>
+        <b>Attn:</b> {co_pic} &nbsp;|&nbsp; <b>Tel:</b> {co_phone} &nbsp;|&nbsp; <b>Email:</b> {co_email}</font>
+        """
+        left_header_flowables = [logo_img, Spacer(1, 4), Paragraph(co_info_text, styles['Normal'])] if logo_img else [Paragraph(co_info_text, styles['Normal'])]
+
+        doc_info_text = f"""
+        <b><font size=14 color='#1A365D'>PACKING LIST</font></b><br/><br/>
+        <b>PL #:</b> <font color='#2B6CB0'><b>PL-{invoice.invoice_number}</b></font><br/>
+        <b>Packing Date:</b> {invoice.issued_date or '-'}<br/>
+        <b>PO Ref:</b> {invoice.po_number or '-'}
+        """
+
+        header_table = Table([[left_header_flowables, Paragraph(doc_info_text, styles['Normal'])]], colWidths=[320, 220])
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ]))
+        elements.extend([header_table, Spacer(1, 10)])
+
+        # Divider Line
+        divider = Table([['']], colWidths=[540])
+        divider.setStyle(TableStyle([('LINEABOVE', (0, 0), (-1, -1), 1, colors.HexColor('#CBD5E0'))]))
+        elements.extend([divider, Spacer(1, 12)])
+
+        # Ship To Block
+        vendor_name = getattr(invoice, 'vendor_name', '-')
+        vendor_address = getattr(invoice, 'vendor_address', '')
+        vendor_pic = getattr(invoice, 'vendor_contact_person', '')
+        vendor_phone = getattr(invoice, 'vendor_phone', '')
+        vendor_email = getattr(invoice, 'vendor_email', '')
+
+        ship_to_text = f"<b><font color='#1A365D'>SHIP TO:</font></b><br/><b>{vendor_name}</b>"
+        if vendor_address:
+            ship_to_text += f"<br/>{vendor_address}"
+        if vendor_pic:
+            ship_to_text += f"<br/><b>Attn:</b> {vendor_pic}"
+        if vendor_phone or vendor_email:
+            ship_to_text += f"<br/><b>Tel:</b> {vendor_phone or '-'} &nbsp;|&nbsp; <b>Email:</b> {vendor_email or '-'}"
+
+        ship_table = Table([[Paragraph(ship_to_text, styles['Normal'])]], colWidths=[540])
+        ship_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F7FAFC')),
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
+            ('PADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.extend([ship_table, Spacer(1, 14)])
+
+        # Items Table
+        items_data = [["Pkg #", "Item Description", "Qty", "Pkg Type", "Notes / Remarks"]]
+        items = invoice.items.all() if hasattr(invoice, 'items') else []
+        total_qty = 0
+        for idx, item in enumerate(items, 1):
+            total_qty += int(item.quantity)
+            items_data.append([f"Box {idx}", item.description, str(item.quantity), "Carton", "-"])
+        
+        items_data.append(["Total:", f"{len(items)} Package(s)", str(total_qty), "", ""])
+
+        item_table = Table(items_data, colWidths=[65, 225, 60, 80, 110])
+        item_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('GRID', (0, 0), (-1, -2), 0.5, colors.HexColor('#CBD5E0')),
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+            ('ALIGN', (2, 0), (2, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#EDF2F7')),
+            ('PADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.extend([item_table, Spacer(1, 24)])
+
+        # Packed / Inspected By Block
+        packed_text = """
+        <b>Packed & Inspected By:</b><br/><br/>
+        Name: ________________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Signature: ________________________ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date: _______________
+        """
+        packed_table = Table([[Paragraph(packed_text, styles['Normal'])]], colWidths=[540])
+        packed_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F7FAFC')),
+            ('BOX', (0, 0), (-1, -1), 0.5, colors.HexColor('#E2E8F0')),
+            ('PADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.append(packed_table)
+
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="PackingList_{invoice.invoice_number}.pdf"'
+        return response
+        invoice = self.get_object()
+        company = CompanySettings.objects.first()
+
+        co_name = getattr(company, 'company_name', 'My Company') if company else 'My Company'
+        co_address = getattr(company, 'address', '') if company else ''
+        co_postal = getattr(company, 'postal_code', '') if company else ''
+        co_full_addr = f"{co_address} Singapore {co_postal}".strip() if co_postal else co_address or '-'
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # Logo & Company Details
+        logo_img = self.get_company_logo(company)
+        co_info_text = f"<b><font size=12 color='#1A365D'>{co_name}</font></b><br/><font size=8 color='#4A5568'>{co_full_addr}</font>"
+        left_header_flowables = [logo_img, Spacer(1, 4), Paragraph(co_info_text, styles['Normal'])] if logo_img else [Paragraph(co_info_text, styles['Normal'])]
+
+        doc_info_text = f"""
+        <b><font size=14 color="#1A365D">PACKING LIST</font></b><br/><br/>
+        <b>PL #:</b> <font color="#2B6CB0"><b>PL-{invoice.invoice_number}</b></font><br/>
+        <b>Packing Date:</b> {invoice.issued_date or '-'}<br/>
+        <b>PO Ref:</b> {invoice.po_number or '-'}
+        """
+
+        header_table = Table([[left_header_flowables, Paragraph(doc_info_text, styles['Normal'])]], colWidths=[320, 220])
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ]))
+        elements.extend([header_table, Spacer(1, 14)])
+
+        # Ship To Block
+        ship_to_text = f"<b><font color='#1A365D'>SHIP TO:</font></b><br/><b>{invoice.vendor_name}</b>"
+        elements.extend([
+            Table([[Paragraph(ship_to_text, styles['Normal'])]], colWidths=[540]),
+            Spacer(1, 14)
+        ])
+
+        # Table
+        items_data = [["Pkg #", "Item Description", "Qty", "Pkg Type", "Notes"]]
+        items = invoice.items.all() if hasattr(invoice, 'items') else []
+        for idx, item in enumerate(items, 1):
+            items_data.append([f"Box {idx}", item.description, str(item.quantity), "Carton", "-"])
+
+        item_table = Table(items_data, colWidths=[60, 240, 60, 80, 100])
+        item_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),
+            ('ALIGN', (2, 0), (2, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('PADDING', (0, 0), (-1, -1), 6),
         ]))
         elements.append(item_table)
 
         doc.build(elements)
         buffer.seek(0)
         response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
+        response['Content-Disposition'] = f'inline; filename="PackingList_{invoice.invoice_number}.pdf"'
         return response
-
-    @action(detail=True, methods=['get'], url_path='export-do-pdf', permission_classes=[AllowAny])
-    def export_do_pdf(self, request, pk=None):
-        invoice = self.get_object()
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
-        
-        styles = getSampleStyleSheet()
-        title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=20, leading=24, textColor=colors.HexColor('#1A365D'))
-        
-        elements = [
-            Paragraph(f"DELIVERY ORDER: DO-{invoice.invoice_number}", title_style),
-            Spacer(1, 12)
-        ]
-
-        details = [
-           [f"Deliver To: {invoice.vendor_name}", f"Delivery Date: {invoice.issued_date or '-'}"],
-           [f"PO Ref: {invoice.po_number or '-'}", ""],
-        ]
-
-        elements.extend([Table(details, colWidths=[270, 270]), Spacer(1, 16)])
-
-        items_data = [["Item Description", "Qty Ordered", "Qty Delivered", "Remarks"]]
-        items = invoice.items.all() if hasattr(invoice, 'items') else []
-        for item in items:
-            items_data.append([item.description, str(item.quantity), str(item.quantity), "Good Condition"])
-
-        item_table = Table(items_data, colWidths=[260, 80, 80, 120])
-        item_table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E0')),
-            ('ALIGN', (1,0), (2,-1), 'CENTER'),
-            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ]))
-        elements.extend([item_table, Spacer(1, 40)])
-
-        sig_data = [["Received By (Name & Signature): ______________________", "Date: _______________"]]
-        elements.append(Table(sig_data, colWidths=[360, 180]))
-
-        doc.build(elements)
-        buffer.seek(0)
-        response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="DO_{invoice.invoice_number}.pdf"'
-        return response
-
-    @action(detail=True, methods=['get'], url_path='export-packing-pdf', permission_classes=[AllowAny])
-    def export_packing_pdf(self, request, pk=None):
         invoice = self.get_object()
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
