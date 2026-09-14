@@ -128,7 +128,8 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                       </span>
                     </td>
                     <td style={{ padding: '10px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
+                      {/* Flex container holding ALL action buttons on one row */}
+                      <div style={{ display: 'flex', gap: '4px', alignItems: 'center', justifyContent: 'center', flexWrap: 'nowrap' }}>
                       {/* Edit Button */}
                       <button
                         onClick={() => handleEdit(inv)}
@@ -206,42 +207,61 @@ export default function InvoiceRecordTable({invoices = [], handleEdit, handleDel
                       </button>
                       </div>
                       {/* Compact PDF Export Dropdown */}
-                    <div className="btn-group" style={{ position: 'relative', display: 'inline-block' }}>
-                      <button 
-                        className="btn btn-sm btn-outline-secondary dropdown-toggle"
-                        type="button"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        📄 PDF Docs ▾
-                      </button>
-                      <ul className="dropdown-menu shadow">
-                        <li>
-                          <button 
-                            className="dropdown-item" 
-                            onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-invoice-pdf/`, '_blank')}
-                          >
-                            📄 Commercial Invoice
-                          </button>
-                        </li>
-                        <li>
-                          <button 
-                            className="dropdown-item" 
-                            onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-do-pdf/`, '_blank')}
-                          >
-                            🚚 Delivery Order (DO)
-                          </button>
-                        </li>
-                        <li>
-                          <button 
-                            className="dropdown-item" 
-                            onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-packing-pdf/`, '_blank')}
-                          >
-                            📦 Packing List
-                          </button>
-                        </li>
-                      </ul>
-                    </div>
+                      <div className="btn-group" style={{ position: 'relative', display: 'inline-block' }}>
+                        <button 
+                          className="btn btn-sm btn-outline-secondary dropdown-toggle"
+                          type="button"
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
+                        >
+                          📄 PDF Docs ▾
+                        </button>
+                        <ul
+                          className="dropdown-menu shadow"
+                          style={{ 
+                            listStyle: 'none', 
+                            padding: '4px 0', 
+                            margin: '4px 0 0 0', 
+                            minWidth: '180px',
+                            position: 'absolute',
+                            right: 0,
+                            top: '100%',
+                            zIndex: 1000,
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            borderRadius: '6px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
+                        >
+                          <li style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                            <button 
+                              className="dropdown-item text-start w-100 px-3 py-1" 
+                              style={{ border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                              onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-invoice-pdf/`, '_blank')}
+                            >
+                              📄 Commercial Invoice
+                            </button>
+                          </li>
+                          <li style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                            <button 
+                              className="dropdown-item text-start w-100 px-3 py-1" 
+                              style={{ border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                              onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-do-pdf/`, '_blank')}
+                            >
+                              🚚 Delivery Order (DO)
+                            </button>
+                          </li>
+                          <li style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                            <button 
+                              className="dropdown-item text-start w-100 px-3 py-1" 
+                              style={{ border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                              onClick={() => window.open(`http://127.0.0.1:8000/api/invoices/${inv.id}/export-packing-pdf/`, '_blank')}
+                            >
+                              📦 Packing List
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
                     </td>      
                   </tr>
                   {/* Expanded Detail Drawer */}

@@ -1,19 +1,30 @@
-from django.template.loader import render_to_string
+import io
 from django.http import HttpResponse
+from django.template.loader import render_to_string
+
+from rest_framework import (viewsets, status,)
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings, PaymentTermTemplate, Quotation
-from .models import from .serializers import ( InvoiceSerializer, CatalogItemSerializer, PurchaseOrderSerializer, PurchaseOrderStatusSerializer, CompanySettingsSerializer)
+from .models import Invoice, CatalogItem, PurchaseOrder, CompanySettings
+from .serializers import (
+    InvoiceSerializer,
+    CatalogItemSerializer,
+    PurchaseOrderSerializer,
+    PurchaseOrderStatusSerializer,
+    CompanySettingsSerializer,
+)
 from .serializers import PaymentTermTemplateSerializer, QuotationSerializer
+
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from weasyprint import HTML
-import io
+
 
 def build_pdf_header(title, ref_no, styles):
     elements = []
@@ -614,9 +625,44 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     def export_invoice_pdf(self, request, pk=None):
         invoice = self.get_object()
         buffer = io.BytesIO()
-        # Build Commercial Invoice PDF...
         doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
-        # (Insert your ReportLab elements construction here)
+        
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=20, leading=24, textColor=colors.HexColor('#1A365D'))
+        
+        elements = [
+            Paragraph(f"COMMERCIAL INVOICE: {invoice.invoice_number}", title_style),
+            Spacer(1, 12)
+        ]
+
+        details = [
+            [f"Billed To: {invoice.vendor_name}", f"Issue Date: {invoice.issued_date or '-'}"],
+            [f"PO Ref: {invoice.po_number or '-'}", f"Credit Terms: {invoice.credit_terms or '-'}"],
+        ]
+        info_table = Table(details, colWidths=[270, 270])
+        info_table.setStyle(TableStyle([('FONTNAME', (0,0), (-1,-1), 'Helvetica'), ('FONTSIZE', (0,0), (-1,-1), 9)]))
+        elements.extend([info_table, Spacer(1, 16)])
+
+        items_data = [["Description", "Qty", "Unit Price ($)", "Amount ($)"]]
+        total_val = 0
+        items = invoice.items.all() if hasattr(invoice, 'items') else []
+        for item in items:
+            amount = float(item.quantity) * float(item.unit_price)
+            total_val += amount
+            items_data.append([item.description, str(item.quantity), f"${float(item.unit_price):.2f}", f"${amount:.2f}"])
+        
+        items_data.append(["", "", "Total Due:", f"${total_val:.2f}"])
+
+        item_table = Table(items_data, colWidths=[260, 60, 100, 120])
+        item_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
+            ('GRID', (0,0), (-1,-2), 0.5, colors.HexColor('#CBD5E0')),
+            ('ALIGN', (1,0), (-1,-1), 'RIGHT'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+            ('FONTNAME', (2,-1), (-1,-1), 'Helvetica-Bold'),
+        ]))
+        elements.append(item_table)
+
         doc.build(elements)
         buffer.seek(0)
         response = HttpResponse(buffer, content_type='application/pdf')
@@ -627,9 +673,40 @@ class InvoiceViewSet(viewsets.ModelViewSet):
     def export_do_pdf(self, request, pk=None):
         invoice = self.get_object()
         buffer = io.BytesIO()
-        # Build Delivery Order PDF...
         doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
-        # (Insert your Delivery Order ReportLab elements here)
+        
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=20, leading=24, textColor=colors.HexColor('#1A365D'))
+        
+        elements = [
+            Paragraph(f"DELIVERY ORDER: DO-{invoice.invoice_number}", title_style),
+            Spacer(1, 12)
+        ]
+
+        details = [
+           [f"Deliver To: {invoice.vendor_name}", f"Delivery Date: {invoice.issued_date or '-'}"],
+           [f"PO Ref: {invoice.po_number or '-'}", ""],
+        ]
+
+        elements.extend([Table(details, colWidths=[270, 270]), Spacer(1, 16)])
+
+        items_data = [["Item Description", "Qty Ordered", "Qty Delivered", "Remarks"]]
+        items = invoice.items.all() if hasattr(invoice, 'items') else []
+        for item in items:
+            items_data.append([item.description, str(item.quantity), str(item.quantity), "Good Condition"])
+
+        item_table = Table(items_data, colWidths=[260, 80, 80, 120])
+        item_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E0')),
+            ('ALIGN', (1,0), (2,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ]))
+        elements.extend([item_table, Spacer(1, 40)])
+
+        sig_data = [["Received By (Name & Signature): ______________________", "Date: _______________"]]
+        elements.append(Table(sig_data, colWidths=[360, 180]))
+
         doc.build(elements)
         buffer.seek(0)
         response = HttpResponse(buffer, content_type='application/pdf')
@@ -638,6 +715,82 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='export-packing-pdf', permission_classes=[AllowAny])
     def export_packing_pdf(self, request, pk=None):
+        invoice = self.get_object()
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=20, leading=24, textColor=colors.HexColor('#1A365D'))
+        
+        elements = [
+            Paragraph(f"PACKING LIST: PL-{invoice.invoice_number}", title_style),
+            Spacer(1, 12)
+        ]
+
+        details = [
+            [f"Ship To: {invoice.vendor_name}", f"Packing Date: {invoice.issued_date or '-'}"],
+            [f"PO Ref: {invoice.po_number or '-'}", ""],
+        ]
+        elements.extend([Table(details, colWidths=[270, 270]), Spacer(1, 16)])
+
+        items_data = [["Pkg #", "Item Description", "Qty", "Pkg Type", "Notes"]]
+        items = invoice.items.all() if hasattr(invoice, 'items') else []
+        for idx, item in enumerate(items, 1):
+            items_data.append([f"Box {idx}", item.description, str(item.quantity), "Carton", "-"])
+
+        item_table = Table(items_data, colWidths=[60, 240, 60, 80, 100])
+        item_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E0')),
+            ('ALIGN', (0,0), (0,-1), 'CENTER'),
+            ('ALIGN', (2,0), (2,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ]))
+        elements.append(item_table)
+
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="PackingList_{invoice.invoice_number}.pdf"'
+        return response
+        invoice = self.get_object()
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle('DocTitle', parent=styles['Heading1'], fontSize=20, leading=24, textColor=colors.HexColor('#1A365D'))
+        
+        elements = [
+            Paragraph(f"PACKING LIST: PL-{invoice.invoice_number}", title_style),
+            Spacer(1, 12)
+        ]
+
+        details = [
+            [f"Ship To: {invoice.vendor_name}", f"Packing Date: {invoice.issue_date or '-'}"],
+            [f"PO Ref: {invoice.po_number or '-'}", ""],
+        ]
+        elements.extend([Table(details, colWidths=[270, 270]), Spacer(1, 16)])
+
+        items_data = [["Pkg #", "Item Description", "Qty", "Pkg Type", "Notes"]]
+        items = invoice.items.all() if hasattr(invoice, 'items') else []
+        for idx, item in enumerate(items, 1):
+            items_data.append([f"Box {idx}", item.description, str(item.quantity), "Carton", "-"])
+
+        item_table = Table(items_data, colWidths=[60, 240, 60, 80, 100])
+        item_table.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#EDF2F7')),
+            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor('#CBD5E0')),
+            ('ALIGN', (0,0), (0,-1), 'CENTER'),
+            ('ALIGN', (2,0), (2,-1), 'CENTER'),
+            ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ]))
+        elements.append(item_table)
+
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="PackingList_{invoice.invoice_number}.pdf"'
+        return response
         invoice = self.get_object()
         buffer = io.BytesIO()
         # Build Packing List PDF...
