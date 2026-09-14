@@ -96,21 +96,21 @@ export default function Settings({ token, baseUrl }) {
 
         if (data && data.id) {
           setSettingId(data.id);
-          setFormData({
-            company_name: data.company_name || '',
-            tax_registration_no: data.tax_registration_no || '',
-            registered_address: data.registered_address || '',
-            phone: data.phone || '',
-            email: data.email || '',
-            website: data.website || '',
-            bank_name: data.bank_name || '',
-            bank_code: '',
-            branch_code: '',
-            bank_address: '',
-            account_name: data.account_name || '',
-            account_number: data.account_number || '',
-            swift_code: data.swift_code || '',
-            paynow_uen: data.paynow_uen || '',
+            setFormData({
+              company_name: data.company_name || '',
+              tax_registration_no: data.tax_registration_no || '',
+              registered_address: data.registered_address || '',
+              phone: data.phone || '',
+              email: data.email || '',
+              website: data.website || '',
+              bank_name: data.bank_name || '',
+              bank_code: data.bank_code || '',       // <-- Fixed
+              branch_code: data.branch_code || '',   // <-- Fixed
+              bank_address: data.bank_address || '', // <-- Fixed
+              account_name: data.account_name || '',
+              account_number: data.account_number || '',
+              swift_code: data.swift_code || '',
+              paynow_uen: data.paynow_uen || '',
           });
           if (data.logo) {
             setLogoPreview(data.logo);
