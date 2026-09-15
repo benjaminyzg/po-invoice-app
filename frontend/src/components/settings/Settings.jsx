@@ -94,33 +94,34 @@ export default function Settings({ token, baseUrl }) {
         const res = await api.get('/company-settings/');
         const data = Array.isArray(res.data) ? res.data[0] : res.data;
 
-        if (data && data.id) {
-          setSettingId(data.id);
-            setFormData({
-              company_name: data.company_name || '',
-              tax_registration_no: data.tax_registration_no || '',
-              registered_address: data.registered_address || '',
-              phone: data.phone || '',
-              email: data.email || '',
-              website: data.website || '',
-              bank_name: data.bank_name || '',
-              bank_code: data.bank_code || '',       // <-- Fixed
-              branch_code: data.branch_code || '',   // <-- Fixed
-              bank_address: data.bank_address || '', // <-- Fixed
-              account_name: data.account_name || '',
-              account_number: data.account_number || '',
-              swift_code: data.swift_code || '',
-              paynow_uen: data.paynow_uen || '',
-          });
-          if (data.logo) {
-            setLogoPreview(data.logo);
+        if (res.data) {
+          if (data) {
+              setSettingId(data.id || null);
+              setFormData({
+                  company_name: data.company_name || '',
+                  tax_registration_no: data.tax_registration_no || '',
+                  registered_address: data.registered_address || '',
+                  phone: data.phone || '',
+                  email: data.email || '',
+                  website: data.website || '',
+                  bank_name: data.bank_name || '',
+                  bank_code: data.bank_code || '',
+                  branch_code: data.branch_code || '',
+                  bank_address: data.bank_address || '',
+                  account_name: data.account_name || '',
+                  account_number: data.account_number || '',
+                  swift_code: data.swift_code || '',
+                  paynow_uen: data.paynow_uen || '',
+              });
+              if (data.logo) {
+                  setLogoPreview(data.logo);
+              }
           }
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
       }
     };
-
     fetchSettings();
   }, []);
   const handleSubmit = async (e) => {
@@ -162,6 +163,7 @@ export default function Settings({ token, baseUrl }) {
       alert('Company settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
+      alert('Error saving settings: ' + (error.response?.data ? JSON.stringify(error.response.data) : error.message));
     }
   };
   return (

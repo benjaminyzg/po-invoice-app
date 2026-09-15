@@ -97,7 +97,11 @@ class CompanySettings(models.Model):
     contact_person = models.CharField(max_length=100, blank=True, null=True)
     full_address = models.TextField(blank=True, null=True)
     web = models.URLField(blank=True, null=True)
-    # Add this new field:
-    quotation_format = models.CharField(max_length=100, default="QT-{YYYY}-{SEQ}")
+    # Bank Related Details:
+    bank_code = models.CharField(max_length=50, blank=True, null=True)
+    branch_code = models.CharField(max_length=50, blank=True, null=True)
+    bank_address = models.TextField(blank=True, null=True)
+
+    # Quotation Related Details:
+    quotation_format = models.CharField(max_length=100, default="FMQ-{DDMMYY}/{CLIENT_NAME}/{SEQ}")
     quotation_ref_label = models.CharField(max_length=100, default="Quotation Reference")
-    quotation_format = models.CharField(max_length=100, default="QT-{YYYY}-{SEQ}")
