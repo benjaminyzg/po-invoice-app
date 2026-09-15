@@ -53,10 +53,16 @@ class UserSerializer(serializers.ModelSerializer):
 
         return instance
 
+# Example if using explicit fields list:
 class CompanySettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanySettings
-        fields = '__all__'
+        fields = [
+            'id', 'name', 'tax_uen', 'email', 'phone_number', 
+            'office_number', 'contact_person', 'full_address', 'web',
+            'bank_code', 'branch_code', 'bank_address', # Ensure these are included here if not using '__all__'
+            'quotation_format', 'quotation_ref_label'
+        ]
 
 class CatalogItemSerializer(serializers.ModelSerializer):
     class Meta:
