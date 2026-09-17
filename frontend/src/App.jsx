@@ -51,25 +51,21 @@ export default function App() {
        <button onClick={() => setActiveTab('quotation-wip')} className={`px-3 py-2 text-sm font-semibold rounded-md ${activeTab === 'quotation-wip' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
           📋 Quotation Form
         </button>
-        <button onClick={() => setActiveTab('catalog')} style={{ padding: '8px 16px', fontWeight: activeTab === 'catalog' ? 'bold' : 'normal' }}>
+        {/* <button onClick={() => setActiveTab('catalog')} style={{ padding: '8px 16px', fontWeight: activeTab === 'catalog' ? 'bold' : 'normal' }}>
           🏷️ Catalog Items
-        </button>
+        </button> */}
         <button onClick={() => setActiveTab('settings')} style={{ padding: '8px 16px', fontWeight: activeTab === 'settings' ? 'bold' : 'normal' }}>
           ⚙️ Company Settings
         </button>
-        <button onClick={() => setActiveTab('usersAdmin')} style={{ padding: '8px 16px', fontWeight: activeTab === 'usersAdmin' ? 'bold' : 'normal' }}>
+        {/* <button onClick={() => setActiveTab('usersAdmin')} style={{ padding: '8px 16px', fontWeight: activeTab === 'usersAdmin' ? 'bold' : 'normal' }}>
           👥 Users Admin
-        </button>
+        </button> */}
       </nav>
 
       {/* Tab Views */}
       <main>
-        {activeTab === 'dashboard' && (
-         <Dashboard token={token} setToken={setToken} />
-        )}
-        {activeTab === 'catalog' && (
-          <CatalogManager token={token} baseUrl={BASE_URL} />
-        )} 
+        {activeTab === 'dashboard' && (<Dashboard token={token} setToken={setToken} />)}
+        {/* {activeTab === 'catalog' && (<CatalogManager token={token} baseUrl={BASE_URL} />)}  */}
         {activeTab === 'purchaseOrders' && (
           <div>
             {/* 1. Form component for creating new POs */}
@@ -79,15 +75,11 @@ export default function App() {
         )}
         {/* Tab Views */}
         {activeTab === 'quotation-wip' && <QuotationFormWip />}        
-        {activeTab === 'settings' && (
-          <Settings token={token} baseUrl={BASE_URL} />
-        )}
+        {activeTab === 'settings' && (<Settings token={token} baseUrl={BASE_URL} />)}
         {/*} In your Main Content Area: */}
         {activeTab === 'invoices' && <Invoices token={token} baseUrl={BASE_URL} />}
         {/* Other existing tab components */}
-        {activeTab === 'usersAdmin' && (
-          <UsersAdmin token={token} baseUrl={BASE_URL} />
-        )}
+        {/* {activeTab === 'usersAdmin' && (<UsersAdmin token={token} baseUrl={BASE_URL} />)} */}
       </main>
     </div>
   );

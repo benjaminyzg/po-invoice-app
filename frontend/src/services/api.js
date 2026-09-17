@@ -11,7 +11,7 @@ const api = axios.create({
 // 2. Add Request Interceptor for Auth Header
 api.interceptors.request.use((config) => {
   //const token = localStorage.getItem('access') || localStorage.getItem('token');
-  const token = localStorage.getItem('access');
+  const token = localStorage.getItem('access_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -26,7 +26,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Check if error is 401 and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !(originalRequest.url && originalRequest.url.includes('/token/refresh/'))) {
       originalRequest._retry = true;
       try {
         // const refreshToken = localStorage.getItem('refresh_token');
@@ -34,15 +34,9 @@ api.interceptors.response.use(
         const res = await axios.post('http://127.0.0.1:8000/api/token/refresh/', {
            refresh: refreshToken,
         });
-
-        // Save new access token
-        // localStorage.setItem('access_token', res.data.access);
-        // localStorage.setItem('token', res.data.access);
-        // originalRequest.headers.Authorization = `Bearer ${res.data.access}`;
-
-        const newAccessToken = response.data.access;
+        const newAccessToken = res.data.access;
         localStorage.setItem('access_token', newAccessToken);
-
+        const token = localStorage.getItem('access_token');
         // Update header and retry original request
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);

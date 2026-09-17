@@ -108,10 +108,11 @@ export default function CatalogItems({ token, baseUrl }) {
         },
       });
       if (response.ok) {
-        setCatalogItems(catalogItems.filter((item) => item.id !== id));
+        // setCatalogItems(catalogItems.filter((item) => item.id !== id));
+        setItems(items.filter((item) => item.id !== id));
       } else {
         console.error('Failed to delete catalog item');
-      }s
+      }
     } catch (error) {
       console.error('Error deleting catalog item:', error);
     }
@@ -123,37 +124,29 @@ export default function CatalogItems({ token, baseUrl }) {
   const fetchCatalogItems = async () => {
     try {
       const response = await api.get('/catalog-items/?active_only=true');
-      setCatalogItems(response.data);
+      // setCatalogItems(response.data);
+      setItems(response.data.results || response.data);
     } catch (error) {
       console.error('Error loading catalog items:', error);
     }
   };
-  const fetchCatalog = async () => {
-    try {
-      const res = await fetch(`${baseUrl}/catalog-items/`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`},
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data);
-      }
-    } catch (err) {
-      console.error('Error fetching catalog items:', err);
-    }
-  };
+  // const fetchCatalog = async () => {
+  //   try {
+  //     const res = await fetch(`${baseUrl}/catalog-items/`, {
+  //       headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}`},
+  //     });
+  //     if (res.ok) {
+  //       const data = await res.json();
+  //       setItems(data);
+  //     }
+  //   } catch (err) {
+  //     console.error('Error fetching catalog items:', err);
+  //   }
+  // };
   useEffect(() => {
     fetchCatalogItems();
   }, []); 
-  
-  // useEffect(() => {
-  //  fetch(`${baseUrl}/catalog-items/?active_only=true`, {
-  //    headers: { 'Authorization': `Token ${token}` }
-  //  })
-  //  .then(res => res.json())
-  //  .then(data => setCatalogItems(data));
-  // }, [token, baseUrl]);
-
-  const handleCreate = async (e) => {
+    const handleCreate = async (e) => {
     e.preventDefault();
     try {
       const res = await fetch(`${baseUrl}/catalog-items/`, {
