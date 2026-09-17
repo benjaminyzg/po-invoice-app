@@ -84,24 +84,6 @@ export default function Invoices({ token, baseUrl }) {
       console.error('Error loading invoices:', err);
     }
   };
-  
-  // 3. Call both functions inside useEffect on mount
-  // useEffect(() => {
-  //   const fetchInvoices = async () => {
-  //     try {
-  //       const res = await axios.get(`${baseUrl}/invoices/`, {
-  //         headers: token ? { Authorization: `Bearer ${token}` } : {}
-  //       });
-  //       // Handle both raw arrays and paginated responses cleanly
-  //       const records = Array.isArray(res.data) ? res.data : (res.data.results || []);
-  //       setInvoices(records);
-  //     } catch (err) {
-  //       console.error('Fetch error:', err);
-  //       // setInvoices([]); // Fallback to empty array on network failure
-  //     }
-  //   };
-  //   fetchInvoices();
-  // }, []); //[token, baseUrl]);
 
   useEffect(() => {
     const loadInvoices = async () => {
@@ -121,17 +103,6 @@ export default function Invoices({ token, baseUrl }) {
     loadInvoices();
   }, []);
 
-  // Fixed implementation with Bearer token
-  // useEffect(() => {
-  //   const token = localStorage.getItem('token');
-  //   const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
-  //   axios.get('http://127.0.0.1:8000/api/invoices/', { headers })
-  //     .then(res => setInvoices(res.data))
-  //     .catch(err => console.error(err));
-  // }, []);
-
-  // Filter invoices before passing them to InvoiceRecordTable
   const filteredInvoices = invoices.filter((inv) => {
     if (statusFilter === 'all') return true;
     return inv.status === statusFilter;
@@ -437,7 +408,7 @@ export default function Invoices({ token, baseUrl }) {
         />
       
         {/* Quick Select Catalog Item */}
-        <div style={{ marginBottom: '20px' }}>
+        {/* <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontWeight: 'bold', fontSize: '14px', marginBottom: '6px', color: '#444' }}>
             Quick Select Catalog Item:
           </label>
@@ -453,7 +424,8 @@ export default function Invoices({ token, baseUrl }) {
               </option>
             ))}
           </select>
-        </div>
+        </div> */}
+        
         <form onSubmit={handleSubmit}>
         
         {/* Header Details Sub-component */}

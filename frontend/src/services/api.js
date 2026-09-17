@@ -10,7 +10,8 @@ const api = axios.create({
 
 // 2. Add Request Interceptor for Auth Header
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access') || localStorage.getItem('token');
+  //const token = localStorage.getItem('access') || localStorage.getItem('token');
+  const token = localStorage.getItem('access');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -29,21 +30,27 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         // const refreshToken = localStorage.getItem('refresh_token');
-        const refreshToken = localStorage.getItem('refresh'); // Or 'refresh_token'
+        const refreshToken = localStorage.getItem('refresh_token'); // Or 'refresh_token'
         const res = await axios.post('http://127.0.0.1:8000/api/token/refresh/', {
            refresh: refreshToken,
         });
 
         // Save new access token
         // localStorage.setItem('access_token', res.data.access);
-        localStorage.setItem('token', res.data.access);
-        originalRequest.headers.Authorization = `Bearer ${res.data.access}`;
+        // localStorage.setItem('token', res.data.access);
+        // originalRequest.headers.Authorization = `Bearer ${res.data.access}`;
 
-        // Retry the original request
+        const newAccessToken = response.data.access;
+        localStorage.setItem('access_token', newAccessToken);
+
+        // Update header and retry original request
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);
+
       } catch (refreshError) {
         // Refresh token failed or expired -> Redirect to login
-        localStorage.clear();
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }

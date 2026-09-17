@@ -104,7 +104,6 @@ class CatalogItem(models.Model):
 
     def __str__(self):
         return f"{self.name} (${self.unit_price})"
-
 # 2. Invoice Header Model
 class Invoice(models.Model):
     STATUS_CHOICES = [
@@ -150,7 +149,6 @@ class Invoice(models.Model):
 
     def __str__(self):
         return f"Invoice {self.invoice_number} - {self.vendor_name}"
-
 # 3. Purchase Order Model
 class PurchaseOrder(models.Model):
     class Status(models.TextChoices):
@@ -176,7 +174,6 @@ class PurchaseOrder(models.Model):
     # Strip away lines 94-106. Your save method should just look like this:
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-
 # 4. Purchase Order Item Model
 class PurchaseOrderItem(models.Model):
     purchase_order = models.ForeignKey(
@@ -191,7 +188,6 @@ class PurchaseOrderItem(models.Model):
 
     def __str__(self):
         return f"{self.description} ({self.quantity})"
-
 # 5. Invoice Line Items Model
 class InvoiceItem(models.Model):
     invoice = models.ForeignKey(
@@ -209,7 +205,6 @@ class InvoiceItem(models.Model):
 
     def __str__(self):
         return f'{self.description} ({self.quantity} x ${self.unit_price})'
-
 # 6. Document Sequence Items Model
 class DocumentSequence(models.Model):
     DOCUMENT_TYPES = [

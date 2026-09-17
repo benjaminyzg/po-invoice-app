@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
+import axios from 'axios';
 import CardContainer from '../common/CardContainer';
 import api from '../../services/api';
 
@@ -50,7 +51,7 @@ export default function Settings({ token, baseUrl }) {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
   const [message, setMessage] = useState('');
-
+ 
   useEffect(() => {
     fetch(`${baseUrl}/company-settings/1/`, {
       headers: { Authorization: `Token ${token}` }
@@ -103,80 +104,60 @@ export default function Settings({ token, baseUrl }) {
       setLogoPreview(URL.createObjectURL(e.target.files[0]));
     }
   };
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await api.get('/company-settings/');
-        const data = Array.isArray(res.data) ? res.data[0] : res.data;
 
-        if (data && data.id) {
-          setSettingId(data.id);
-            setFormData({
-              company_name: data.company_name || '',
-              tax_registration_no: data.tax_registration_no || '',
-              registered_address: data.registered_address || '',
-              phone: data.phone || '',
-              email: data.email || '',
-              website: data.website || '',
-              bank_name: data.bank_name || '',
-              bank_code: data.bank_code || '',       // <-- Fixed
-              branch_code: data.branch_code || '',   // <-- Fixed
-              bank_address: data.bank_address || '', // <-- Fixed
-              account_name: data.account_name || '',
-              account_number: data.account_number || '',
-              swift_code: data.swift_code || '',
-              paynow_uen: data.paynow_uen || '',
-          });
-          if (data.logo) {
-            setLogoPreview(data.logo);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching settings:', error);
-      }
-    };
+  {/* Old Version of HandleSubmit*/}
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   const data = new FormData();
+  //   Object.keys(formData).forEach((key) => {
+  //     if (formData[key] !== null && formData[key] !== undefined) {
+  //       data.append(key, formData[key]);
+  //     }
+  //   });
+  //   if (logoFile) {
+  //     data.append('logo', logoFile);
+  //   }
 
-    fetchSettings();
-  }, []);
+  //   try {
+  //     const response = await fetch(`${baseUrl}/company-settings/1/`, {
+  //       method: 'PUT',
+  //       headers: { Authorization: `Token ${token}` },
+  //       body: data
+  //     });
+  //     if (response.ok) {
+  //       setMessage('Company settings saved successfully!');
+  //       setTimeout(() => setMessage(''), 3000);
+  //     } else {
+  //       setMessage('Failed to save settings.');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error saving settings:', error);
+  //     setMessage('An error occurred.');
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData();
-
-    // Append fields from formData (the state updated by your inputs)
-    data.append('company_name', formData.company_name || '');
-    data.append('tax_registration_no', formData.tax_registration_no || '');
-    data.append('registered_address', formData.registered_address || '');
-    data.append('phone', formData.phone || '');
-    data.append('email', formData.email || '');
-    data.append('website', formData.website || '');
-    data.append('bank_name', formData.bank_name || '');
-    data.append('bank_code', formData.bank_code || '');
-    data.append('branch_code', formData.branch_code || '');
-    data.append('bank_address', formData.bank_address || '');
-    data.append('account_name', formData.account_name || '');
-    data.append('account_number', formData.account_number || '');
-    data.append('swift_code', formData.swift_code || '');
-    data.append('paynow_uen', formData.paynow_uen || '');
-
+      Object.keys(formData).forEach((key) => {
+        if (key !== 'logo' && formData[key] !== null && formData[key] !== undefined) {
+            data.append(key, formData[key]);
+        }
+    });
     if (logoFile) {
-      data.append('logo', logoFile);
+        data.append('logo', logoFile);
     }
-
     try {
-      if (settingId) {
-        await api.put(`/company-settings/${settingId}/`, data, {
-          headers: { 'Content-Type': 'multipart/form-data' }
+        const response = await axios.put(`${baseUrl}/company-settings/1/`, data, {
+            headers: {
+                'Authorization': `Token ${token}`,
+                'Content-Type': 'multipart/form-data',
+            },
         });
-      } else {
-        const res = await api.post('/company-settings/', data, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        if (res.data && res.data.id) setSettingId(res.data.id);
-      }
-
-      alert('Company settings saved successfully!');
+        setMessage('Settings saved successfully!');
     } catch (error) {
-      console.error('Error saving settings:', error);
+        console.error('Error saving settings:', error);
+        setMessage('Failed to save settings.');
     }
   };
   return (
@@ -299,7 +280,15 @@ export default function Settings({ token, baseUrl }) {
             </div>
             <div>
               <label style={labelStyle}>Account Name</label>
-              <input type="text" name="account_name" value={formData.account_name || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. Focus Machinery Pte Ltd" />
+              <input type="text" name="account_name" value={formData.account_name || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. Company Pte Ltd" />
+            </div>
+            <div>
+              <label style={labelStyle}>Bank Code</label>
+              <input type="text" name="bank_code" value={formData.bank_code || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. 7171"/>
+            </div>
+            <div>
+              <label style={labelStyle}>Branch Code</label>
+              <input type="text" name="branch_code" value={formData.branch_code || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. 070"/>
             </div>
           </div>
 
@@ -319,24 +308,11 @@ export default function Settings({ token, baseUrl }) {
             </div>
           </div>
 
-          {/* Row 3: Bank Code & Branch Code */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-            <div>
-              <label style={labelStyle}>Bank Code</label>
-              <input type="text" name="bank_code" value={formData.bank_code || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. 7171" />
-            </div>
-            <div>
-              <label style={labelStyle}>Branch Code</label>
-              <input type="text" name="branch_code" value={formData.branch_code || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. 070" />
-            </div>
+          <div style={{ marginBottom: '16px' }}>
+              <label style={labelStyle}>Bank Address</label>
+              <textarea name="bank_address" value={formData.bank_address || ''} onChange={handleChange} style={{ ...commonInputStyle, minHeight: '80px', resize: 'vertical'}} placeholder="12 Marina Boulevard, DBS Asia Central, Marina Bay Financial Centre Tower 3, Singapore 018982"/>
           </div>
-
-          {/* Row 4: Bank Address */}
-          <div>
-            <label style={labelStyle}>Bank Address</label>
-            <textarea name="bank_address" value={formData.bank_address || ''} onChange={handleChange} style={{ ...commonInputStyle, minHeight: '60px', resize: 'vertical' }} placeholder="12 Marina Boulevard, DBS Asia Central, MBFC Tower 3, Singapore 018982" />
-          </div>
-        </div>
+        </div>          
         {/* Submit */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid #e5e7eb' }}>
           <Button type="submit">Save Company Settings</Button>
