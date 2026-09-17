@@ -10,7 +10,6 @@ const containerStyle = {
   fontFamily: 'Helvetica, Arial, sans-serif',
   boxSizing: 'border-box'
 };
-
 const tableHeaderStyle = {
   backgroundColor: '#f3f4f6',
   color: '#374151',
@@ -20,13 +19,11 @@ const tableHeaderStyle = {
   padding: '10px 12px',
   borderBottom: '2px solid #e5e7eb'
 };
-
 const tableCellStyle = {
   padding: '10px 12px',
   fontSize: '13px',
   borderBottom: '1px solid #f3f4f6'
 };
-
 export default function InvoicePdfTemplate({ invoice, companySettings, elementId = "printable-invoice" }) {
   if (!invoice) return null;
 
@@ -62,19 +59,19 @@ export default function InvoicePdfTemplate({ invoice, companySettings, elementId
               style={{ maxHeight: '60px', maxWidth: '200px', objectFit: 'contain', marginBottom: '10px', display: 'block' }} 
             />
           )}
-          <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', color: '#111827', fontWeight: 'bold' }}>
-            {companySettings?.company_name || 'My Company'}
+          <h2 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 'bold' }}>
+            {companySettings?.company_name || companySettings?.name || 'My Company'}
           </h2>
           {companySettings?.tax_registration_no && (
-            <p style={{ margin: '0 0 2px 0', fontSize: '12px', color: '#6b7280' }}>
-              UEN / Tax Reg: {companySettings.tax_registration_no}
+            <p style={{ margin: '4px 0 0', fontSize: '12px' }}>
+              Tax / UEN: {companySettings?.tax_registration_no || '-'}
             </p>
           )}
           {companySettings?.registered_address && (
             <p style={{ margin: '0 0 2px 0', fontSize: '12px', color: '#6b7280', whiteSpace: 'pre-line' }}>
               {companySettings.registered_address}
             </p>
-          )}
+          )}companySettings.tax_uen
           {(companySettings?.phone || companySettings?.email) && (
             <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#6b7280' }}>
               {companySettings?.phone && `Tel: ${companySettings.phone}`} {companySettings?.email && `| ${companySettings.email}`}
@@ -220,7 +217,7 @@ export default function InvoicePdfTemplate({ invoice, companySettings, elementId
               {companySettings.account_number && <p style={{ margin: '0' }}><strong>Account No:</strong> {companySettings.account_number}</p>}
             </div>
             <div>
-              {companySettings.swift_code && <p style={{ margin: '0 0 2px 0' }}><strong>SWIFT Code:</strong> {companySettings.swift_code}</p>}
+              {companySettings.swift_bic && <p style={{ margin: '0 0 2px 0' }}><strong>SWIFT Code:</strong> {companySettings.swift_code}</p>}
               {companySettings.paynow_uen && <p style={{ margin: '0' }}><strong>PayNow UEN:</strong> {companySettings.paynow_uen}</p>}
             </div>
           </div>

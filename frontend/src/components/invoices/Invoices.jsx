@@ -49,7 +49,7 @@ export default function Invoices({ token, baseUrl }) {
   // 1. Define fetchCompanySettings
   const fetchCompanySettings = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const res = await fetch(`${baseUrl}/company-settings/1/`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -90,7 +90,7 @@ export default function Invoices({ token, baseUrl }) {
       try {
         const response = await fetch('http://127.0.0.1:8000/api/invoices/', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
             'Content-Type': 'application/json',
           },
         });
@@ -101,6 +101,7 @@ export default function Invoices({ token, baseUrl }) {
       }
     };
     loadInvoices();
+    fetchCompanySettings();
   }, []);
 
   const filteredInvoices = invoices.filter((inv) => {
@@ -402,7 +403,7 @@ export default function Invoices({ token, baseUrl }) {
         {/* Printable Invoice Container */}
         <InvoicePdfTemplate 
           invoice={activeInvoiceData}
-          invoice={selectedInvoice} 
+          //invoice={selectedInvoice} 
           companySettings={companySettings} 
           elementId="printable-invoice" 
         />
