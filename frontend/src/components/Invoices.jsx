@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FormField from './common/FormField';
 import { formatCurrency, calculateGrandTotal, formatDate } from '../utils/formatters';
+import InvoicePdfTemplate from './PdfTemplate';
 
 // Isolated Popover Preview Component
 // Safe, Isolated Popover Preview Component
@@ -261,7 +262,6 @@ function DataTable({ title, headers, children }) {
     </div>
   );
 }
-
 export default function Invoices({ token, baseUrl }) {
   const invoiceHeaders = [
     { label: 'Invoice #', align: 'left' },
@@ -302,7 +302,9 @@ export default function Invoices({ token, baseUrl }) {
   // 1. Fetch Invoices and Predefined Catalog Items
   const fetchData = async () => {
     try {
-      const headers = { Authorization: `Token ${token}` };
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+
       const [invRes, catRes] = await Promise.all([
         fetch(`${baseUrl}/invoices/`, { headers }),
         fetch(`${baseUrl}/catalog-items/`, { headers }),

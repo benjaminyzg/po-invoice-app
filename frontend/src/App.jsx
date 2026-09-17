@@ -3,9 +3,16 @@ import Login from './Login';
 import POList from './components/POList';
 import Invoices from './components/invoices/Invoices';
 import PurchaseOrders from './components/purchase-orders/PurchaseOrders';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import QuotationForm from './components/QuotationForm';
 import PurchaseOrderList from './components/PurchaseOrderList';
 import CatalogItems from './components/CatalogItems';
 import Settings from './components/settings/Settings';
+import Dashboard from './components/Dashboard';
+import UsersAdmin from './components/UsersAdmin';
+import CatalogManagement from './components/CatalogManagement';
+import QuotationFormWip from './components/QuotationFormWip';
+import CatalogManager from './CatalogManager';
 import './App.css'; 
 
 const BASE_URL = 'http://127.0.0.1:8000/api';
@@ -13,11 +20,12 @@ const BASE_URL = 'http://127.0.0.1:8000/api';
 export default function App() {
   // Read initial token state directly from localStorage
   const [token, setToken] = useState(() => localStorage.getItem('token') || '');
-  const [activeTab, setActiveTab] = useState('invoices');
-
+  // const [activeTab, setActiveTab] = useState('invoices');
+  const [activeTab, setActiveTab] = useState('dashboard'); // Set as default landing view
+  
   const handleLogout = () => {
     localStorage.removeItem('token');
-    setToken(''); // Reset React state to render Login component
+    setToken(null); // Reset React state to render Login component
   };
   // If no token exists, render the Login screen
   if (!token) {
@@ -28,11 +36,20 @@ export default function App() {
     <div style={{ width: '100%', maxWidth: '1000px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif' }}>
       {/* Navigation Tabs */}
       <nav style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '10px' }}>
+        <button 
+          onClick={() => setActiveTab('dashboard')}
+          style={{ fontWeight: activeTab === 'dashboard' ? 'bold' : 'normal' }}
+        >
+          📊 Dashboard Summmary
+        </button>
         <button onClick={() => setActiveTab('invoices')} style={{ padding: '8px 16px', fontWeight: activeTab === 'invoices' ? 'bold' : 'normal' }}>
-          📄 Invoices
+          📄 Invoices Records
         </button>
         <button onClick={() => setActiveTab('purchaseOrders')} style={{ padding: '8px 16px', fontWeight: activeTab === 'purchaseOrders' ? 'bold' : 'normal' }}>
           📦 Purchase Orders
+        </button>
+       <button onClick={() => setActiveTab('quotation-wip')} className={`px-3 py-2 text-sm font-semibold rounded-md ${activeTab === 'quotation-wip' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+          📋 Quotation Form
         </button>
         <button onClick={() => setActiveTab('catalog')} style={{ padding: '8px 16px', fontWeight: activeTab === 'catalog' ? 'bold' : 'normal' }}>
           🏷️ Catalog Items
@@ -40,14 +57,19 @@ export default function App() {
         <button onClick={() => setActiveTab('settings')} style={{ padding: '8px 16px', fontWeight: activeTab === 'settings' ? 'bold' : 'normal' }}>
           ⚙️ Company Settings
         </button>
+        <button onClick={() => setActiveTab('usersAdmin')} style={{ padding: '8px 16px', fontWeight: activeTab === 'usersAdmin' ? 'bold' : 'normal' }}>
+          👥 Users Admin
+        </button>
       </nav>
 
       {/* Tab Views */}
       <main>
-        {activeTab === 'invoices' && (
-          <Invoices token={token} baseUrl={BASE_URL} />
+        {activeTab === 'dashboard' && (
+         <Dashboard token={token} setToken={setToken} />
         )}
-
+        {activeTab === 'catalog' && (
+          <CatalogManager token={token} baseUrl={BASE_URL} />
+        )} 
         {activeTab === 'purchaseOrders' && (
           <div>
             {/* 1. Form component for creating new POs */}
@@ -55,13 +77,16 @@ export default function App() {
             <hr style={{ margin: '30px 0', border: 'none', borderTop: '1px solid #ddd' }} />
           </div>
         )}
-
-        {activeTab === 'catalog' && (
-          <CatalogItems token={token} baseUrl={BASE_URL} />
-        )}
-
+        {/* Tab Views */}
+        {activeTab === 'quotation-wip' && <QuotationFormWip />}        
         {activeTab === 'settings' && (
           <Settings token={token} baseUrl={BASE_URL} />
+        )}
+        {/*} In your Main Content Area: */}
+        {activeTab === 'invoices' && <Invoices token={token} baseUrl={BASE_URL} />}
+        {/* Other existing tab components */}
+        {activeTab === 'usersAdmin' && (
+          <UsersAdmin token={token} baseUrl={BASE_URL} />
         )}
       </main>
     </div>

@@ -3,6 +3,7 @@ import PoHeaderDetails from './PoHeaderDetails';
 import PoLineItems from './PoLineItems';
 import PoSummary from './PoSummary';
 import PoTable from './PoTable';
+import api from '../../services/api';
 
 const commonInputStyle = {
   width: '100%',
@@ -27,6 +28,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
   const [status, setStatus] = useState('PENDING');
   const [file, setFile] = useState(null);
   const [editingPoId, setEditingPoId] = useState(null);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
 
   const getHeaders = () => ({
     'Content-Type': 'application/json',
@@ -71,9 +73,41 @@ export default function PurchaseOrders({ token, baseUrl }) {
       setError(err.message);
     }
   };
+  // Example of fetching purchase orders with an Authorization header
+  const fetchPurchaseOrders = async () => {
+    try {
+      const token = localStorage.getItem('access_token'); // Or wherever your token is stored
+      const response = await axios.get('/api/purchase-orders/', {
+        headers: {
+          Authorization: `Bearer ${token}` // Use `Token ${token}` if using DRF TokenAuth
+        }
+      });
+      setPurchaseOrders(response.data);
+    } catch (err) {
+      console.error("Error fetching purchase orders:", err);
+    }
+  };
+
   useEffect(() => {
-    fetchPOs();
+    const loadPurchaseOrders = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/purchase-orders/', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const data = await response.json();
+        console.log("RAW API DATA:", data);
+        //setPurchaseOrders(data);
+        setPurchaseOrders(Array.isArray(data) ? data : (data.results || []));
+      } catch (error) {
+        console.error('Error loading purchase orders:', error);
+      }
+  }
+  loadPurchaseOrders();
   }, []);
+
   const handleItemChange = (index, field, value) => {
     setItems((prevItems) => {
       const updated = [...prevItems];
@@ -165,7 +199,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
 
   return (
     <div style={{ padding: '10px 0' }}>
-      <h3 style={{ textAlign: 'center' }}>📦 Purchase Orders (PO)</h3>
+      <h3 style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '18px' }}>📦 Purchase Orders (PO)</h3>
       {error && <div style={{ color: 'red', marginBottom: '10px', textAlign: 'center' }}>{error}</div>}
 
       <form 
@@ -265,7 +299,17 @@ export default function PurchaseOrders({ token, baseUrl }) {
         </div>
       </form>
 
-      <PoTable
+      <PoTable 
+        purchaseOrders={purchaseOrders} 
+        handleEdit={handleEdit} 
+        handleCancel={handleCancel} 
+      />    
+
+      {/* 
+        NOTE: Old incorrect prop passing snippet kept for reference. 
+        Passed single loop variable 'pos' instead of the 'purchaseOrders' state array.
+      */}
+      {/* <PoTable
         purchaseOrders={pos}
         handleEdit={(po) => {
           setEditingPoId(po.id);
@@ -292,7 +336,7 @@ export default function PurchaseOrders({ token, baseUrl }) {
             handleStatusChange(po.id, 'CANCELLED');
           }
         }}
-      />
+      /> */}
     </div>
   );
 }

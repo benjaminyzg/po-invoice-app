@@ -50,12 +50,12 @@ function PurchaseOrderRow({ po, baseUrl, token, onStatusUpdate }) {
     } finally {
       setIsCancelling(false);
     }
-  };
-
+  }
+  // 3. Add the Cancel handler function
   const handleEditClick = () => {
   setIsEditing(true);
-  };
-
+  }
+  // 4. Add the Cancel handler function
   const handleSaveEdit = async () => {
     try {
       // Send updated PO data to backend
@@ -75,7 +75,7 @@ function PurchaseOrderRow({ po, baseUrl, token, onStatusUpdate }) {
     } catch (error) {
       console.error('Error updating PO:', error);
     }
-
+  } 
   return (
     <>
       <tr className="po-row">
@@ -96,7 +96,6 @@ function PurchaseOrderRow({ po, baseUrl, token, onStatusUpdate }) {
           </button>
           {po.po_number}
         </td>
-        
         <td>{vendorDisplay}</td>
         <td>{formattedAmount}</td>
         <td>{po.status}</td>
@@ -135,7 +134,23 @@ function PurchaseOrderRow({ po, baseUrl, token, onStatusUpdate }) {
           >
             {isCancelling ? 'Cancelling...' : 'CANCEL'}
           </button>
-          </div>
+
+          <button
+            type="button"
+            onClick={() => handleDelete && handleDelete(po)}
+            style={{
+              padding: '4px 8px',
+              fontSize: '12px',
+              cursor: 'pointer',
+              backgroundColor: '#dc3545',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '4px'
+            }}
+          >
+            Delete
+          </button>
+        </div>
         </td>
       </tr>
       
@@ -199,7 +214,6 @@ function PurchaseOrderRow({ po, baseUrl, token, onStatusUpdate }) {
       )}
     </>
   );
-  }
 }
 
 export default function PurchaseOrderList({ pos, token, baseUrl }) {
@@ -235,10 +249,37 @@ export default function PurchaseOrderList({ pos, token, baseUrl }) {
     } catch (err) {
       setError(err.message);
     }
-  };
+  }
 
   if (loading) return <div style={{ padding: '20px' }}>Loading Purchase Orders...</div>;
   if (!purchaseOrders.length) return <div style={{ padding: '20px' }}>No purchase orders found.</div>;
+
+const handleDelete = async (poRecord) => {
+    const confirmed = window.confirm(`Are you sure you want to permanently delete PO ${poRecord.po_number}?`);
+    if (!confirmed) return;
+
+      try {
+        const response = await fetch(`${baseUrl}api/purchase-orders/${poRecord.id}/`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Token ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete purchase order');
+        }
+
+        // Refresh the list or update the state so the deleted row disappears instantly
+        if (onStatusUpdate) {
+          onStatusUpdate();
+        }
+      }catch (err){
+        console.error('Error deleting purchase order:', err);
+        alert(err.message);
+      }
+  }
 
   return (
     <div className="po-list-wrapper">
@@ -261,7 +302,7 @@ export default function PurchaseOrderList({ pos, token, baseUrl }) {
             po={po}
             baseUrl={baseUrl}
             token={token}
-            onStatusUpdate={fetchPOs} 
+            onStatusUpdate={fetchPOs}
             />
           ))}
         </tbody>

@@ -11,7 +11,7 @@ export default function PoTable({ purchaseOrders, handleEdit, handleCancel }) {
 
   return (
     <div>
-      <h4 style={{ textAlign: 'center', margin: '20px 0 15px 0', color: '#333' }}>
+      <h4 style={{ fontWeight: 'bold', fontSize: '18px', marginTop: '20px', textAlign: 'center', margin: '20px 0 15px 0', color: '#333' }}>
         Purchase Order History
       </h4>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>

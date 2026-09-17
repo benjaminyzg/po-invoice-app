@@ -1,7 +1,67 @@
 from decimal import Decimal
 from django.db import models
 from datetime import datetime
+from django.conf import settings
 from django.utils import timezone
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from core_app.models import CatalogItem  # Import master catalog from core_app
+
+class PaymentTermTemplate(models.Model):
+    """Reusable payment term templates (e.g., Net 30, 50/50 Split)"""
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    deposit_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    due_days = models.IntegerField(help_text="Number of days until full payment is due")
+
+    def __str__(self):
+        return self.name
+
+class Quotation(models.Model):
+    """Quotation document tracking pricing validity and payment schedules"""
+    quote_reference = models.CharField(max_length=100, blank=True, null=True)
+    client_name = models.CharField(max_length=255) # Or ForeignKey to a Client model if available
+    currency = models.CharField(max_length=10, default="SGD")
+    created_at = models.DateTimeField(auto_now_add=True)
+    valid_until = models.DateField(help_text="Date until which this quoted price is valid")
+    incoterm = models.CharField(max_length=50, blank=True, null=True)
+    payment_term = models.ForeignKey(PaymentTermTemplate, on_delete=models.SET_NULL, null=True)
+    
+    STATUS_CHOICES = [
+        ('DRAFT', 'Draft'),
+        ('SENT', 'Sent'),
+        ('ACCEPTED', 'Accepted'),
+        ('EXPIRED', 'Expired'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
+
+    def clean(self):
+        super().clean()
+        if self.pk is None and self.valid_until and self.valid_until < timezone.now().date():
+            raise ValidationError({'valid_until': "Quotation validity date cannot be set in the past."})
+
+    def save(self, *args, **kwargs):
+        if self.valid_until and self.valid_until < timezone.now().date() and self.status == 'SENT':
+            self.status = 'EXPIRED'
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Quotation #{self.id} - {self.client_name}"
+
+class QuotationItem(models.Model):
+    """Line items locking in pricing from core_app's CatalogItem"""
+    quotation = models.ForeignKey(Quotation, related_name='items', on_delete=models.CASCADE)
+    catalog_item = models.ForeignKey(CatalogItem, on_delete=models.PROTECT) # Prevents deleting items used in quotes
+    quantity = models.PositiveIntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2) # Locks price at time of quotation
+
+    def save(self, *args, **kwargs):
+        # Automatically pull price from core_app CatalogItem if not specified
+        if not self.unit_price and self.catalog_item:
+            self.unit_price = self.catalog_item.unit_price
+        super().save(*args, **kwargs)
 
 class CompanySettings(models.Model):
     # Company Profile
@@ -17,6 +77,9 @@ class CompanySettings(models.Model):
 
     # Banking & Payment Details
     bank_name = models.CharField(max_length=100, blank=True, null=True)
+    bank_code = models.CharField(max_length=20, blank=True, default='')
+    branch_code = models.CharField(max_length=20, blank=True, default='')
+    bank_address = models.TextField(blank=True, default='')
     account_name = models.CharField(max_length=100, blank=True, null=True)
     account_number = models.CharField(max_length=50, blank=True, null=True)
     swift_code = models.CharField(max_length=20, blank=True, null=True)
@@ -35,6 +98,9 @@ class CatalogItem(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    is_deleted = models.BooleanField(default=False)
+    packing_dimensions = models.CharField(max_length=100, blank=True, null=True)
+    gross_weight = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name} (${self.unit_price})"
@@ -45,6 +111,9 @@ class Invoice(models.Model):
         ('pending', 'Pending'),
         ('fulfilled', 'Fulfilled'),
         ('cancelled', 'Cancelled'),
+        ('rejected', 'Rejected'),
+        ('draft', 'Draft'),
+        ('pending_approval', 'Pending Approval')
     ]
 
     invoice_number = models.CharField(max_length=50, unique=True)
@@ -54,7 +123,22 @@ class Invoice(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     issued_date = models.DateField(default=timezone.now)
     remarks = models.TextField(blank=True, null=True)
-
+    is_deleted = models.BooleanField(default=False)
+    invoice_number = models.CharField(max_length=50, unique=True)
+    purchase_order = models.ForeignKey(
+        'PurchaseOrder',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='invoices'
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
+    vendor_name = models.CharField(max_length=255)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    remarks = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     @property
     def total_amount(self):
         """Calculates total from related line items."""
@@ -89,19 +173,8 @@ class PurchaseOrder(models.Model):
     def __str__(self):
         return f"{self.po_number} - {self.vendor_name} ({self.status})"
 
+    # Strip away lines 94-106. Your save method should just look like this:
     def save(self, *args, **kwargs):
-        if not self.po_number:
-            year = datetime.now().year
-            prefix = f"PO-{year}-"
-            last_po = PurchaseOrder.objects.filter(po_number__startswith=prefix).order_by('id').last()
-            
-            if last_po and last_po.po_number.rsplit('-', 1)[-1].isdigit():
-                last_seq = int(last_po.po_number.rsplit('-', 1)[-1])
-                seq = last_seq + 1
-            else:
-                seq = 1
-                
-            self.po_number = f"{prefix}{seq:04d}"
         super().save(*args, **kwargs)
 
 # 4. Purchase Order Item Model
@@ -136,3 +209,16 @@ class InvoiceItem(models.Model):
 
     def __str__(self):
         return f'{self.description} ({self.quantity} x ${self.unit_price})'
+
+# 6. Document Sequence Items Model
+class DocumentSequence(models.Model):
+    DOCUMENT_TYPES = [
+        ('INV', 'Invoice'),
+        ('PO', 'Purchase Order'),
+    ]
+    doc_type = models.CharField(max_length=3, choices=DOCUMENT_TYPES)
+    year = models.PositiveIntegerField()
+    last_sequence = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ('doc_type', 'year')

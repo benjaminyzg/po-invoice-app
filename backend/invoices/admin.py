@@ -1,5 +1,10 @@
 from django.contrib import admin
 from .models import Invoice, InvoiceItem, CatalogItem, PurchaseOrder
+from .models import PaymentTermTemplate, Quotation, QuotationItem
+
+admin.site.register(PaymentTermTemplate)
+admin.site.register(Quotation)
+admin.site.register(QuotationItem)
 
 # 1. Register CatalogItem
 @admin.register(CatalogItem)
@@ -17,10 +22,6 @@ class PurchaseOrderAdmin(admin.ModelAdmin):
 class InvoiceItemInline(admin.TabularInline):
     model = InvoiceItem
     extra = 1
-
-from django.contrib import admin
-from .models import Invoice
-
 
 @admin.register(Invoice)
 class InvoiceAdmin(admin.ModelAdmin):
