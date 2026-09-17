@@ -98,6 +98,6 @@ class CompanySettings(models.Model):
     full_address = models.TextField(blank=True, null=True)
     web = models.URLField(blank=True, null=True)
     # Add this new field:
-    quotation_format = models.CharField(max_length=100, default="QT-{YYYY}-{SEQ}")
-    quotation_ref_label = models.CharField(max_length=100, default="Quotation Reference")
-    quotation_format = models.CharField(max_length=100, default="QT-{YYYY}-{SEQ}")
+    quotation_format = models.CharField(max_length=100, default="FMQ-{DDMMYY}/{CLIENT_NAME}/{SEQ}")
+    quotation_ref_label = models.CharField(max_length=100, default="Quote Ref")
+    
