@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
+import axios from 'axios';
 import CardContainer from '../common/CardContainer';
 
 const commonInputStyle = {
@@ -46,7 +47,7 @@ export default function Settings({ token, baseUrl }) {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
   const [message, setMessage] = useState('');
-
+ 
   useEffect(() => {
     fetch(`${baseUrl}/company-settings/1/`, {
       headers: { Authorization: `Token ${token}` }
@@ -70,36 +71,62 @@ export default function Settings({ token, baseUrl }) {
       setLogoPreview(URL.createObjectURL(e.target.files[0]));
     }
   };
+
+  {/* Old Version of HandleSubmit*/}
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   const data = new FormData();
+  //   Object.keys(formData).forEach((key) => {
+  //     if (formData[key] !== null && formData[key] !== undefined) {
+  //       data.append(key, formData[key]);
+  //     }
+  //   });
+  //   if (logoFile) {
+  //     data.append('logo', logoFile);
+  //   }
+
+  //   try {
+  //     const response = await fetch(`${baseUrl}/company-settings/1/`, {
+  //       method: 'PUT',
+  //       headers: { Authorization: `Token ${token}` },
+  //       body: data
+  //     });
+  //     if (response.ok) {
+  //       setMessage('Company settings saved successfully!');
+  //       setTimeout(() => setMessage(''), 3000);
+  //     } else {
+  //       setMessage('Failed to save settings.');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error saving settings:', error);
+  //     setMessage('An error occurred.');
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData();
     Object.keys(formData).forEach((key) => {
-      if (formData[key] !== null && formData[key] !== undefined) {
-        data.append(key, formData[key]);
-      }
+        if (formData[key] !== null && formData[key] !== undefined) {
+            data.append(key, formData[key]);
+        }
     });
     if (logoFile) {
-      data.append('logo', logoFile);
+        data.append('logo', logoFile);
     }
-
     try {
-      const response = await fetch(`${baseUrl}/company-settings/1/`, {
-        method: 'PUT',
-        headers: { Authorization: `Token ${token}` },
-        body: data
-      });
-      if (response.ok) {
-        setMessage('Company settings saved successfully!');
-        setTimeout(() => setMessage(''), 3000);
-      } else {
-        setMessage('Failed to save settings.');
-      }
+        const response = await axios.put(`${baseUrl}/company-settings/1/`, data, {
+            headers: {
+                'Authorization': `Token ${token}`,
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        setMessage('Settings saved successfully!');
     } catch (error) {
-      console.error('Error saving settings:', error);
-      setMessage('An error occurred.');
+        console.error('Error saving settings:', error);
+        setMessage('Failed to save settings.');
     }
   };
-
   return (
     <CardContainer title="Company Settings & Branding">
       {message && (
@@ -170,7 +197,15 @@ export default function Settings({ token, baseUrl }) {
             </div>
             <div>
               <label style={labelStyle}>Account Name</label>
-              <input type="text" name="account_name" value={formData.account_name || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. My Company Pte Ltd" />
+              <input type="text" name="account_name" value={formData.account_name || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. Company Pte Ltd" />
+            </div>
+            <div>
+              <label style={labelStyle}>Bank Code</label>
+              <input type="text" name="bank_code" value={formData.bank_code || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. 7171"/>
+            </div>
+            <div>
+              <label style={labelStyle}>Branch Code</label>
+              <input type="text" name="branch_code" value={formData.branch_code || ''} onChange={handleChange} style={commonInputStyle} placeholder="e.g. 070"/>
             </div>
           </div>
 
@@ -188,6 +223,11 @@ export default function Settings({ token, baseUrl }) {
               <input type="text" name="paynow_uen" value={formData.paynow_uen || ''} onChange={handleChange} style={commonInputStyle} placeholder="201812345M" />
             </div>
           </div>
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+            <label style={labelStyle}>Bank Address</label>
+            <textarea name="bank_address" value={formData.bank_address || ''} onChange={handleChange} style={{ ...commonInputStyle, minHeight: '80px', resize: 'vertical'}} placeholder="12 Marina Boulevard, DBS Asia Central, Marina Bay Financial Centre Tower 3, Singapore 018982"/>
         </div>
 
         {/* Submit */}
