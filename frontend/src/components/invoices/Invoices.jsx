@@ -214,7 +214,7 @@ export default function Invoices({ token, baseUrl }) {
         </h2>
         </div>
         {/* Quick Select Catalog Item */}
-        <div style={{ marginBottom: '20px' }}>
+        {/* <div style={{ marginBottom: '20px' }}>
           <label style={{ display: 'block', fontWeight: 'bold', fontSize: '14px', marginBottom: '6px', color: '#444' }}>
             Quick Select Catalog Item:
           </label>
@@ -230,7 +230,8 @@ export default function Invoices({ token, baseUrl }) {
               </option>
             ))}
           </select>
-        </div>
+        </div> */}
+        
         <form onSubmit={handleSubmit}>
           {/* Header Details Sub-component */}
           <InvoiceHeaderDetails
