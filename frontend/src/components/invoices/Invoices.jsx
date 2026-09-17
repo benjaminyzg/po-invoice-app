@@ -408,8 +408,8 @@ export default function Invoices({ token, baseUrl }) {
         />
       
         {/* Quick Select Catalog Item */}
-        {/* <div style={{ marginBottom: '20px' }}>
-          <label style={{ display: 'block', fontWeight: 'bold', fontSize: '14px', marginBottom: '6px', color: '#444' }}>
+        <div style={{ marginBottom: '60px' }}></div>
+        {/*  <label style={{ display: 'block', fontWeight: 'bold', fontSize: '14px', marginBottom: '6px', color: '#444' }}>
             Quick Select Catalog Item:
           </label>
           <select
