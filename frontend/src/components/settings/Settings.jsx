@@ -50,6 +50,21 @@ export default function Settings({ token, baseUrl }) {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    fetch(`${baseUrl}/company-settings/1/`, {
+      headers: { Authorization: `Token ${token}` }
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data) {
+          setFormData(data);
+          if (data.logo) setLogoPreview(data.logo);
+        }
+      })
+      .catch((err) => console.error('Error fetching settings:', err));
+  }, [token, baseUrl]);
+
   const [settings, setSettings] = useState({
     name: '',
     email: '',

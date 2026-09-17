@@ -14,6 +14,7 @@ router.register(r'users', UserViewSet, basename='user')
 router.register(r'invoices', InvoiceViewSet, basename='invoice')
 router.register(r'catalog-items', CatalogItemViewSet, basename='catalogitem')
 router.register(r'purchase-orders', PurchaseOrderViewSet, basename='purchaseorder')
+router.register(r'company-settings', CompanySettingsViewSet, basename='companysettings')
 router.register(r'company-settings', CompanySettingsViewSet, basename='companysetting')
 
 urlpatterns = [
@@ -25,6 +26,9 @@ urlpatterns = [
     
     # App Routes
     path('api/', include(router.urls)),
+    path('api-token-auth/', obtain_auth_token, name='api_token_auth'), # Ensure trailing slash!
+    # path('api/company-settings/', CompanySettingsView.as_view(), name='company-settings'),
+]
     path('api/', include('core_app.urls')),
     path('api/', include('invoices.urls')),
     path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
