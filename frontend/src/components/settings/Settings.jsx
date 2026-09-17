@@ -329,7 +329,7 @@ export default function Settings({ token, baseUrl }) {
                 type="text"
                 name="quotation_ref_label"
                 style={commonInputStyle}
-                value={settings.quotation_ref_label || 'Quotation Reference'}
+                value={settings.quotation_ref_label || 'QUOTE REF'}
                 onChange={(e) => setSettings({ ...settings, quotation_ref_label: e.target.value })}
                 placeholder="e.g. Quotation Reference, Estimate No, Doc ID"
               />
@@ -342,7 +342,7 @@ export default function Settings({ token, baseUrl }) {
                 type="text"
                 name="quotation_format"
                 style={commonInputStyle}
-                value={settings.quotation_format || 'QT-{YYYY}-{SEQ}'}
+                value={settings.quotation_format || 'FMQ-{DDMMYY}/{CLIENT_NAME}/{SEQ}'}
                 onChange={(e) => setSettings({ ...settings, quotation_format: e.target.value })}
                 placeholder="e.g. FMQ-{DDMMYY}/{CLIENT_NAME}/{SEQ}"
               />

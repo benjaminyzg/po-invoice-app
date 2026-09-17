@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from './services/api';
+// import axios from 'axios';
 
 export default function Login({ setToken }) {
   const [username, setUsername] = useState('');
@@ -11,14 +12,20 @@ export default function Login({ setToken }) {
     setErrorMsg('');
 
     try {
-      const response = await axios.post('http://localhost:8000/api/token/', {
-        username,
-        password,
+      // const response = await axios.post('http://localhost:8000/api/token/', {
+      //   username: username,
+      //   password: password
+      // });
+
+      const response = await api.post('/token/', {
+          username,
+          password
       });
 
       // Save JWT access token inside the handler function
       const accessToken = response.data.access;
-      localStorage.setItem('token', accessToken);
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', response.data.refresh);
       
       if (response.data.user) {
         localStorage.setItem('user', JSON.stringify(response.data.user));

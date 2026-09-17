@@ -5,6 +5,8 @@ class CatalogItem(models.Model):
     sku = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    is_active = models.BooleanField(default=True)
+    is_deleted = models.BooleanField(default=False)
 
     # Customs & Freight Extensions
     hs_code = models.CharField(max_length=20, help_text="Harmonized System Code for Customs Tariff")
