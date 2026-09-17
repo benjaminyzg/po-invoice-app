@@ -21,6 +21,7 @@ class CompanySettings(models.Model):
     account_number = models.CharField(max_length=50, blank=True, null=True)
     bank_code = models.CharField(max_length=20, blank=True, null=True)
     branch_code = models.CharField(max_length=20, blank=True, null=True)
+    bank_address = models.TextField(blank=True, null=True)
     swift_code = models.CharField(max_length=20, blank=True, null=True)
     paynow_uen = models.CharField(max_length=50, blank=True, null=True)
 
