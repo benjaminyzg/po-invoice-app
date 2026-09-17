@@ -12,7 +12,6 @@ const commonInputStyle = {
   boxSizing: 'border-box',
   backgroundColor: '#ffffff'
 };
-
 const labelStyle = {
   display: 'block',
   fontSize: '13px',
@@ -21,7 +20,6 @@ const labelStyle = {
   marginBottom: '6px',
   textAlign: 'left'
 };
-
 const sectionTitleStyle = {
   fontSize: '15px',
   fontWeight: '600',
@@ -31,7 +29,6 @@ const sectionTitleStyle = {
   borderBottom: '1px solid #e5e7eb',
   textAlign: 'left'
 };
-
 export default function Settings({ token, baseUrl }) {
   const [formData, setFormData] = useState({
     company_name: '',
@@ -52,7 +49,7 @@ export default function Settings({ token, baseUrl }) {
 
   useEffect(() => {
     fetch(`${baseUrl}/company-settings/1/`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Token ${token}` }
     })
       .then((res) => res.json())
       .then((data) => {
@@ -67,14 +64,12 @@ export default function Settings({ token, baseUrl }) {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
   const handleLogoChange = (e) => {
     if (e.target.files[0]) {
       setLogoFile(e.target.files[0]);
       setLogoPreview(URL.createObjectURL(e.target.files[0]));
     }
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData();
@@ -90,7 +85,7 @@ export default function Settings({ token, baseUrl }) {
     try {
       const response = await fetch(`${baseUrl}/company-settings/1/`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Token ${token}` },
         body: data
       });
       if (response.ok) {
