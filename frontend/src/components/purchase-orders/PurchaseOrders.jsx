@@ -30,10 +30,17 @@ export default function PurchaseOrders({ token, baseUrl }) {
   const [editingPoId, setEditingPoId] = useState(null);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
 
-  const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Token ${token}`
-  });
+  const getHeaders = () => {
+    const activeToken = token 
+      || localStorage.getItem('token') 
+      || localStorage.getItem('access') 
+      || localStorage.getItem('access_token');
+
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': activeToken ? `Bearer ${activeToken}` : ''
+    };
+  };
   // Initial State Definition
   const initialFormState = {
     po_number: '',
@@ -76,36 +83,16 @@ export default function PurchaseOrders({ token, baseUrl }) {
   // Example of fetching purchase orders with an Authorization header
   const fetchPurchaseOrders = async () => {
     try {
-      const token = localStorage.getItem('access_token'); // Or wherever your token is stored
-      const response = await axios.get('/api/purchase-orders/', {
-        headers: {
-          Authorization: `Bearer ${token}` // Use `Token ${token}` if using DRF TokenAuth
-        }
+      const response = await axios.get(`${baseUrl}/purchase-orders/`, {
+        headers: getHeaders()
       });
       setPurchaseOrders(response.data);
     } catch (err) {
       console.error("Error fetching purchase orders:", err);
     }
   };
-
   useEffect(() => {
-    const loadPurchaseOrders = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:8000/api/purchase-orders/', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        const data = await response.json();
-        console.log("RAW API DATA:", data);
-        //setPurchaseOrders(data);
-        setPurchaseOrders(Array.isArray(data) ? data : (data.results || []));
-      } catch (error) {
-        console.error('Error loading purchase orders:', error);
-      }
-  }
-  loadPurchaseOrders();
+    fetchPurchaseOrders();
   }, []);
 
   const handleItemChange = (index, field, value) => {
